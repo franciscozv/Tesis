@@ -22,12 +22,7 @@ app.set("trust proxy", true);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-app.use(
-  helmet({
-    crossOriginOpenerPolicy: false,
-    originAgentCluster: false,
-  })
-);
+app.use(helmet());
 app.use(rateLimiter);
 
 // Request logging

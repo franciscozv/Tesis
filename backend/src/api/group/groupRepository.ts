@@ -1,67 +1,76 @@
+// groupRepository.ts
 import type { Group } from "@/api/group/groupModel";
-
-export const groups: Group[] = [
-  {
-    id: 1,
-    name: "group1",
-    description: "description for group1",
-    createdAt: new Date(),
-    updatedAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days later
-  },
-  {
-    id: 2,
-    name: "group2",
-    description: "description for group2",
-    createdAt: new Date(),
-    updatedAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days later
-  },
-];
+import prisma from "@/lib/prisma";
 
 export class GroupRepository {
   async findAllAsync(): Promise<Group[]> {
-    return groups;
+    const groups = await prisma.group.findMany();
+    return groups.map((group) => ({
+      ...group,
+      createdAt: group.createdAt, // Prisma ya devuelve Date
+      updatedAt: group.updatedAt,
+    }));
   }
 
   async findByIdAsync(id: number): Promise<Group | null> {
-    return groups.find((group) => group.id === id) || null;
+    const group = await prisma.group.findUnique({
+      where: { id },
+    });
+    return group
+      ? {
+          ...group,
+          createdAt: group.createdAt,
+          updatedAt: group.updatedAt,
+        }
+      : null;
   }
+
   async createAsync(
     data: Omit<Group, "id" | "createdAt" | "updatedAt">
   ): Promise<Group> {
-    const newGroup: Group = {
-      id: groups.length + 1,
-      name: data.name,
-      description: data.description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const newGroup = await prisma.group.create({
+      data: {
+        name: data.name,
+        description: data.description,
+      },
+    });
+    return {
+      ...newGroup,
+      createdAt: newGroup.createdAt,
+      updatedAt: newGroup.updatedAt,
     };
-
-    groups.push(newGroup);
-    return newGroup;
   }
 
   async deleteByIdAsync(id: number): Promise<boolean> {
-    const index = groups.findIndex((group) => group.id === id);
-
-    if (index === -1) {
+    try {
+      await prisma.group.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
       return false;
     }
-
-    groups.splice(index, 1);
-    return true;
   }
 
   async updateByIdAsync(
     id: number,
     data: { name: string; description?: string }
   ): Promise<Group | null> {
-    const group = groups.find((g) => g.id === id);
-    if (!group) return null;
-
-    group.name = data.name;
-    group.description = data.description ?? group.description;
-    group.updatedAt = new Date();
-
-    return group;
+    try {
+      const updatedGroup = await prisma.group.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description,
+        },
+      });
+      return {
+        ...updatedGroup,
+        createdAt: updatedGroup.createdAt,
+        updatedAt: updatedGroup.updatedAt,
+      };
+    } catch (error) {
+      return null;
+    }
   }
 }

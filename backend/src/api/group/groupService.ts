@@ -1,7 +1,7 @@
+// groupService.ts
 import { StatusCodes } from "http-status-codes";
-
 import type { Group } from "@/api/group/groupModel";
-import { GroupRepository, groups } from "@/api/group/groupRepository";
+import { GroupRepository } from "@/api/group/groupRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 
@@ -12,11 +12,10 @@ export class GroupService {
     this.groupRepository = repository;
   }
 
-  // Retrieves all groups from the database
   async findAll(): Promise<ServiceResponse<Group[] | null>> {
     try {
-      const users = await this.groupRepository.findAllAsync();
-      if (!users || users.length === 0) {
+      const groups = await this.groupRepository.findAllAsync();
+      if (!groups || groups.length === 0) {
         return ServiceResponse.failure(
           "No Groups found",
           null,
@@ -25,32 +24,29 @@ export class GroupService {
       }
       return ServiceResponse.success<Group[]>("Groups found", groups);
     } catch (ex) {
-      const errorMessage = `Error finding all groups: $${
-        (ex as Error).message
-      }`;
+      const errorMessage = `Error finding all groups: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        "An error occurred while retrieving users.",
+        "An error occurred while retrieving groups.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR
       );
     }
   }
 
-  // Retrieves a single user by their ID
   async findById(id: number): Promise<ServiceResponse<Group | null>> {
     try {
       const group = await this.groupRepository.findByIdAsync(id);
       if (!group) {
         return ServiceResponse.failure(
-          "User not found",
+          "Group not found",
           null,
           StatusCodes.NOT_FOUND
         );
       }
       return ServiceResponse.success<Group>("Group found", group);
     } catch (ex) {
-      const errorMessage = `Error finding group with id ${id}:, ${
+      const errorMessage = `Error finding group with id ${id}: ${
         (ex as Error).message
       }`;
       logger.error(errorMessage);
@@ -61,7 +57,7 @@ export class GroupService {
       );
     }
   }
-  // Creates a new group
+
   async create(data: {
     name: string;
     description: string;
@@ -69,9 +65,9 @@ export class GroupService {
     try {
       const { name, description } = data;
 
-      if (!name || !description) {
+      if (!name) {
         return ServiceResponse.failure(
-          "Name and description are required",
+          "Name is required",
           null,
           StatusCodes.BAD_REQUEST
         );
@@ -97,12 +93,10 @@ export class GroupService {
       );
     }
   }
-  // Deletes a group by its ID
 
   async deleteById(id: number): Promise<ServiceResponse<null>> {
     try {
       const deleted = await this.groupRepository.deleteByIdAsync(id);
-
       if (!deleted) {
         return ServiceResponse.failure(
           "Group not found",
@@ -110,11 +104,10 @@ export class GroupService {
           StatusCodes.NOT_FOUND
         );
       }
-
       return ServiceResponse.success(
         "Group deleted successfully",
         null,
-        StatusCodes.OK // ✅ 200 permite body
+        StatusCodes.OK
       );
     } catch (ex) {
       logger.error(
@@ -134,7 +127,6 @@ export class GroupService {
   ): Promise<ServiceResponse<Group | null>> {
     try {
       const updatedGroup = await this.groupRepository.updateByIdAsync(id, data);
-
       if (!updatedGroup) {
         return ServiceResponse.failure(
           "Group not found",
@@ -142,7 +134,6 @@ export class GroupService {
           StatusCodes.NOT_FOUND
         );
       }
-
       return ServiceResponse.success(
         "Group updated successfully",
         updatedGroup

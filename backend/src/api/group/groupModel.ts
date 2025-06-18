@@ -9,9 +9,9 @@ export type Group = z.infer<typeof GroupSchema>;
 export const GroupSchema = z.object({
   id: z.number(),
   name: z.string(),
-  description: z.string().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  description: z.string().nullish(),
+  createdAt: z.date().or(z.string().datetime()),
+  updatedAt: z.date().or(z.string().datetime()),
 });
 
 // Input Validation for 'POST groups' endpoint
