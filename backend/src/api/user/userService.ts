@@ -4,7 +4,7 @@ import type { User } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
-
+import type { createUserInput } from "@/api/user/userModel";
 export class UserService {
   private userRepository: UserRepository;
 
@@ -54,6 +54,23 @@ export class UserService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding user.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async create(data: createUserInput): Promise<ServiceResponse<User | null>> {
+    try {
+      console.log("Creating user with data:", data);
+      const user = await this.userRepository.createAsync(data);
+      return ServiceResponse.success("User created", user, StatusCodes.CREATED);
+    } catch (ex) {
+      const errorMessage = `Error creating user: ${(ex as Error).message}`;
+      console.error(errorMessage, ex);
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while creating user.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR
       );

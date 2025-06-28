@@ -23,7 +23,7 @@ class GroupController {
   public deleteGroup: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
     const serviceResponse = await groupService.deleteById(id);
-    res.status(serviceResponse.statusCode).json(serviceResponse); // ✅ Importante
+    res.status(serviceResponse.statusCode).json(serviceResponse);
   };
 
   public updateGroup: RequestHandler = async (req: Request, res: Response) => {

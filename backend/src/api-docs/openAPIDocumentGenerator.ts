@@ -6,6 +6,7 @@ import {
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { userRegistry } from "@/api/user/userRouter";
 import { groupRegistry } from "@/api/group/groupRouter";
+import { eventRegistry } from "@/api/event/eventRouter";
 export type OpenAPIDocument = ReturnType<
   OpenApiGeneratorV3["generateDocument"]
 >;
@@ -15,6 +16,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     healthCheckRegistry,
     userRegistry,
     groupRegistry,
+    eventRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

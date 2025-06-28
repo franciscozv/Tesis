@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  tesis-db:
+    image: postgres:15
+    container_name: tesis-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tesis
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - tesis-net
+
+  tesis-backend:
+    build:
+      context: ./backend
+    container_name: tesis-backend
+    restart: unless-stopped
+    depends_on:
+      - tesis-db
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8080:8080"
+    networks:
+      - tesis-net
+
+  tesis-frontend:
+    build:
+      context: ./frontend
+    container_name: tesis-frontend
+    restart: unless-stopped
+    depends_on:
+      - tesis-backend
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - tesis-net
+
+volumes:
+  pgdata:
+
+networks:
+  tesis-net:
+    driver: bridge

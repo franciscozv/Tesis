@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { env } from "~/env";
-import CreateGroupForm from "../components/CreateGroupForm";
-import EditGroupForm from "../components/EditGroupForm";
+import CreateGroupForm from "../../components/CreateGroupForm";
+import EditGroupForm from "../../components/EditGroupForm";
 
 const Page = () => {
   const [groups, setGroups] = useState([]);

@@ -9,7 +9,7 @@ export type Group = z.infer<typeof GroupSchema>;
 export const GroupSchema = z.object({
   id: z.number(),
   name: z.string(),
-  description: z.string().nullish(),
+  description: z.string(),
   createdAt: z.date().or(z.string().datetime()),
   updatedAt: z.date().or(z.string().datetime()),
 });
@@ -18,7 +18,7 @@ export const GroupSchema = z.object({
 export const CreateGroupSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Name is required"),
-    description: z.string().optional(),
+    description: z.string(),
   }),
 });
 
@@ -26,7 +26,7 @@ export const UpdateGroupSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
     name: z.string().min(1, "Name is required"),
-    description: z.string().optional(),
+    description: z.string(),
   }),
 });
 
