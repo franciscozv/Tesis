@@ -56,3 +56,17 @@ userRouter.post(
   validateRequest(CreateUserSchema),
   userController.createUser
 );
+
+userRegistry.registerPath({
+  method: "delete",
+  path: "/users/{id}",
+  tags: ["User"],
+  request: { params: GetUserSchema.shape.params },
+  responses: createApiResponse(UserSchema, "Deleted"),
+});
+
+userRouter.delete(
+  "/:id",
+  validateRequest(GetUserSchema),
+  userController.deleteUser
+);

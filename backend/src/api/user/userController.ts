@@ -19,6 +19,12 @@ class UserController {
     const serviceResponse = await userService.create({ name, email, password });
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
+
+  public deleteUser: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id as string, 10);
+    const serviceResponse = await userService.deleteById(id);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
 }
 
 export const userController = new UserController();

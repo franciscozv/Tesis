@@ -76,6 +76,30 @@ export class UserService {
       );
     }
   }
+
+  async deleteById(id: number): Promise<ServiceResponse<null>> {
+    try {
+      const deletedUser = await this.userRepository.deleteByIdAsync(id);
+      if (!deletedUser) {
+        return ServiceResponse.failure(
+          "User not found",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+      return ServiceResponse.success("User deleted", null, StatusCodes.OK);
+    } catch (ex) {
+      const errorMessage = `Error deleting user with id ${id}: ${
+        (ex as Error).message
+      }`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while deleting user.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }
 
 export const userService = new UserService();

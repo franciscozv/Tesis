@@ -12,4 +12,9 @@ export class UserRepository {
       where: { id },
     });
   }
+  async deleteByIdAsync(id: number): Promise<User | null> {
+    return prisma.user.delete({
+      where: { id },
+    });
+  }
 }

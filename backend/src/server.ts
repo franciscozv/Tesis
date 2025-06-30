@@ -8,6 +8,7 @@ import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { userRouter } from "@/api/user/userRouter";
 import { groupRouter } from "@/api/group/groupRouter";
 import { eventRouter } from "./api/event/eventRouter";
+import { responsibilityRouter } from "./api/responsibility/responsibilityRouter";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
@@ -24,7 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(helmet());
-app.use(rateLimiter);
+// app.use(rateLimiter);
 
 // Request logging
 app.use(requestLogger);
@@ -34,6 +35,7 @@ app.use("/health-check", healthCheckRouter);
 app.use("/users", userRouter);
 app.use("/groups", groupRouter);
 app.use("/events", eventRouter);
+app.use("/responsibilities", responsibilityRouter);
 // Swagger UI
 app.use(openAPIRouter);
 
