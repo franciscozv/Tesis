@@ -1,7 +1,16 @@
-import "~/styles/globals.css";
 
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Roboto } from "next/font/google";
+import Navbar from "../components/layout/Navbar";
+import ThemeRegistry from "../components/ThemeRegistry";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
+const roboto = Roboto({
+  weight: ["300", "400", "500", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Mi App Web",
@@ -9,17 +18,19 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={roboto.className}>
+      <body>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <ThemeRegistry>
+            <Navbar />
+            {children}
+          </ThemeRegistry>
+        </LocalizationProvider>
+      </body>
     </html>
   );
 }

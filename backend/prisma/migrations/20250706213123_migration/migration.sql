@@ -14,6 +14,23 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "People" (
+    "id" SERIAL NOT NULL,
+    "firstname" TEXT NOT NULL,
+    "lastname" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "baptismDate" TIMESTAMP(3) NOT NULL,
+    "convertionDate" TIMESTAMP(3) NOT NULL,
+    "birthdate" TIMESTAMP(3) NOT NULL,
+    "gender" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "People_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Group" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -29,16 +46,25 @@ CREATE TABLE "Event" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "dateStart" TIMESTAMP(3) NOT NULL,
-    "dateEnd" TIMESTAMP(3) NOT NULL,
-    "timeStart" TIMESTAMP(3) NOT NULL,
-    "timeEnd" TIMESTAMP(3) NOT NULL,
+    "startDateTime" TIMESTAMP(3) NOT NULL,
+    "endDateTime" TIMESTAMP(3) NOT NULL,
     "location" TEXT NOT NULL,
-    "state" TEXT NOT NULL DEFAULT 'PENDING',
+    "state" "State" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PostEvent" (
+    "id" SERIAL NOT NULL,
+    "photoUrl" TEXT NOT NULL,
+    "comment" TEXT NOT NULL,
+    "conclution" TEXT NOT NULL,
+    "eventId" INTEGER,
+
+    CONSTRAINT "PostEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -54,3 +80,6 @@ CREATE TABLE "Responsibility" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- AddForeignKey
+ALTER TABLE "PostEvent" ADD CONSTRAINT "PostEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE SET NULL ON UPDATE CASCADE;

@@ -9,6 +9,9 @@ import {
   CreateEventSchema,
   EventSchema,
   CreateEventRequestSchema,
+  UpdateEventSchema,
+  UpdateEventStatusRequestSchema,
+  UpdateEventStatusSchema,
 } from "./eventModel";
 
 export const eventRegistry = new OpenAPIRegistry();
@@ -46,3 +49,68 @@ eventRouter.post(
   validateRequest(CreateEventRequestSchema),
   eventController.createEvent
 );
+
+eventRegistry.registerPath({
+  method: "put",
+  path: "/events/{id}",
+  tags: ["Event"],
+  request: {
+    params: z.object({
+      id: z.number(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateEventSchema,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(EventSchema, "Updated"),
+});
+
+eventRouter.put(
+  "/:id",
+  validateRequest(z.object({ body: UpdateEventSchema })),
+  eventController.updateEvent
+);
+
+eventRegistry.registerPath({
+  method: "patch",
+  path: "/events/{id}/status",
+  tags: ["Event"],
+  request: {
+    params: z.object({
+      id: z.number(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateEventStatusSchema,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(EventSchema, "Updated"),
+});
+
+eventRouter.patch(
+  "/:id/status",
+  validateRequest(UpdateEventStatusRequestSchema),
+  eventController.updateEventStatus
+);
+
+
+eventRegistry.registerPath({
+  method: "delete",
+  path: "/events/{id}",
+  tags: ["Event"],
+  request: {
+    params: z.object({
+      id: z.number(),
+    }),
+  },
+  responses: createApiResponse(EventSchema, "Deleted"),
+});
+
+eventRouter.delete("/:id", eventController.deleteEvent);

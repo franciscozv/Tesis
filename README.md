@@ -4,7 +4,7 @@
 
 ## IEPWebApp
 
-Este es el Backend de la aplicación web desarrollada como parte del proyecto de tesis titulado: Sistema Web para la gestión de la congregación y eventos de la Iglesia Evangelica Pentecostal (IEP) Santa Juana.
+Este es el repositorio para la aplicación web desarrollada como parte del proyecto de tesis titulado: Sistema Web para la gestión de la congregación y eventos de la Iglesia Evangelica Pentecostal (IEP) Santa Juana.
 
 </div>
 
