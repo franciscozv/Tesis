@@ -7,8 +7,5 @@ export default {
   theme: {
     extend: {},
   },
-  corePlugins: {
-    preflight: false, // Deshabilita el preflight de Tailwind para evitar conflictos con MUI CssBaseline
-  },
   plugins: [],
 };
