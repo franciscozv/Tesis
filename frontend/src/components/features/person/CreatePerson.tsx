@@ -14,7 +14,7 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
-
+import type { SelectChangeEvent } from "@mui/material/Select";
 type Props = {
   onPersonCreated?: () => void;
 };
@@ -35,10 +35,18 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
     {}
   );
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  // Manejador para TextField (inputs y textareas)
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Manejador para Select (dropdowns de MUI)
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name as string]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,7 +111,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.firstname}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.firstname}
         helperText={errors.firstname ? errors.firstname[0] : ""}
       />
@@ -114,7 +122,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.lastname}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.lastname}
         helperText={errors.lastname ? errors.lastname[0] : ""}
       />
@@ -125,7 +133,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.address}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.address}
         helperText={errors.address ? errors.address[0] : ""}
       />
@@ -136,7 +144,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.phone}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.phone}
         helperText={errors.phone ? errors.phone[0] : ""}
       />
@@ -148,7 +156,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.birthdate}
-        onChange={handleChange}
+        onChange={handleInputChange}
         InputLabelProps={{
           shrink: true,
         }}
@@ -163,7 +171,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.convertionDate}
-        onChange={handleChange}
+        onChange={handleInputChange}
         InputLabelProps={{
           shrink: true,
         }}
@@ -178,7 +186,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         variant="outlined"
         fullWidth
         value={formData.baptismDate}
-        onChange={handleChange}
+        onChange={handleInputChange}
         InputLabelProps={{
           shrink: true,
         }}
@@ -194,7 +202,7 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
           name="gender"
           value={formData.gender}
           label="Género"
-          onChange={handleChange}
+          onChange={handleSelectChange}
         >
           <MenuItem value="">Seleccionar género</MenuItem>
           <MenuItem value="Masculino">Masculino</MenuItem>

@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { updatePerson } from "~/services/personService";
 import { personSchema } from "./person.validators";
@@ -13,6 +14,7 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material/Select";
 
 type Person = {
   id: number;
@@ -32,32 +34,71 @@ type Props = {
   onCancel: () => void;
 };
 
+function formatDateForInput(dateString: string | undefined | null): string {
+  // 1. Validación de entrada
+  if (
+    dateString === null ||
+    dateString === undefined ||
+    typeof dateString !== "string"
+  ) {
+    return "";
+  }
+
+  // 2. Limpieza del string
+  const cleanedDateString = dateString.trim();
+  if (cleanedDateString === "") {
+    return "";
+  }
+
+  // 3. Parseo y validación de fecha
+  const timestamp = Date.parse(cleanedDateString);
+  if (isNaN(timestamp)) {
+    return "";
+  }
+
+  // 4. Creación y verificación de fecha
+  const date = new Date(timestamp);
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return "";
+  }
+
+  // 5. Formateo seguro con verificación de resultado
+  try {
+    const isoString = date.toISOString();
+    const datePart = isoString.split("T")[0] ?? "";
+    return datePart;
+  } catch {
+    return "";
+  }
+}
+
 const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
-  const [formData, setFormData] = useState(person);
+  const [formData, setFormData] = useState<Person>({
+    ...person,
+    birthdate: formatDateForInput(person.birthdate),
+    convertionDate: formatDateForInput(person.convertionDate),
+    baptismDate: formatDateForInput(person.baptismDate),
+  });
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {}
   );
 
-  useEffect(() => {
-    // Ensure dates are in YYYY-MM-DD format for TextField type="date"
-    setFormData({
-      ...person,
-      birthdate: person.birthdate ? new Date(person.birthdate).toISOString().split('T')[0] : '',
-      convertionDate: person.convertionDate ? new Date(person.convertionDate).toISOString().split('T')[0] : '',
-      baptismDate: person.baptismDate ? new Date(person.baptismDate).toISOString().split('T')[0] : '',
-    });
-  }, [person]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name as string]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const result = personSchema.safeParse(formData);
 
     if (!result.success) {
@@ -65,17 +106,14 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
       return;
     }
 
-    setErrors({});
     setLoading(true);
     try {
       await updatePerson(person.id, result.data);
       onUpdate();
     } catch (err) {
-      if (err instanceof Error) {
-        alert(`Error al actualizar persona: ${err.message}`);
-      } else {
-        alert("An unknown error occurred.");
-      }
+      alert(
+        err instanceof Error ? `Error: ${err.message}` : "Error desconocido"
+      );
     } finally {
       setLoading(false);
     }
@@ -95,7 +133,7 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         border: "1px solid #ccc",
         borderRadius: 2,
         boxShadow: 1,
-        mb: 4, // Add some margin bottom
+        mb: 4,
       }}
     >
       <Typography variant="h5" component="h2" gutterBottom>
@@ -108,9 +146,9 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.firstname}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.firstname}
-        helperText={errors.firstname ? errors.firstname[0] : ""}
+        helperText={errors.firstname?.[0] || ""}
       />
 
       <TextField
@@ -119,9 +157,9 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.lastname}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.lastname}
-        helperText={errors.lastname ? errors.lastname[0] : ""}
+        helperText={errors.lastname?.[0] || ""}
       />
 
       <TextField
@@ -130,9 +168,9 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.address}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.address}
-        helperText={errors.address ? errors.address[0] : ""}
+        helperText={errors.address?.[0] || ""}
       />
 
       <TextField
@@ -141,9 +179,9 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.phone}
-        onChange={handleChange}
+        onChange={handleInputChange}
         error={!!errors.phone}
-        helperText={errors.phone ? errors.phone[0] : ""}
+        helperText={errors.phone?.[0] || ""}
       />
 
       <TextField
@@ -153,12 +191,10 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.birthdate}
-        onChange={handleChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
+        onChange={handleInputChange}
+        InputLabelProps={{ shrink: true }}
         error={!!errors.birthdate}
-        helperText={errors.birthdate ? errors.birthdate[0] : ""}
+        helperText={errors.birthdate?.[0] || ""}
       />
 
       <TextField
@@ -168,12 +204,10 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.convertionDate}
-        onChange={handleChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
+        onChange={handleInputChange}
+        InputLabelProps={{ shrink: true }}
         error={!!errors.convertionDate}
-        helperText={errors.convertionDate ? errors.convertionDate[0] : ""}
+        helperText={errors.convertionDate?.[0] || ""}
       />
 
       <TextField
@@ -183,12 +217,10 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         variant="outlined"
         fullWidth
         value={formData.baptismDate}
-        onChange={handleChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
+        onChange={handleInputChange}
+        InputLabelProps={{ shrink: true }}
         error={!!errors.baptismDate}
-        helperText={errors.baptismDate ? errors.baptismDate[0] : ""}
+        helperText={errors.baptismDate?.[0] || ""}
       />
 
       <FormControl fullWidth error={!!errors.gender}>
@@ -199,7 +231,7 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
           name="gender"
           value={formData.gender}
           label="Género"
-          onChange={handleChange}
+          onChange={handleSelectChange}
         >
           <MenuItem value="">Seleccionar género</MenuItem>
           <MenuItem value="Masculino">Masculino</MenuItem>
@@ -208,7 +240,7 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         {errors.gender && <FormHelperText>{errors.gender[0]}</FormHelperText>}
       </FormControl>
 
-      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
         <Button
           type="submit"
           variant="contained"

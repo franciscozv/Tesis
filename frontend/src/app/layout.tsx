@@ -3,8 +3,6 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import Navbar from "../components/layout/Navbar";
 import ThemeRegistry from "../components/ThemeRegistry";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 const roboto = Roboto({
   weight: ["300", "400", "500", "700"],
@@ -24,12 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={roboto.className}>
       <body>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <ThemeRegistry>
-            <Navbar />
-            {children}
-          </ThemeRegistry>
-        </LocalizationProvider>
+        <ThemeRegistry>
+          <Navbar />
+          {children}
+        </ThemeRegistry>
       </body>
     </html>
   );
