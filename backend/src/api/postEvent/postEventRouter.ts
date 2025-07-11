@@ -13,24 +13,21 @@ export const postEventRouter: Router = express.Router();
 postEventRegistry.register("PostEvent", PostEventSchema);
 
 postEventRegistry.registerPath({
-  method: "post",
-  path: "/post-events",
-  tags: ["PostEvent"],
-  request: {
-    body: {
-      content: {
-        "multipart/form-data": {
-          schema: CreatePostEventSchema.extend({
-            photo: z.string().openapi({ type: "string", format: "binary" }),
-          }),
-        },
-      },
-    },
-  },
-  responses: createApiResponse(PostEventSchema, "Created"),
+	method: "post",
+	path: "/post-events",
+	tags: ["PostEvent"],
+	request: {
+		body: {
+			content: {
+				"multipart/form-data": {
+					schema: CreatePostEventSchema.extend({
+						photo: z.string().openapi({ type: "string", format: "binary" }),
+					}),
+				},
+			},
+		},
+	},
+	responses: createApiResponse(PostEventSchema, "Created"),
 });
 
-postEventRouter.post(
-  "/",
-  postEventController.createPostEvent
-);
+postEventRouter.post("/", postEventController.createPostEvent);

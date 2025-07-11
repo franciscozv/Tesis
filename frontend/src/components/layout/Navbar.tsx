@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Stack } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  IconButton,
+  Stack,
+} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Navbar = () => {
@@ -16,7 +24,7 @@ const Navbar = () => {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1 }}>
-          Mi Iglesia App
+          App
         </Typography>
         <Box sx={{ display: { xs: "none", sm: "block" } }}>
           <Stack direction="row" spacing={2}>
@@ -35,7 +43,12 @@ const Navbar = () => {
             <Button color="inherit" component={Link} href="/responsibility">
               Responsibility
             </Button>
-            <Button color="inherit" variant="outlined" component={Link} href="/auth/login">
+            <Button
+              color="inherit"
+              variant="outlined"
+              component={Link}
+              href="/auth/login"
+            >
               Login
             </Button>
           </Stack>
