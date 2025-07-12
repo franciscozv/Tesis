@@ -28,5 +28,5 @@ export const personSchema = z.object({
   }),
   gender: z.string(),
 });
-
+console.log("Person schema loaded");
 export type PersonSchema = z.infer<typeof personSchema>;
