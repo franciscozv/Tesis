@@ -195,6 +195,7 @@ const Page = () => {
             fetchData();
             setOpenCreateDialog(false);
           }}
+          onCancel={() => setOpenCreateDialog(false)}
         />
       </Dialog>
 
