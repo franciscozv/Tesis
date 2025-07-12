@@ -35,6 +35,10 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
     {}
   );
 
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const maxDate = yesterday.toISOString().split("T")[0];
+
   // Manejador para TextField (inputs y textareas)
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -160,6 +164,11 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         InputLabelProps={{
           shrink: true,
         }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
+        }}
         error={!!errors.birthdate}
         helperText={errors.birthdate ? errors.birthdate[0] : ""}
       />
@@ -175,6 +184,11 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         InputLabelProps={{
           shrink: true,
         }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
+        }}
         error={!!errors.convertionDate}
         helperText={errors.convertionDate ? errors.convertionDate[0] : ""}
       />
@@ -189,6 +203,11 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         onChange={handleInputChange}
         InputLabelProps={{
           shrink: true,
+        }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
         }}
         error={!!errors.baptismDate}
         helperText={errors.baptismDate ? errors.baptismDate[0] : ""}

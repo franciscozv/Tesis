@@ -85,6 +85,10 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
     {}
   );
 
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const maxDate = yesterday.toISOString().split("T")[0];
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -193,6 +197,11 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         value={formData.birthdate}
         onChange={handleInputChange}
         InputLabelProps={{ shrink: true }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
+        }}
         error={!!errors.birthdate}
         helperText={errors.birthdate?.[0] || ""}
       />
@@ -206,6 +215,11 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         value={formData.convertionDate}
         onChange={handleInputChange}
         InputLabelProps={{ shrink: true }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
+        }}
         error={!!errors.convertionDate}
         helperText={errors.convertionDate?.[0] || ""}
       />
@@ -219,6 +233,11 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         value={formData.baptismDate}
         onChange={handleInputChange}
         InputLabelProps={{ shrink: true }}
+        InputProps={{
+          inputProps: {
+            max: maxDate,
+          },
+        }}
         error={!!errors.baptismDate}
         helperText={errors.baptismDate?.[0] || ""}
       />
