@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { updatePerson } from "~/services/personService";
 import { personSchema } from "./person.validators";
 import {
@@ -14,6 +14,8 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs, { type Dayjs } from "dayjs";
 import type { SelectChangeEvent } from "@mui/material/Select";
 
 type Person = {
@@ -34,60 +36,31 @@ type Props = {
   onCancel: () => void;
 };
 
-function formatDateForInput(dateString: string | undefined | null): string {
-  // 1. Validación de entrada
-  if (
-    dateString === null ||
-    dateString === undefined ||
-    typeof dateString !== "string"
-  ) {
-    return "";
-  }
-
-  // 2. Limpieza del string
-  const cleanedDateString = dateString.trim();
-  if (cleanedDateString === "") {
-    return "";
-  }
-
-  // 3. Parseo y validación de fecha
-  const timestamp = Date.parse(cleanedDateString);
-  if (isNaN(timestamp)) {
-    return "";
-  }
-
-  // 4. Creación y verificación de fecha
-  const date = new Date(timestamp);
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
-    return "";
-  }
-
-  // 5. Formateo seguro con verificación de resultado
-  try {
-    const isoString = date.toISOString();
-    const datePart = isoString.split("T")[0] ?? "";
-    return datePart;
-  } catch {
-    return "";
-  }
-}
-
 const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
-  const [formData, setFormData] = useState<Person>({
-    ...person,
-    birthdate: formatDateForInput(person.birthdate),
-    convertionDate: formatDateForInput(person.convertionDate),
-    baptismDate: formatDateForInput(person.baptismDate),
+  const [formData, setFormData] = useState({
+    firstname: person.firstname,
+    lastname: person.lastname,
+    address: person.address,
+    phone: person.phone,
+    gender: person.gender,
   });
+
+  const [birthdate, setBirthdate] = useState<Dayjs | null>(
+    person.birthdate ? dayjs(person.birthdate) : null
+  );
+  const [convertionDate, setConvertionDate] = useState<Dayjs | null>(
+    person.convertionDate ? dayjs(person.convertionDate) : null
+  );
+  const [baptismDate, setBaptismDate] = useState<Dayjs | null>(
+    person.baptismDate ? dayjs(person.baptismDate) : null
+  );
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {}
   );
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const maxDate = yesterday.toISOString().split("T")[0];
+  const yesterday = dayjs().subtract(1, 'day');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -103,7 +76,15 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = personSchema.safeParse(formData);
+
+    const dataToValidate = {
+        ...formData,
+        birthdate: birthdate ? birthdate.toISOString() : "",
+        convertionDate: convertionDate ? convertionDate.toISOString() : "",
+        baptismDate: baptismDate ? baptismDate.toISOString() : "",
+    }
+
+    const result = personSchema.safeParse(dataToValidate);
 
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
@@ -188,58 +169,49 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
         helperText={errors.phone?.[0] || ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Nacimiento"
-        name="birthdate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.birthdate}
-        onChange={handleInputChange}
-        InputLabelProps={{ shrink: true }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={birthdate}
+        onChange={(newValue) => setBirthdate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.birthdate,
+            helperText: errors.birthdate ? errors.birthdate[0] : "",
           },
         }}
-        error={!!errors.birthdate}
-        helperText={errors.birthdate?.[0] || ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Conversión"
-        name="convertionDate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.convertionDate}
-        onChange={handleInputChange}
-        InputLabelProps={{ shrink: true }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={convertionDate}
+        onChange={(newValue) => setConvertionDate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.convertionDate,
+            helperText: errors.convertionDate ? errors.convertionDate[0] : "",
           },
         }}
-        error={!!errors.convertionDate}
-        helperText={errors.convertionDate?.[0] || ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Bautismo"
-        name="baptismDate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.baptismDate}
-        onChange={handleInputChange}
-        InputLabelProps={{ shrink: true }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={baptismDate}
+        onChange={(newValue) => setBaptismDate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.baptismDate,
+            helperText: errors.baptismDate ? errors.baptismDate[0] : "",
           },
         }}
-        error={!!errors.baptismDate}
-        helperText={errors.baptismDate?.[0] || ""}
       />
 
       <FormControl fullWidth error={!!errors.gender}>

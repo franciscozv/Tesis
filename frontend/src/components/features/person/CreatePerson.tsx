@@ -14,7 +14,10 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs, { type Dayjs } from "dayjs";
 import type { SelectChangeEvent } from "@mui/material/Select";
+
 type Props = {
   onPersonCreated?: () => void;
 };
@@ -25,21 +28,19 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
     lastname: "",
     address: "",
     phone: "",
-    birthdate: "",
-    convertionDate: "",
-    baptismDate: "",
     gender: "",
   });
+  const [birthdate, setBirthdate] = useState<Dayjs | null>(null);
+  const [convertionDate, setConvertionDate] = useState<Dayjs | null>(null);
+  const [baptismDate, setBaptismDate] = useState<Dayjs | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {}
   );
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const maxDate = yesterday.toISOString().split("T")[0];
+  const yesterday = dayjs().subtract(1, 'day');
 
-  // Manejador para TextField (inputs y textareas)
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -47,7 +48,6 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // Manejador para Select (dropdowns de MUI)
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name as string]: value });
@@ -56,7 +56,14 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = personSchema.safeParse(formData);
+    const dataToValidate = {
+      ...formData,
+      birthdate: birthdate ? birthdate.toISOString() : "",
+      convertionDate: convertionDate ? convertionDate.toISOString() : "",
+      baptismDate: baptismDate ? baptismDate.toISOString() : "",
+    };
+
+    const result = personSchema.safeParse(dataToValidate);
 
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
@@ -72,11 +79,11 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         lastname: "",
         address: "",
         phone: "",
-        birthdate: "",
-        convertionDate: "",
-        baptismDate: "",
         gender: "",
       });
+      setBirthdate(null);
+      setConvertionDate(null);
+      setBaptismDate(null);
       onPersonCreated?.();
     } catch (err) {
       if (err instanceof Error) {
@@ -153,64 +160,49 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
         helperText={errors.phone ? errors.phone[0] : ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Nacimiento"
-        name="birthdate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.birthdate}
-        onChange={handleInputChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={birthdate}
+        onChange={(newValue) => setBirthdate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.birthdate,
+            helperText: errors.birthdate ? errors.birthdate[0] : "",
           },
         }}
-        error={!!errors.birthdate}
-        helperText={errors.birthdate ? errors.birthdate[0] : ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Conversión"
-        name="convertionDate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.convertionDate}
-        onChange={handleInputChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={convertionDate}
+        onChange={(newValue) => setConvertionDate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.convertionDate,
+            helperText: errors.convertionDate ? errors.convertionDate[0] : "",
           },
         }}
-        error={!!errors.convertionDate}
-        helperText={errors.convertionDate ? errors.convertionDate[0] : ""}
       />
 
-      <TextField
+      <DatePicker
         label="Fecha de Bautismo"
-        name="baptismDate"
-        type="date"
-        variant="outlined"
-        fullWidth
-        value={formData.baptismDate}
-        onChange={handleInputChange}
-        InputLabelProps={{
-          shrink: true,
-        }}
-        InputProps={{
-          inputProps: {
-            max: maxDate,
+        value={baptismDate}
+        onChange={(newValue) => setBaptismDate(newValue)}
+        maxDate={yesterday}
+        slotProps={{
+          textField: {
+            fullWidth: true,
+            variant: "outlined",
+            error: !!errors.baptismDate,
+            helperText: errors.baptismDate ? errors.baptismDate[0] : "",
           },
         }}
-        error={!!errors.baptismDate}
-        helperText={errors.baptismDate ? errors.baptismDate[0] : ""}
       />
 
       <FormControl fullWidth error={!!errors.gender}>
