@@ -80,9 +80,9 @@ const Page = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Meses son 0-indexados
-    const year = date.getFullYear();
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0"); // Meses son 0-indexados
+    const year = date.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
 
