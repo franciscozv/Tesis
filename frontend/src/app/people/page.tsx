@@ -22,12 +22,14 @@ import {
   Tooltip,
   Dialog,
   Fab,
+  Avatar,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { blue, green, deepPurple, orange, red, amber, cyan, pink } from '@mui/material/colors';
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
 
 type Person = {
@@ -41,6 +43,18 @@ type Person = {
   birthdate: string;
   gender: string;
 };
+
+const colorPalette = [blue[500], green[500], deepPurple[500], orange[500], red[500], amber[500], cyan[500], pink[500]];
+
+const getAvatarColor = (id: number) => {
+  return colorPalette[id % colorPalette.length];
+};
+
+const getInitials = (firstname: string, lastname: string) => {
+    const firstInitial = firstname ? firstname[0] : '';
+    const lastInitial = lastname ? lastname[0] : '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+}
 
 const Page = () => {
   const [people, setPeople] = useState<Person[]>([]);
@@ -127,12 +141,11 @@ const Page = () => {
               <Table sx={{ minWidth: 650 }} aria-label="simple table">
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ width: '60px' }}></TableCell>
                     <TableCell>Nombre</TableCell>
                     <TableCell>Apellido</TableCell>
                     <TableCell>Teléfono</TableCell>
                     <TableCell>F. Nacimiento</TableCell>
-                    <TableCell>F. Conversión</TableCell>
-                    <TableCell>F. Bautismo</TableCell>
                     <TableCell align="right">Acciones</TableCell>
                   </TableRow>
                 </TableHead>
@@ -142,12 +155,15 @@ const Page = () => {
                       key={person.id}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
+                      <TableCell>
+                        <Avatar sx={{ bgcolor: getAvatarColor(person.id) }}>
+                          {getInitials(person.firstname, person.lastname)}
+                        </Avatar>
+                      </TableCell>
                       <TableCell>{person.firstname}</TableCell>
                       <TableCell>{person.lastname}</TableCell>
                       <TableCell>{person.phone}</TableCell>
                       <TableCell>{formatDate(person.birthdate)}</TableCell>
-                      <TableCell>{formatDate(person.convertionDate)}</TableCell>
-                      <TableCell>{formatDate(person.baptismDate)}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Editar">
                           <IconButton
