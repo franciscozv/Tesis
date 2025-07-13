@@ -38,10 +38,15 @@ export const CreateEventSchema = z
 			.min(3, "Location must be at least 3 characters long")
 			.max(100, "Location must be at most 100 characters long"),
 	})
-	.refine((data) => data.endDateTime > data.startDateTime, {
-		message: "End date must be after start date",
-		path: ["endDateTime"],
-	});
+	.refine((data) => {
+    if (data.startDateTime && data.endDateTime) {
+      return data.endDateTime > data.startDateTime;
+    }
+    return true;
+  }, {
+    message: "End date must be after start date",
+    path: ["endDateTime"],
+  });
 
 export const CreateEventRequestSchema = z.object({
 	body: CreateEventSchema,

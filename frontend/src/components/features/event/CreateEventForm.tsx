@@ -73,6 +73,18 @@ const CreateEventForm: React.FC<Props> = ({
     setErrors({});
   }, [eventToEdit]);
 
+  useEffect(() => {
+    if (dateStart && dateEnd && timeStart && timeEnd) {
+      const start = dateStart.hour(timeStart.hour()).minute(timeStart.minute());
+      const end = dateEnd.hour(timeEnd.hour()).minute(timeEnd.minute());
+      if (end.isBefore(start)) {
+        setErrors((prev) => ({ ...prev, endDateTime: ["La fecha y hora de fin no puede ser anterior a la de inicio"] }));
+      } else {
+        setErrors((prev) => ({ ...prev, endDateTime: undefined }));
+      }
+    }
+  }, [dateStart, timeStart, dateEnd, timeEnd]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -221,6 +233,8 @@ const CreateEventForm: React.FC<Props> = ({
           textField: {
             fullWidth: true,
             variant: "outlined",
+            error: !!errors.endDateTime,
+            helperText: errors.endDateTime ? errors.endDateTime[0] : "",
           },
         }}
       />
