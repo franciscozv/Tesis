@@ -19,6 +19,9 @@ export const EventSchema = z.object({
 });
 export type Event = z.infer<typeof EventSchema>;
 
+const startOfToday = new Date();
+startOfToday.setHours(0, 0, 0, 0);
+
 export const CreateEventSchema = z
 	.object({
 		title: z
@@ -31,22 +34,17 @@ export const CreateEventSchema = z
 			.min(10, "Description must be at least 10 characters long")
 			.max(500, "Description must be at most 500 characters long")
 			.regex(/^[a-zA-Z\s]+$/, "Description can only contain letters and spaces"),
-		startDateTime: z.coerce.date().refine((date) => date > new Date(), { message: "Start date must be in the future" }),
+		startDateTime: z.coerce.date().refine((date) => date >= startOfToday, { message: "La fecha de inicio no puede ser en el pasado" }),
 		endDateTime: z.coerce.date(),
 		location: z
 			.string()
 			.min(3, "Location must be at least 3 characters long")
 			.max(100, "Location must be at most 100 characters long"),
 	})
-	.refine((data) => {
-    if (data.startDateTime && data.endDateTime) {
-      return data.endDateTime > data.startDateTime;
-    }
-    return true;
-  }, {
-    message: "End date must be after start date",
-    path: ["endDateTime"],
-  });
+	.refine((data) => data.endDateTime > data.startDateTime, {
+		message: "La fecha de fin debe ser posterior a la de inicio",
+		path: ["endDateTime"],
+	});
 
 export const CreateEventRequestSchema = z.object({
 	body: CreateEventSchema,
@@ -72,11 +70,11 @@ export const UpdateEventSchema = z
 			.refine(
 				(date) => {
 					if (date) {
-						return date > new Date();
+						return date >= startOfToday;
 					}
 					return true; // No validation if startDateTime is missing
 				},
-				{ message: "Start date must be in the future" },
+				{ message: "La fecha de inicio no puede ser en el pasado" },
 			),
 		endDateTime: z.coerce.date().optional(),
 		location: z
@@ -94,7 +92,7 @@ export const UpdateEventSchema = z
 			return true; // No validation if one or both dates are missing
 		},
 		{
-			message: "End date must be after start date if both are provided",
+			message: "La fecha de fin debe ser posterior a la de inicio si ambas son proporcionadas",
 			path: ["endDateTime"],
 		},
 	);

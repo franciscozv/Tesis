@@ -189,6 +189,7 @@ const CreateEventForm: React.FC<Props> = ({
         label="Fecha de Inicio"
         value={dateStart}
         onChange={(newValue) => setDateStart(newValue)}
+        minDate={dayjs()}
         slotProps={{
           textField: {
             fullWidth: true,
