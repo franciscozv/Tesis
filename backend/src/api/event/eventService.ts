@@ -83,10 +83,11 @@ export class EventService {
 		}
 	}
 
-	async updateStatus(id: number, state: State): Promise<ServiceResponse<Event | null>> {
+	async updateStatus(id: number, state: State, reviewComment?: string): Promise<ServiceResponse<Event | null>> {
 		try {
 			const updatedEvent = await this.eventRepository.updateAsync(id, {
 				state,
+				reviewComment,
 			});
 			if (!updatedEvent) {
 				return ServiceResponse.failure("Event not found", null, StatusCodes.NOT_FOUND);
@@ -115,6 +116,28 @@ export class EventService {
 			logger.error(errorMessage);
 			return ServiceResponse.failure(
 				"An error occurred while deleting the event.",
+				null,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async findAllPending(): Promise<ServiceResponse<Event[] | null>> {
+		try {
+			const events = await this.eventRepository.findAllPendingAsync();
+			if (!events) {
+				return ServiceResponse.failure(
+					"An error occurred while retrieving pending events.",
+					null,
+					StatusCodes.INTERNAL_SERVER_ERROR,
+				);
+			}
+			return ServiceResponse.success<Event[]>("Pending events found", events);
+		} catch (ex) {
+			const errorMessage = `Error finding pending events: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+			return ServiceResponse.failure(
+				"An error occurred while retrieving pending events.",
 				null,
 				StatusCodes.INTERNAL_SERVER_ERROR,
 			);

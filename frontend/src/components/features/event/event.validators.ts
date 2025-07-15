@@ -13,11 +13,7 @@ export const CreateEventFormSchema = z
     description: z
       .string()
       .min(10, "La descripción debe tener al menos 10 caracteres")
-      .max(500, "La descripción debe tener como máximo 500 caracteres")
-      .regex(
-        /^[a-zA-Z\s]+$/,
-        "La descripción solo puede contener letras y espacios"
-      ),
+      .max(500, "La descripción debe tener como máximo 500 caracteres"),
     startDateTime: z.coerce.date().refine((date) => date > new Date(), {
       message: "La fecha de inicio debe ser en el futuro",
     }),
@@ -44,10 +40,6 @@ export const UpdateEventFormSchema = z
       .string()
       .min(10, "La descripción debe tener al menos 10 caracteres")
       .max(500, "La descripción debe tener como máximo 500 caracteres")
-      .regex(
-        /^[a-zA-Z\s]+$/,
-        "La descripción solo puede contener letras y espacios"
-      )
       .optional(),
     startDateTime: z.coerce
       .date()

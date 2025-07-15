@@ -14,6 +14,7 @@ export const EventSchema = z.object({
 	endDateTime: z.coerce.date(),
 	location: z.string(),
 	state: StateEnum,
+	reviewComment: z.string().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -104,6 +105,7 @@ export const GetEventShema = z.object({
 
 export const UpdateEventStatusSchema = z.object({
 	state: StateEnum,
+	reviewComment: z.string().max(500, "El comentario debe tener máximo 500 caracteres").optional(),
 });
 
 export const UpdateEventStatusRequestSchema = z.object({

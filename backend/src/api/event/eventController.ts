@@ -39,14 +39,19 @@ class EventController {
 
 	public updateEventStatus: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const { state } = req.body;
-		const serviceResponse = await eventService.updateStatus(Number(id), state);
+		const { state, reviewComment } = req.body;
+		const serviceResponse = await eventService.updateStatus(Number(id), state, reviewComment);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public deleteEvent: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
 		const serviceResponse = await eventService.delete(Number(id));
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
+
+	public getPendingEvents: RequestHandler = async (_req: Request, res: Response) => {
+		const serviceResponse = await eventService.findAllPending();
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 }

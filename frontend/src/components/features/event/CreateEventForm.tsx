@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import dynamic from 'next/dynamic';
 import { createEvent, updateEvent } from "~/services/eventService";
 import { CreateEventFormSchema } from "./event.validators";
 import {
@@ -10,6 +11,11 @@ import {
 } from "@mui/material";
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
+
+const EditorClient = dynamic(() => import('./EditorClient'), { 
+  ssr: false,
+  loading: () => <CircularProgress />
+});
 
 type Event = {
   id: number;
@@ -172,17 +178,9 @@ const CreateEventForm: React.FC<Props> = ({
         helperText={errors.title ? errors.title[0] : ""}
       />
 
-      <TextField
-        label="Descripción"
-        name="description"
-        variant="outlined"
-        fullWidth
-        multiline
-        rows={4}
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        error={!!errors.description}
-        helperText={errors.description ? errors.description[0] : ""}
+      <EditorClient 
+        value={formData.description} 
+        onChange={(newDescription) => setFormData({ ...formData, description: newDescription })}
       />
 
       <DatePicker
@@ -263,10 +261,10 @@ const CreateEventForm: React.FC<Props> = ({
           {loading
             ? eventToEdit
               ? "Actualizando..."
-              : "Creando..."
+              : "Creando Solicitud de Evento..."
             : eventToEdit
             ? "Actualizar Evento"
-            : "Crear Evento"}
+            : "Crear Solicitud de Evento"}
         </Button>
         {eventToEdit && (
           <Button

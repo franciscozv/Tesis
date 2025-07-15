@@ -51,6 +51,7 @@ model Event {
   endDateTime      DateTime
   location    String
   state      State   @default(PENDING)
+  reviewComment String? // Comentario de aprobación/rechazo
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   postEvents  PostEvent[]
@@ -74,6 +75,14 @@ model PostEvent {
 model Responsibility {
   id          Int      @id @default(autoincrement())
   name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EventType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

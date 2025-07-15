@@ -101,3 +101,12 @@ eventRegistry.registerPath({
 });
 
 eventRouter.delete("/:id", eventController.deleteEvent);
+
+eventRegistry.registerPath({
+	method: "get",
+	path: "/events/pending",
+	tags: ["Event"],
+	responses: createApiResponse(z.array(EventSchema), "Success"),
+});
+
+eventRouter.get("/pending", eventController.getPendingEvents);

@@ -16,8 +16,8 @@ export const updateEvent = async (id: number, eventData: any) => {
     return await put(`${EVENT_API_URL}/${id}`, eventData);
 };
 
-export const updateEventStatus = async (id: number, status: string) => {
-    return await patch(`${EVENT_API_URL}/${id}/status`, { state: status });
+export const updateEventStatus = async (id: number, status: string, reviewComment?: string) => {
+    return await patch(`${EVENT_API_URL}/${id}/status`, { state: status, reviewComment });
 };
 
 export const deleteEvent = async (id: number) => {

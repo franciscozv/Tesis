@@ -28,4 +28,9 @@ export class EventRepository {
 			where: { id },
 		});
 	}
+	async findAllPendingAsync(): Promise<Event[]> {
+		return prisma.event.findMany({
+			where: { state: "PENDING" },
+		});
+	}
 }

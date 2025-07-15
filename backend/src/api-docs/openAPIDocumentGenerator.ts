@@ -6,6 +6,7 @@ import { groupRegistry } from "@/api/group/groupRouter";
 import { eventRegistry } from "@/api/event/eventRouter";
 import { responsibilityRegistry } from "@/api/responsibility/responsibilityRouter";
 import { peopleRegistry } from "@/api/people/peopleRouter";
+import { eventTypeRegistry } from "@/api/eventType/eventTypeRouter";
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3["generateDocument"]>;
 
 export function generateOpenAPIDocument(): OpenAPIDocument {
@@ -16,6 +17,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		eventRegistry,
 		responsibilityRegistry,
 		peopleRegistry,
+		eventTypeRegistry
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 

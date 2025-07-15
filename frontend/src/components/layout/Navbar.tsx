@@ -40,6 +40,9 @@ const Navbar = () => {
             <Button color="inherit" component={Link} href="/events">
               Eventos
             </Button>
+            <Button color="inherit" component={Link} href="/eventType">
+              Tipos de Evento
+            </Button>
             <Button color="inherit" component={Link} href="/responsibility">
               Responsibility
             </Button>

@@ -18,6 +18,11 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
 
@@ -37,6 +42,10 @@ const Page = () => {
   const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<{ id: number; title: string } | null>(null);
+  const [openStatusDialog, setOpenStatusDialog] = useState(false);
+  const [statusAction, setStatusAction] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [statusEventId, setStatusEventId] = useState<number | null>(null);
+  const [statusComment, setStatusComment] = useState("");
 
   const fetchData = async () => {
     try {
@@ -100,6 +109,33 @@ const Page = () => {
       fetchData();
     } catch (error) {
       console.error("Error al rechazar evento:", error);
+    }
+  };
+
+  const handleOpenStatusDialog = (id: number, action: "APPROVED" | "REJECTED") => {
+    setStatusEventId(id);
+    setStatusAction(action);
+    setStatusComment("");
+    setOpenStatusDialog(true);
+  };
+
+  const handleCloseStatusDialog = () => {
+    setOpenStatusDialog(false);
+    setStatusEventId(null);
+    setStatusAction(null);
+    setStatusComment("");
+  };
+
+  const handleConfirmStatus = async () => {
+    if (statusEventId && statusAction) {
+      try {
+        await updateEventStatus(statusEventId, statusAction, statusComment);
+        fetchData();
+      } catch (error) {
+        console.error("Error al actualizar estado del evento:", error);
+      } finally {
+        handleCloseStatusDialog();
+      }
     }
   };
 
@@ -179,7 +215,7 @@ const Page = () => {
                         <Button
                           variant="outlined"
                           color="success"
-                          onClick={() => handleApprove(event.id)}
+                          onClick={() => handleOpenStatusDialog(event.id, "APPROVED")}
                           size="small"
                         >
                           Aprobar
@@ -187,7 +223,7 @@ const Page = () => {
                         <Button
                           variant="outlined"
                           color="error"
-                          onClick={() => handleReject(event.id)}
+                          onClick={() => handleOpenStatusDialog(event.id, "REJECTED")}
                           size="small"
                         >
                           Rechazar
@@ -229,6 +265,34 @@ const Page = () => {
           description={`¿Estás seguro de que deseas eliminar el evento "${eventToDelete.title}"? Esta acción no se puede deshacer.`}
         />
       )}
+
+      <Dialog open={openStatusDialog} onClose={handleCloseStatusDialog}>
+        <DialogTitle>
+          {statusAction === "APPROVED" ? "Aprobar Evento" : "Rechazar Evento"}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Comentario"
+            type="text"
+            fullWidth
+            multiline
+            minRows={2}
+            value={statusComment}
+            onChange={(e) => setStatusComment(e.target.value)}
+            placeholder={statusAction === "APPROVED" ? "¿Por qué apruebas este evento?" : "¿Por qué rechazas este evento?"}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseStatusDialog} color="secondary">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmStatus} color={statusAction === "APPROVED" ? "success" : "error"}>
+            {statusAction === "APPROVED" ? "Aprobar" : "Rechazar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
