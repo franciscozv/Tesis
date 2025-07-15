@@ -1,3 +1,5 @@
+'use client';
+import { useState } from "react";
 import Link from "next/link";
 import {
   AppBar,
@@ -6,56 +8,90 @@ import {
   Button,
   Box,
   IconButton,
-  Stack,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Navbar = () => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
     <AppBar position="static" color="primary">
       <Toolbar>
-        <IconButton
-          size="large"
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          sx={{ mr: 2 }}
-        >
-          <MenuIcon />
-        </IconButton>
-        <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1 }}>
-          App
-        </Typography>
-        <Box sx={{ display: { xs: "none", sm: "block" } }}>
-          <Stack direction="row" spacing={2}>
-            <Button color="inherit" component={Link} href="/">
+        <Box sx={{ flexGrow: 0 }}>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={handleClick}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Menu
+            id="menu-appbar"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
+            open={open}
+            onClose={handleClose}
+          >
+            <MenuItem component={Link} href="/" onClick={handleClose}>
               Inicio
-            </Button>
-            <Button color="inherit" component={Link} href="/people">
+            </MenuItem>
+            <MenuItem component={Link} href="/people" onClick={handleClose}>
               Personas
-            </Button>
-            <Button color="inherit" component={Link} href="/group">
+            </MenuItem>
+            <MenuItem component={Link} href="/group" onClick={handleClose}>
               Grupos
-            </Button>
-            <Button color="inherit" component={Link} href="/events">
+            </MenuItem>
+            <MenuItem component={Link} href="/events" onClick={handleClose}>
               Eventos
-            </Button>
-            <Button color="inherit" component={Link} href="/eventType">
+            </MenuItem>
+            <MenuItem component={Link} href="/eventType" onClick={handleClose}>
               Tipos de Evento
-            </Button>
-            <Button color="inherit" component={Link} href="/responsibility">
-              Responsibility
-            </Button>
-            <Button
-              color="inherit"
-              variant="outlined"
-              component={Link}
-              href="/auth/login"
-            >
-              Login
-            </Button>
-          </Stack>
+            </MenuItem>
+            <MenuItem component={Link} href="/responsibility" onClick={handleClose}>
+              Responsabilidades
+            </MenuItem>
+          </Menu>
         </Box>
+        <Typography
+          variant="h6"
+          component="div"
+          noWrap
+          sx={{ flexGrow: 1, textAlign: 'center' }}
+        >
+          <Link href="/" passHref>
+            <Button color="inherit">App</Button>
+          </Link>
+        </Typography>
+        <Button
+          color="inherit"
+          variant="outlined"
+          component={Link}
+          href="/auth/login"
+        >
+          Login
+        </Button>
       </Toolbar>
     </AppBar>
   );
