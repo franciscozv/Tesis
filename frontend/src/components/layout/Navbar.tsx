@@ -74,16 +74,6 @@ const Navbar = () => {
             </MenuItem>
           </Menu>
         </Box>
-        <Typography
-          variant="h6"
-          component="div"
-          noWrap
-          sx={{ flexGrow: 1, textAlign: 'center' }}
-        >
-          <Link href="/" passHref>
-            <Button color="inherit">App</Button>
-          </Link>
-        </Typography>
         <Button
           color="inherit"
           variant="outlined"
