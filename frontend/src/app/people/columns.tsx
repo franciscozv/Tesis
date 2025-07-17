@@ -34,39 +34,45 @@ const TextCell = ({ getValue, row, column, table }) => {
   );
 };
 
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+
 // Componente para celdas de fecha editables
 const DateCell = ({ getValue, row, column, table }) => {
   const initialValue = getValue();
   const isEditing = table.options.meta?.editingRowId === row.original.id;
   const error = table.options.meta?.validationErrors?.[column.id];
-
-  const toInputDate = (dateString: string) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toISOString().split('T')[0];
-    } catch (e) {
-      return '';
-    }
-  };
+  const yesterday = dayjs().subtract(1, 'day');
 
   const toDisplayDate = (dateString: string) => {
     if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const year = date.getUTCFullYear();
-    return `${day}/${month}/${year}`;
+    const date = dayjs(dateString);
+    if (!date.isValid()) return "N/A";
+    return date.format("DD/MM/YYYY");
   };
 
   return isEditing ? (
     <FormControl error={!!error} style={{ width: '100%' }}>
-      <Input
-        type="date"
-        defaultValue={toInputDate(initialValue)}
-        onChange={(e) => table.options.meta?.updateData(row.index, column.id, e.target.value)}
-        style={{ width: '100%' }}
+      <DatePicker
+        value={initialValue ? dayjs(initialValue) : null}
+        onChange={(newValue) => {
+          table.options.meta?.updateData(
+            row.index,
+            column.id,
+            newValue ? newValue.toISOString() : null
+          );
+        }}
+        maxDate={yesterday}
+        format="DD/MM/YYYY"
+        slotProps={{
+          textField: {
+            variant: "standard",
+            fullWidth: true,
+            error: !!error,
+            helperText: error,
+          },
+        }}
       />
-      {error && <FormHelperText>{error}</FormHelperText>}
     </FormControl>
   ) : (
     <span>{toDisplayDate(initialValue)}</span>

@@ -13,7 +13,8 @@ export const createGroup = async (groupData: { name: string; description: string
 };
 
 export const updateGroup = async (id: number, groupData: { name?: string; description?: string }) => {
-    return await put(`${GROUP_API_URL}/${id}`, groupData);
+    const response = await put(`${GROUP_API_URL}/${id}`, groupData);
+    return response.responseObject; // Asume que el objeto actualizado está en responseObject
 };
 
 export const deleteGroup = async (id: number) => {
