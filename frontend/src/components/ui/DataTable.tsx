@@ -12,29 +12,50 @@ import {
   type ColumnFiltersState,
   type VisibilityState,
   type ColumnPinningState,
+  type ColumnSizingState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
 import { Input, Button, Table, TableBody, TableCell, TableHead, TableRow, Paper, TableContainer, Select, MenuItem, Menu, Checkbox, FormControlLabel } from '@mui/material';
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+// Extend meta to include our edit functions
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData extends { id: number }> {
+    editingRowId: number | null;
+    setEditingRowId: (id: number | null) => void;
+    updateData: (rowIndex: number, columnId: string, value: any) => void;
+    saveRow: (id: number) => void;
+    cancelEdit: () => void;
+    validationErrors: Record<string, string>;
+  }
 }
 
-export function DataTable<TData, TValue>({
+interface DataTableProps<TData extends { id: number }, TValue> {
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  meta: any; // Pass meta from the page component
+}
+
+export function DataTable<TData extends { id: number }, TValue>({
   columns,
   data,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ right: ['actions'] });
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const table = useReactTable({
     data,
     columns,
+    defaultColumn: {
+        size: 150, // default size
+        enableResizing: true,
+    },
+    columnResizeMode: 'onChange',
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
@@ -44,13 +65,16 @@ export function DataTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnPinningChange: setColumnPinning,
+    onColumnSizingChange: setColumnSizing,
     state: {
       sorting,
       columnFilters,
       globalFilter,
       columnVisibility,
       columnPinning,
+      columnSizing,
     },
+    meta,
   });
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -98,8 +122,8 @@ export function DataTable<TData, TValue>({
           })}
         </Menu>
       </div>
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} style={{ overflowX: 'auto' }}>
+        <Table style={{ width: '100%', tableLayout: 'fixed' }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -109,14 +133,18 @@ export function DataTable<TData, TValue>({
                     <TableCell 
                       key={header.id}
                       style={{
-                        position: column.getIsPinned() ? 'sticky' : 'relative',
-                        right: column.getIsPinned() === 'right' ? `${column.getAfter('right')}px` : undefined,
-                        zIndex: column.getIsPinned() ? 1 : 0,
-                        background: 'white',
+                        position: 'relative',
+                        width: header.getSize(),
                       }}
                     >
                       <div
-                        style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
+                        style={{ 
+                          cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                          position: column.getIsPinned() ? 'sticky' : 'relative',
+                          right: column.getIsPinned() === 'right' ? `${column.getAfter('right')}px` : undefined,
+                          zIndex: column.getIsPinned() ? 1 : 0,
+                          background: 'white',
+                        }}
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {header.isPlaceholder
@@ -130,6 +158,23 @@ export function DataTable<TData, TValue>({
                           'desc': ' 🔽',
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: 0,
+                              height: '100%',
+                              width: '3px',
+                              background: header.column.getIsResizing() ? 'blue' : 'lightgray',
+                              cursor: 'col-resize',
+                              userSelect: 'none',
+                              touchAction: 'none'
+                          }}
+                        />
+                      )}
                     </TableCell>
                   );
                 })}
@@ -149,6 +194,7 @@ export function DataTable<TData, TValue>({
                         right: column.getIsPinned() === 'right' ? `${column.getAfter('right')}px` : undefined,
                         zIndex: column.getIsPinned() ? 1 : 0,
                         background: 'white',
+                        width: cell.column.getSize(),
                       }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
