@@ -4,10 +4,13 @@ import { responsibilitySchema } from './responsibility.validators';
 import {
   TextField,
   Button,
-  Typography,
   Box,
   CircularProgress,
-  FormHelperText,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
 } from "@mui/material";
 
 type Props = {
@@ -60,71 +63,67 @@ const EditResponsibilityForm: React.FC<Props> = ({ responsibility, onUpdate, onC
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        maxWidth: 400,
-        mx: "auto",
-        p: 3,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        boxShadow: 1,
-        mb: 4, // Add some margin bottom
-      }}
-    >
-      <Typography variant="h5" component="h2" gutterBottom>
-        Editar Responsabilidad
-      </Typography>
-
-      <TextField
-        label="Nombre de la responsabilidad"
-        variant="outlined"
-        fullWidth
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        error={!!errors.name}
-        helperText={errors.name ? errors.name[0] : ""}
+    <Card elevation={3} sx={{ borderRadius: 2, mb: 4, maxWidth: 600, margin: 'auto' }}>
+      <CardHeader
+        title="Editar Responsabilidad"
+        titleTypographyProps={{ variant: 'h5', align: 'center' }}
       />
-
-      <TextField
-        label="Descripción"
-        variant="outlined"
-        fullWidth
-        multiline
-        rows={3}
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        error={!!errors.description}
-        helperText={errors.description ? errors.description[0] : ""}
-      />
-
-      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : null}
-          sx={{ flexGrow: 1 }}
+      <Divider />
+      <CardContent>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 2 }}
         >
-          {loading ? 'Guardando...' : 'Guardar Cambios'}
-        </Button>
-        <Button
-          type="button"
-          variant="outlined"
-          color="secondary"
-          onClick={onCancel}
-          disabled={loading}
-          sx={{ flexGrow: 1 }}
-        >
-          Cancelar
-        </Button>
-      </Box>
-    </Box>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                label="Nombre de la responsabilidad"
+                fullWidth
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                error={!!errors.name}
+                helperText={errors.name ? errors.name[0] : ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Descripción"
+                fullWidth
+                multiline
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                error={!!errors.description}
+                helperText={errors.description ? errors.description[0] : ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  color="secondary"
+                  onClick={onCancel}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

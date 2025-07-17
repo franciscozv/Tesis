@@ -1,5 +1,6 @@
+'use client';
 import React, { useState, useEffect } from "react";
-import dynamic from 'next/dynamic';
+
 import { createEvent, updateEvent } from "~/services/eventService";
 import { CreateEventFormSchema } from "./event.validators";
 import {
@@ -8,14 +9,16 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
 } from "@mui/material";
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 
-const EditorClient = dynamic(() => import('./EditorClient'), { 
-  ssr: false,
-  loading: () => <CircularProgress />
-});
+
 
 type Event = {
   id: number;
@@ -145,141 +148,150 @@ const CreateEventForm: React.FC<Props> = ({
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        maxWidth: 600,
-        mx: "auto",
-        p: 3,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        boxShadow: 1,
-        mb: 4,
-      }}
-    >
-      <Typography variant="h5" component="h2" gutterBottom>
-        {eventToEdit
-          ? "Editar Solicitud de Evento"
-          : "Crear Solicitud de Evento"}
-      </Typography>
-
-      <TextField
-        label="Título"
-        name="title"
-        variant="outlined"
-        fullWidth
-        value={formData.title}
-        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        error={!!errors.title}
-        helperText={errors.title ? errors.title[0] : ""}
+    <Card elevation={3} sx={{ borderRadius: 2, maxWidth: 600, margin: 'auto' }}>
+      <CardHeader
+        title={eventToEdit ? "Editar Solicitud de Evento" : "Crear Solicitud de Evento"}
+        titleTypographyProps={{ variant: 'h5', align: 'center' }}
       />
-
-      <EditorClient 
-        value={formData.description} 
-        onChange={(newDescription) => setFormData({ ...formData, description: newDescription })}
-      />
-
-      <DatePicker
-        label="Fecha de Inicio"
-        value={dateStart}
-        onChange={(newValue) => setDateStart(newValue)}
-        minDate={dayjs()}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.startDateTime,
-            helperText: errors.startDateTime ? errors.startDateTime[0] : "",
-          },
-        }}
-      />
-
-      <TimePicker
-        label="Hora de Inicio"
-        value={timeStart}
-        onChange={(newValue) => setTimeStart(newValue)}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-          },
-        }}
-      />
-
-      <DatePicker
-        label="Fecha de Fin"
-        value={dateEnd}
-        onChange={(newValue) => setDateEnd(newValue)}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.endDateTime,
-            helperText: errors.endDateTime ? errors.endDateTime[0] : "",
-          },
-        }}
-      />
-
-      <TimePicker
-        label="Hora de Fin"
-        value={timeEnd}
-        onChange={(newValue) => setTimeEnd(newValue)}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.endDateTime,
-            helperText: errors.endDateTime ? errors.endDateTime[0] : "",
-          },
-        }}
-      />
-
-      <TextField
-        label="Ubicación"
-        name="location"
-        variant="outlined"
-        fullWidth
-        value={formData.location}
-        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-        error={!!errors.location}
-        helperText={errors.location ? errors.location[0] : ""}
-      />
-
-      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : null}
-          sx={{ flexGrow: 1 }}
+      <Divider />
+      <CardContent>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 2 }}
         >
-          {loading
-            ? eventToEdit
-              ? "Actualizando..."
-              : "Creando Solicitud de Evento..."
-            : eventToEdit
-            ? "Actualizar Evento"
-            : "Crear Solicitud de Evento"}
-        </Button>
-        {eventToEdit && (
-          <Button
-            type="button"
-            variant="outlined"
-            color="secondary"
-            onClick={onCancelEdit}
-            disabled={loading}
-            sx={{ flexGrow: 1 }}
-          >
-            Cancelar
-          </Button>
-        )}
-      </Box>
-    </Box>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                label="Título"
+                name="title"
+                fullWidth
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                error={!!errors.title}
+                helperText={errors.title ? errors.title[0] : ""}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                label="Descripción"
+                name="description"
+                fullWidth
+                multiline
+                rows={4}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                error={!!errors.description}
+                helperText={errors.description ? errors.description[0] : ""}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6} component="div">
+              <DatePicker
+                label="Fecha de Inicio"
+                value={dateStart}
+                onChange={(newValue) => setDateStart(newValue)}
+                minDate={dayjs()}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.startDateTime,
+                    helperText: errors.startDateTime ? errors.startDateTime[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6} component="div">
+              <TimePicker
+                label="Hora de Inicio"
+                value={timeStart}
+                onChange={(newValue) => setTimeStart(newValue)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6} component="div">
+              <DatePicker
+                label="Fecha de Fin"
+                value={dateEnd}
+                onChange={(newValue) => setDateEnd(newValue)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.endDateTime,
+                    helperText: errors.endDateTime ? errors.endDateTime[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6} component="div">
+              <TimePicker
+                label="Hora de Fin"
+                value={timeEnd}
+                onChange={(newValue) => setTimeEnd(newValue)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.endDateTime,
+                    helperText: errors.endDateTime ? errors.endDateTime[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} component="div">
+              <TextField
+                label="Ubicación"
+                name="location"
+                fullWidth
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                error={!!errors.location}
+                helperText={errors.location ? errors.location[0] : ""}
+              />
+            </Grid>
+
+            <Grid item xs={12} component="div">
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  {loading
+                    ? eventToEdit
+                      ? "Actualizando..."
+                      : "Creando Solicitud..."
+                    : eventToEdit
+                    ? "Actualizar Evento"
+                    : "Crear Solicitud de Evento"}
+                </Button>
+                {eventToEdit && (
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    color="secondary"
+                    onClick={onCancelEdit}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

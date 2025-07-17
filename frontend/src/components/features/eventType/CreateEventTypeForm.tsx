@@ -1,7 +1,17 @@
 import React, { useState } from "react";
 import { createEventType } from "~/services/eventTypeService";
 import { eventTypeSchema } from "./eventType.validators";
-import { TextField, Button, Typography, Box, CircularProgress, FormHelperText } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+} from "@mui/material";
 
 type Props = {
   onEventTypeCreated?: () => void;
@@ -48,52 +58,56 @@ const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        maxWidth: 400,
-        mx: "auto",
-        p: 3,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        boxShadow: 1,
-      }}
-    >
-      <Typography variant="h5" component="h2" gutterBottom>
-        Crear Nuevo Tipo de Evento
-      </Typography>
-      <TextField
-        label="Nombre del tipo de evento"
-        variant="outlined"
-        fullWidth
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        error={!!errors.name}
-        helperText={errors.name ? errors.name[0] : ""}
+    <Card elevation={3} sx={{ borderRadius: 2, maxWidth: 600, margin: 'auto' }}>
+      <CardHeader
+        title="Crear Nuevo Tipo de Evento"
+        titleTypographyProps={{ variant: 'h5', align: 'center' }}
       />
-      <TextField
-        label="Descripción"
-        variant="outlined"
-        fullWidth
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        error={!!errors.description}
-        helperText={errors.description ? errors.description[0] : ""}
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        startIcon={loading ? <CircularProgress size={20} /> : null}
-      >
-        {loading ? "Creando..." : "Crear Tipo de Evento"}
-      </Button>
-    </Box>
+      <Divider />
+      <CardContent>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 2 }}
+        >
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                label="Nombre del tipo de evento"
+                fullWidth
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                error={!!errors.name}
+                helperText={errors.name ? errors.name[0] : ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Descripción"
+                fullWidth
+                multiline
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                error={!!errors.description}
+                helperText={errors.description ? errors.description[0] : ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : null}
+              >
+                {loading ? "Creando..." : "Crear Tipo de Evento"}
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

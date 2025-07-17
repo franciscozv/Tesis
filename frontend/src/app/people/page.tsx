@@ -129,7 +129,10 @@ const Page = () => {
                 <TableCell>Nombre</TableCell>
                 <TableCell>Apellido</TableCell>
                 <TableCell>Teléfono</TableCell>
+                <TableCell>Dirección</TableCell>
                 <TableCell>F. Nacimiento</TableCell>
+                <TableCell>F. Conversión</TableCell>
+                <TableCell>F. Bautismo</TableCell>
                 <TableCell>Género</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
@@ -143,7 +146,10 @@ const Page = () => {
                   <TableCell>{person.firstname}</TableCell>
                   <TableCell>{person.lastname}</TableCell>
                   <TableCell>{person.phone}</TableCell>
+                  <TableCell>{person.address}</TableCell>
                   <TableCell>{formatDate(person.birthdate)}</TableCell>
+                  <TableCell>{formatDate(person.convertionDate)}</TableCell>
+                  <TableCell>{formatDate(person.baptismDate)}</TableCell>
                   <TableCell>{person.gender}</TableCell>
                   <TableCell align="right">
                     <Button

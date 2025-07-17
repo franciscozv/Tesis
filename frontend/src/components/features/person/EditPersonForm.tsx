@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updatePerson } from "~/services/personService";
 import { personSchema } from "./person.validators";
 import {
@@ -12,7 +12,11 @@ import {
   Select,
   MenuItem,
   FormHelperText,
-  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { type Dayjs } from "dayjs";
@@ -24,9 +28,9 @@ type Person = {
   lastname: string;
   address: string;
   phone: string;
-  baptismDate: string;
-  convertionDate: string;
-  birthdate: string;
+  baptismDate: string | null;
+  convertionDate: string | null;
+  birthdate: string | null;
   gender: string;
 };
 
@@ -60,6 +64,20 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
     {}
   );
 
+  useEffect(() => {
+    setFormData({
+        firstname: person.firstname,
+        lastname: person.lastname,
+        address: person.address,
+        phone: person.phone,
+        gender: person.gender,
+    });
+    setBirthdate(person.birthdate ? dayjs(person.birthdate) : null);
+    setConvertionDate(person.convertionDate ? dayjs(person.convertionDate) : null);
+    setBaptismDate(person.baptismDate ? dayjs(person.baptismDate) : null);
+    setErrors({});
+  }, [person]);
+
   const yesterday = dayjs().subtract(1, 'day');
 
   const handleInputChange = (
@@ -79,9 +97,9 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
 
     const dataToValidate = {
       ...formData,
-      birthdate: birthdate ? birthdate.toISOString() : "",
-      convertionDate: convertionDate ? convertionDate.toISOString() : "",
-      baptismDate: baptismDate ? baptismDate.toISOString() : "",
+      birthdate: birthdate ? birthdate.toISOString() : null,
+      convertionDate: convertionDate ? convertionDate.toISOString() : null,
+      baptismDate: baptismDate ? baptismDate.toISOString() : null,
     };
 
     const result = personSchema.safeParse(dataToValidate);
@@ -105,155 +123,156 @@ const EditPersonForm: React.FC<Props> = ({ person, onUpdate, onCancel }) => {
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        maxWidth: 500,
-        mx: "auto",
-        p: 3,
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        boxShadow: 1,
-        mb: 4,
-      }}
-    >
-      <Typography variant="h5" component="h2" gutterBottom>
-        Editar Persona
-      </Typography>
-      <TextField
-        label="Nombre"
-        name="firstname"
-        variant="outlined"
-        fullWidth
-        value={formData.firstname}
-        onChange={handleInputChange}
-        error={!!errors.firstname}
-        helperText={errors.firstname?.[0] || ""}
+    <Card elevation={3} sx={{ borderRadius: 2, mb: 4, maxWidth: 600, margin: 'auto' }}>
+      <CardHeader
+        title="Editar Persona"
+        titleTypographyProps={{ variant: 'h5', align: 'center' }}
       />
-
-      <TextField
-        label="Apellido"
-        name="lastname"
-        variant="outlined"
-        fullWidth
-        value={formData.lastname}
-        onChange={handleInputChange}
-        error={!!errors.lastname}
-        helperText={errors.lastname?.[0] || ""}
-      />
-
-      <TextField
-        label="Dirección"
-        name="address"
-        variant="outlined"
-        fullWidth
-        value={formData.address}
-        onChange={handleInputChange}
-        error={!!errors.address}
-        helperText={errors.address?.[0] || ""}
-      />
-
-      <TextField
-        label="Teléfono"
-        name="phone"
-        variant="outlined"
-        fullWidth
-        value={formData.phone}
-        onChange={handleInputChange}
-        error={!!errors.phone}
-        helperText={errors.phone?.[0] || ""}
-      />
-
-      <DatePicker
-        label="Fecha de Nacimiento"
-        value={birthdate}
-        onChange={(newValue) => setBirthdate(newValue)}
-        maxDate={yesterday}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.birthdate,
-            helperText: errors.birthdate ? errors.birthdate[0] : "",
-          },
-        }}
-      />
-
-      <DatePicker
-        label="Fecha de Conversión"
-        value={convertionDate}
-        onChange={(newValue) => setConvertionDate(newValue)}
-        maxDate={yesterday}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.convertionDate,
-            helperText: errors.convertionDate ? errors.convertionDate[0] : "",
-          },
-        }}
-      />
-
-      <DatePicker
-        label="Fecha de Bautismo"
-        value={baptismDate}
-        onChange={(newValue) => setBaptismDate(newValue)}
-        maxDate={yesterday}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            variant: "outlined",
-            error: !!errors.baptismDate,
-            helperText: errors.baptismDate ? errors.baptismDate[0] : "",
-          },
-        }}
-      />
-
-      <FormControl fullWidth error={!!errors.gender}>
-        <InputLabel id="gender-select-label">Género</InputLabel>
-        <Select
-          labelId="gender-select-label"
-          id="gender-select"
-          name="gender"
-          value={formData.gender}
-          label="Género"
-          onChange={handleSelectChange}
+      <Divider />
+      <CardContent>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 2 }}
         >
-          <MenuItem value="">Seleccionar género</MenuItem>
-          <MenuItem value="Masculino">Masculino</MenuItem>
-          <MenuItem value="Femenino">Femenino</MenuItem>
-        </Select>
-        {errors.gender && <FormHelperText>{errors.gender[0]}</FormHelperText>}
-      </FormControl>
-      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : null}
-          sx={{ flexGrow: 1 }}
-        >
-          {loading ? "Guardando..." : "Guardar Cambios"}
-        </Button>
-        <Button
-          type="button"
-          variant="outlined"
-          color="secondary"
-          onClick={onCancel}
-          disabled={loading}
-          sx={{ flexGrow: 1 }}
-        >
-          Cancelar
-        </Button>
-      </Box>
-    </Box>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Nombre"
+                name="firstname"
+                fullWidth
+                value={formData.firstname}
+                onChange={handleInputChange}
+                error={!!errors.firstname}
+                helperText={errors.firstname?.[0] || ""}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Apellido"
+                name="lastname"
+                fullWidth
+                value={formData.lastname}
+                onChange={handleInputChange}
+                error={!!errors.lastname}
+                helperText={errors.lastname?.[0] || ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Dirección"
+                name="address"
+                fullWidth
+                value={formData.address}
+                onChange={handleInputChange}
+                error={!!errors.address}
+                helperText={errors.address?.[0] || ""}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Teléfono"
+                name="phone"
+                fullWidth
+                value={formData.phone}
+                onChange={handleInputChange}
+                error={!!errors.phone}
+                helperText={errors.phone?.[0] || ""}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth error={!!errors.gender}>
+                <InputLabel id="gender-select-label">Género</InputLabel>
+                <Select
+                  labelId="gender-select-label"
+                  id="gender-select"
+                  name="gender"
+                  value={formData.gender}
+                  label="Género"
+                  onChange={handleSelectChange}
+                >
+                  <MenuItem value=""><em>Seleccionar género</em></MenuItem>
+                  <MenuItem value="Masculino">Masculino</MenuItem>
+                  <MenuItem value="Femenino">Femenino</MenuItem>
+                </Select>
+                {errors.gender && <FormHelperText>{errors.gender[0]}</FormHelperText>}
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <DatePicker
+                label="Fecha de Nacimiento"
+                value={birthdate}
+                onChange={(newValue) => setBirthdate(newValue)}
+                maxDate={yesterday}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.birthdate,
+                    helperText: errors.birthdate ? errors.birthdate[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <DatePicker
+                label="Fecha de Conversión"
+                value={convertionDate}
+                onChange={(newValue) => setConvertionDate(newValue)}
+                maxDate={yesterday}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.convertionDate,
+                    helperText: errors.convertionDate ? errors.convertionDate[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <DatePicker
+                label="Fecha de Bautismo"
+                value={baptismDate}
+                onChange={(newValue) => setBaptismDate(newValue)}
+                maxDate={yesterday}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.baptismDate,
+                    helperText: errors.baptismDate ? errors.baptismDate[0] : "",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  {loading ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  color="secondary"
+                  onClick={onCancel}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 
 export default EditPersonForm;
-
