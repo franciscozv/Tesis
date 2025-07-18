@@ -1,0 +1,76 @@
+'use client';
+import { type ColumnDef } from "@tanstack/react-table";
+import { Button, Input, FormHelperText, FormControl } from "@mui/material";
+
+export type Responsibility = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+// Componente para celdas de texto editables
+const TextCell = ({ getValue, row, column, table }) => {
+  const initialValue = getValue();
+  const isEditing = table.options.meta?.editingRowId === row.original.id;
+  const error = table.options.meta?.validationErrors?.[column.id];
+
+  return isEditing ? (
+    <FormControl error={!!error} style={{ width: '100%' }}>
+      <Input
+        defaultValue={initialValue}
+        onChange={(e) => table.options.meta?.updateData(row.index, column.id, e.target.value)}
+        style={{ width: '100%' }}
+      />
+      {error && <FormHelperText>{error}</FormHelperText>}
+    </FormControl>
+  ) : (
+    <span>{initialValue}</span>
+  );
+};
+
+export const getColumns = (
+  onDelete: (id: number, name: string) => void
+): ColumnDef<Responsibility>[] => [
+  {
+    accessorKey: "name",
+    header: "Nombre",
+    cell: TextCell,
+    size: 200,
+  },
+  {
+    accessorKey: "description",
+    header: "Descripción",
+    cell: TextCell,
+    size: 400,
+  },
+  {
+    id: "actions",
+    header: "Acciones",
+    size: 180,
+    enableResizing: false,
+    cell: ({ row, table }) => {
+      const isEditing = table.options.meta?.editingRowId === row.original.id;
+      const responsibility = row.original;
+
+      return isEditing ? (
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow(responsibility.id)}>
+            Guardar
+          </Button>
+          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit()}>
+            Cancelar
+          </Button>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId(responsibility.id)}>
+            Editar
+          </Button>
+          <Button variant="outlined" color="error" onClick={() => onDelete(responsibility.id, responsibility.name)}>
+            Eliminar
+          </Button>
+        </div>
+      );
+    },
+  },
+];

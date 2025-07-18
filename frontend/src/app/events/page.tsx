@@ -1,20 +1,8 @@
-"use client";
-import { useState, useEffect } from "react";
-import {
-  deleteEvent,
-  getEvents,
-  updateEventStatus,
-} from "~/services/eventService";
+'use client';
+import { useState, useEffect, useMemo } from "react";
+import { getEvents, deleteEvent, updateEvent, updateEventStatus } from "~/services/eventService";
 import CreateEventForm from "~/components/features/event/CreateEventForm";
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  Button,
   Typography,
   Box,
   CircularProgress,
@@ -23,23 +11,18 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Button,
 } from "@mui/material";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
-
-type Event = {
-  id: number;
-  title: string;
-  description: string;
-  startDateTime: string;
-  endDateTime: string;
-  location: string;
-  state: string;
-};
+import { DataTable } from "~/components/ui/DataTable";
+import { getColumns, type Event } from "./columns";
+import { UpdateEventFormSchema } from "~/components/features/event/event.validators";
 
 const Page = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
+  const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<{ id: number; title: string } | null>(null);
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
@@ -48,6 +31,7 @@ const Page = () => {
   const [statusComment, setStatusComment] = useState("");
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const data = await getEvents();
       setEvents(data || []);
@@ -71,9 +55,10 @@ const Page = () => {
     if (eventToDelete) {
       try {
         await deleteEvent(eventToDelete.id);
-        fetchData();
+        fetchData(); // Refrescar datos
       } catch (error) {
-        console.error("Error al eliminar evento:", error);
+        console.error("Error al eliminar el evento:", error);
+        alert("Error al eliminar el evento");
       } finally {
         setOpenConfirmDialog(false);
         setEventToDelete(null);
@@ -86,30 +71,49 @@ const Page = () => {
     setEventToDelete(null);
   };
 
-  const handleEdit = (event: Event) => {
-    setEventToEdit(event);
+  const handleEventUpdate = (rowIndex: number, columnId: string, value: any) => {
+    setEvents((old) =>
+      old.map((row, index) => {
+        if (index === rowIndex) {
+          return {
+            ...old[rowIndex],
+            [columnId]: value,
+          };
+        }
+        return row;
+      })
+    );
   };
 
-  const handleCancelEdit = () => {
-    setEventToEdit(null);
-  };
+  const handleSave = async (eventId: number) => {
+    const eventToUpdate = events.find(e => e.id === eventId);
+    if (eventToUpdate) {
+      const validationResult = UpdateEventFormSchema.safeParse(eventToUpdate);
+      if (!validationResult.success) {
+        const newErrors: Record<string, string> = {};
+        for (const [key, value] of Object.entries(validationResult.error.flatten().fieldErrors)) {
+            if (value) newErrors[key] = value.join(', ');
+        }
+        setValidationErrors(newErrors);
+        return; // Detener si hay errores
+      }
 
-  const handleApprove = async (id: number) => {
-    try {
-      await updateEventStatus(id, "APPROVED");
-      fetchData();
-    } catch (error) {
-      console.error("Error al aprobar evento:", error);
+      setValidationErrors({}); // Limpiar errores si la validación es exitosa
+      try {
+        await updateEvent(eventId, validationResult.data);
+        setEditingRowId(null); // Salir del modo edición
+      } catch (error) {
+        console.error("Error al actualizar el evento:", error);
+        alert("Error al actualizar el evento");
+        fetchData(); // Revertir cambios si falla la API
+      }
     }
   };
 
-  const handleReject = async (id: number) => {
-    try {
-      await updateEventStatus(id, "REJECTED");
-      fetchData();
-    } catch (error) {
-      console.error("Error al rechazar evento:", error);
-    }
+  const handleCancel = () => {
+    setEditingRowId(null);
+    setValidationErrors({}); // Limpiar errores al cancelar
+    fetchData(); // Recargar datos originales
   };
 
   const handleOpenStatusDialog = (id: number, action: "APPROVED" | "REJECTED") => {
@@ -139,22 +143,7 @@ const Page = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatTime = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
-  };
+  const columns = useMemo(() => getColumns(handleDelete), []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -162,11 +151,9 @@ const Page = () => {
         Gestión de Eventos
       </Typography>
 
-      <CreateEventForm
-        onEventCreated={fetchData}
-        eventToEdit={eventToEdit}
-        onCancelEdit={handleCancelEdit}
-      />
+      <Box sx={{ my: 4 }}>
+        <CreateEventForm onEventCreated={fetchData} />
+      </Box>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -175,85 +162,19 @@ const Page = () => {
             Cargando eventos...
           </Typography>
         </Box>
-      ) : events.length === 0 ? (
-        <Typography variant="body1" sx={{ my: 4 }}>
-          No se encontraron eventos.
-        </Typography>
       ) : (
-        <TableContainer component={Paper} sx={{ mt: 4 }}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Título</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Fecha Inicio (dd/mm/aaaa)</TableCell>
-                <TableCell>Hora Inicio (HH:MM)</TableCell>
-                <TableCell>Fecha Fin (dd/mm/aaaa)</TableCell>
-                <TableCell>Hora Fin (HH:MM)</TableCell>
-                <TableCell>Ubicación</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {events.map((event) => (
-                <TableRow
-                  key={event.id}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>{event.title}</TableCell>
-                  <TableCell>{event.description}</TableCell>
-                  <TableCell>{formatDate(event.startDateTime)}</TableCell>
-                  <TableCell>{formatTime(event.startDateTime)}</TableCell>
-                  <TableCell>{formatDate(event.endDateTime)}</TableCell>
-                  <TableCell>{formatTime(event.endDateTime)}</TableCell>
-                  <TableCell>{event.location}</TableCell>
-                  <TableCell>{event.state}</TableCell>
-                  <TableCell>
-                    {event.state === "PENDING" && (
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Button
-                          variant="outlined"
-                          color="success"
-                          onClick={() => handleOpenStatusDialog(event.id, "APPROVED")}
-                          size="small"
-                        >
-                          Aprobar
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleOpenStatusDialog(event.id, "REJECTED")}
-                          size="small"
-                        >
-                          Rechazar
-                        </Button>
-                      </Box>
-                    )}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => handleEdit(event)}
-                        size="small"
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handleDelete(event.id, event.title)}
-                        size="small"
-                      >
-                        Eliminar
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable 
+          columns={columns} 
+          data={events} 
+          meta={{
+            editingRowId,
+            setEditingRowId,
+            updateData: handleEventUpdate,
+            saveRow: handleSave,
+            cancelEdit: handleCancel,
+            validationErrors,
+          }}
+        />
       )}
 
       {eventToDelete && (

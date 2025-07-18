@@ -1,34 +1,22 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
+import { useState, useEffect, useMemo } from "react";
 import CreateEventTypeForm from "../../components/features/eventType/CreateEventTypeForm";
-import EditEventTypeForm from "../../components/features/eventType/EditEventTypeForm";
-import { deleteEventType, getEventTypes } from "~/services/eventTypeService";
+import { getEventTypes, deleteEventType, updateEventType } from "~/services/eventTypeService";
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  Button,
   Typography,
   Box,
   CircularProgress,
 } from "@mui/material";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
-
-// Define the EventType type
-type EventType = {
-  id: number;
-  name: string;
-  description: string;
-};
+import { DataTable } from "~/components/ui/DataTable";
+import { getColumns, type EventType } from "./columns";
+import { eventTypeSchema } from "~/components/features/eventType/eventType.validators";
 
 const Page = () => {
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editEventType, setEditEventType] = useState<EventType | null>(null);
+  const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [eventTypeToDelete, setEventTypeToDelete] = useState<{
     id: number;
@@ -36,6 +24,7 @@ const Page = () => {
   } | null>(null);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const data = await getEventTypes();
       setEventTypes(data || []);
@@ -46,6 +35,10 @@ const Page = () => {
     }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const handleDelete = (id: number, name: string) => {
     setEventTypeToDelete({ id, name });
     setOpenConfirmDialog(true);
@@ -54,15 +47,11 @@ const Page = () => {
   const handleConfirmDelete = async () => {
     if (eventTypeToDelete) {
       try {
-        const data = await deleteEventType(eventTypeToDelete.id);
-
-        if (data) {
-          fetchData();
-        } else {
-          alert(`Error al eliminar tipo de evento: ${data.message}`);
-        }
+        await deleteEventType(eventTypeToDelete.id);
+        fetchData(); // Refrescar datos
       } catch (error) {
-        console.error("Error al eliminar:", error);
+        console.error("Error al eliminar el tipo de evento:", error);
+        alert("Error al eliminar el tipo de evento");
       } finally {
         setOpenConfirmDialog(false);
         setEventTypeToDelete(null);
@@ -75,9 +64,52 @@ const Page = () => {
     setEventTypeToDelete(null);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const handleEventTypeUpdate = (rowIndex: number, columnId: string, value: any) => {
+    setEventTypes((old) =>
+      old.map((row, index) => {
+        if (index === rowIndex) {
+          return {
+            ...old[rowIndex],
+            [columnId]: value,
+          };
+        }
+        return row;
+      })
+    );
+  };
+
+  const handleSave = async (eventTypeId: number) => {
+    const eventTypeToUpdate = eventTypes.find(et => et.id === eventTypeId);
+    if (eventTypeToUpdate) {
+      const validationResult = eventTypeSchema.safeParse(eventTypeToUpdate);
+      if (!validationResult.success) {
+        const newErrors: Record<string, string> = {};
+        for (const [key, value] of Object.entries(validationResult.error.flatten().fieldErrors)) {
+            if (value) newErrors[key] = value.join(', ');
+        }
+        setValidationErrors(newErrors);
+        return; // Detener si hay errores
+      }
+
+      setValidationErrors({}); // Limpiar errores si la validación es exitosa
+      try {
+        await updateEventType(eventTypeId, validationResult.data);
+        setEditingRowId(null); // Salir del modo edición
+      } catch (error) {
+        console.error("Error al actualizar el tipo de evento:", error);
+        alert("Error al actualizar el tipo de evento");
+        fetchData(); // Revertir cambios si falla la API
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingRowId(null);
+    setValidationErrors({}); // Limpiar errores al cancelar
+    fetchData(); // Recargar datos originales
+  };
+
+  const columns = useMemo(() => getColumns(handleDelete), []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -85,20 +117,9 @@ const Page = () => {
         Gestión de Tipos de Evento
       </Typography>
 
-      {editEventType ? (
-        <EditEventTypeForm
-          eventType={editEventType}
-          onUpdate={() => {
-            fetchData();
-            setEditEventType(null);
-          }}
-          onCancel={() => setEditEventType(null)}
-        />
-      ) : (
-        <Box sx={{ my: 4 }}>
-          <CreateEventTypeForm onEventTypeCreated={fetchData} />
-        </Box>
-      )}
+      <Box sx={{ my: 4 }}>
+        <CreateEventTypeForm onEventTypeCreated={fetchData} />
+      </Box>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -107,52 +128,19 @@ const Page = () => {
             Cargando tipos de evento...
           </Typography>
         </Box>
-      ) : eventTypes.length === 0 ? (
-        <Typography variant="body1" sx={{ my: 4 }}>
-          No se encontraron tipos de evento.
-        </Typography>
       ) : (
-        <TableContainer component={Paper} sx={{ mt: 4 }}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {eventTypes.map((eventType: EventType) => (
-                <TableRow
-                  key={eventType.id}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {eventType.name}
-                  </TableCell>
-                  <TableCell>{eventType.description}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => setEditEventType(eventType)}
-                      sx={{ mr: 1 }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDelete(eventType.id, eventType.name)}
-                    >
-                      Eliminar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable 
+          columns={columns} 
+          data={eventTypes} 
+          meta={{
+            editingRowId,
+            setEditingRowId,
+            updateData: handleEventTypeUpdate,
+            saveRow: handleSave,
+            cancelEdit: handleCancel,
+            validationErrors,
+          }}
+        />
       )}
 
       {eventTypeToDelete && (

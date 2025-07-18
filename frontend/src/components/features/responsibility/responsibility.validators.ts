@@ -11,8 +11,8 @@ export const responsibilitySchema = z.object({
     .min(10, "La descripción debe tener al menos 10 caracteres")
     .max(500, "La descripción debe tener como máximo 500 caracteres")
     .regex(
-      /^[a-zA-Z\s]+$/,
-      "La descripción solo puede contener letras y espacios"
+      /^[a-zA-Z\s,]+$/,
+      "La descripción solo puede contener letras, espacios y comas"
     ),
 });
 

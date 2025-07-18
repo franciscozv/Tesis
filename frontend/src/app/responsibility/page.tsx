@@ -1,43 +1,35 @@
-"use client";
-import { useState, useEffect } from 'react';
+'use client';
+import { useState, useEffect, useMemo } from "react";
 import CreateResponsibility from '~/components/features/responsibility/CreateResponsibility';
-import EditResponsibilityForm from '~/components/features/responsibility/EditResponsibilityForm';
-import { getResponsibilities, deleteResponsibility } from '~/services/responsibilityService';
+import { getResponsibilities, deleteResponsibility, updateResponsibility } from '~/services/responsibilityService';
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  Button,
   Typography,
   Box,
   CircularProgress,
 } from "@mui/material";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
-
-// Tipo de dato
-type Responsibility = {
-  id: number;
-  name: string;
-  description: string;
-};
+import { DataTable } from "~/components/ui/DataTable";
+import { getColumns, type Responsibility } from "./columns";
+import { responsibilitySchema } from "~/components/features/responsibility/responsibility.validators";
 
 const Page = () => {
-  const [responsibility, setResponsibility] = useState<Responsibility[]>([]);
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editResponsibility, setEditResponsibility] = useState<Responsibility | null>(null);
+  const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-  const [responsibilityToDelete, setResponsibilityToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [responsibilityToDelete, setResponsibilityToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const data = await getResponsibilities();
-      setResponsibility(data || []);
+      setResponsibilities(data || []);
     } catch (error) {
-      console.error('Error al obtener responsabilidades:', error);
+      console.error("Error al obtener responsabilidades:", error);
     } finally {
       setLoading(false);
     }
@@ -56,10 +48,10 @@ const Page = () => {
     if (responsibilityToDelete) {
       try {
         await deleteResponsibility(responsibilityToDelete.id);
-        fetchData();
+        fetchData(); // Refrescar datos
       } catch (error) {
-        console.error('Error al eliminar la responsabilidad:', error);
-        alert('Error al eliminar la responsabilidad');
+        console.error("Error al eliminar la responsabilidad:", error);
+        alert("Error al eliminar la responsabilidad");
       } finally {
         setOpenConfirmDialog(false);
         setResponsibilityToDelete(null);
@@ -72,26 +64,62 @@ const Page = () => {
     setResponsibilityToDelete(null);
   };
 
+  const handleResponsibilityUpdate = (rowIndex: number, columnId: string, value: any) => {
+    setResponsibilities((old) =>
+      old.map((row, index) => {
+        if (index === rowIndex) {
+          return {
+            ...old[rowIndex],
+            [columnId]: value,
+          };
+        }
+        return row;
+      })
+    );
+  };
+
+  const handleSave = async (responsibilityId: number) => {
+    const responsibilityToUpdate = responsibilities.find(r => r.id === responsibilityId);
+    if (responsibilityToUpdate) {
+      const validationResult = responsibilitySchema.safeParse(responsibilityToUpdate);
+      if (!validationResult.success) {
+        const newErrors: Record<string, string> = {};
+        for (const [key, value] of Object.entries(validationResult.error.flatten().fieldErrors)) {
+            if (value) newErrors[key] = value.join(', ');
+        }
+        setValidationErrors(newErrors);
+        return; // Detener si hay errores
+      }
+
+      setValidationErrors({}); // Limpiar errores si la validación es exitosa
+      try {
+        await updateResponsibility(responsibilityId, validationResult.data);
+        setEditingRowId(null); // Salir del modo edición
+      } catch (error) {
+        console.error("Error al actualizar la responsabilidad:", error);
+        alert("Error al actualizar la responsabilidad");
+        fetchData(); // Revertir cambios si falla la API
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingRowId(null);
+    setValidationErrors({}); // Limpiar errores al cancelar
+    fetchData(); // Recargar datos originales
+  };
+
+  const columns = useMemo(() => getColumns(handleDelete), []);
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Gestión de Responsabilidades
       </Typography>
 
-      {editResponsibility ? (
-        <EditResponsibilityForm
-          responsibility={editResponsibility}
-          onUpdate={() => {
-            fetchData();
-            setEditResponsibility(null);
-          }}
-          onCancel={() => setEditResponsibility(null)}
-        />
-      ) : (
-        <Box sx={{ my: 4 }}>
-          <CreateResponsibility onResponsibilityCreated={fetchData} />
-        </Box>
-      )}
+      <Box sx={{ my: 4 }}>
+        <CreateResponsibility onResponsibilityCreated={fetchData} />
+      </Box>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -100,52 +128,19 @@ const Page = () => {
             Cargando responsabilidades...
           </Typography>
         </Box>
-      ) : responsibility.length === 0 ? (
-        <Typography variant="body1" sx={{ my: 4 }}>
-          No se encontraron responsabilidades.
-        </Typography>
       ) : (
-        <TableContainer component={Paper} sx={{ mt: 4 }}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {responsibility.map((resp) => (
-                <TableRow
-                  key={resp.id}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {resp.name}
-                  </TableCell>
-                  <TableCell>{resp.description}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => setEditResponsibility(resp)}
-                      sx={{ mr: 1 }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDelete(resp.id, resp.name)}
-                    >
-                      Eliminar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable 
+          columns={columns} 
+          data={responsibilities} 
+          meta={{
+            editingRowId,
+            setEditingRowId,
+            updateData: handleResponsibilityUpdate,
+            saveRow: handleSave,
+            cancelEdit: handleCancel,
+            validationErrors,
+          }}
+        />
       )}
 
       {responsibilityToDelete && (
@@ -162,4 +157,3 @@ const Page = () => {
 };
 
 export default Page;
-
