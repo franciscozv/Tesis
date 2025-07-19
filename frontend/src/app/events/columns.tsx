@@ -122,8 +122,8 @@ export const getColumns = (
     },
     cell: ({ row }: { row: Row<any> }) => {
       const state = row.original.state;
-      const color: 'warning' | 'success' | 'error' | 'default' =
-        state === 'PENDING' ? 'warning'
+      const color: 'info' | 'success' | 'error' | 'default' =
+        state === 'PENDING' ? 'info'
         : state === 'APPROVED' ? 'success'
         : state === 'REJECTED' ? 'error'
         : 'default';
