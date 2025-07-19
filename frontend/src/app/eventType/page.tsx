@@ -69,7 +69,7 @@ const Page = () => {
       old.map((row, index) => {
         if (index === rowIndex) {
           return {
-            ...old[rowIndex],
+            ...row,
             [columnId]: value,
           };
         }

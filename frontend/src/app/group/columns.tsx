@@ -1,5 +1,5 @@
 'use client';
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type Row, type Column, type Table } from "@tanstack/react-table";
 import { Button, Input, FormHelperText, FormControl } from "@mui/material";
 
 export type Group = {
@@ -9,7 +9,7 @@ export type Group = {
 };
 
 // Componente para celdas de texto editables
-const TextCell = ({ getValue, row, column, table }) => {
+const TextCell = ({ getValue, row, column, table }: { getValue: () => any, row: Row<any>, column: Column<any>, table: Table<any> }) => {
   const initialValue = getValue();
   const isEditing = table.options.meta?.editingRowId === row.original.id;
   const error = table.options.meta?.validationErrors?.[column.id];
@@ -18,7 +18,7 @@ const TextCell = ({ getValue, row, column, table }) => {
     <FormControl error={!!error} style={{ width: '100%' }}>
       <Input
         defaultValue={initialValue}
-        onChange={(e) => table.options.meta?.updateData(row.index, column.id, e.target.value)}
+        onChange={(e) => table.options.meta?.updateData?.(row.index, column.id, e.target.value)}
         style={{ width: '100%' }}
       />
       {error && <FormHelperText>{error}</FormHelperText>}
@@ -54,16 +54,16 @@ export const getColumns = (
 
       return isEditing ? (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow(group.id)}>
+          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow?.(group.id)}>
             Guardar
           </Button>
-          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit()}>
+          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit?.()}>
             Cancelar
           </Button>
         </div>
       ) : (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId(group.id)}>
+          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId?.(group.id)}>
             Editar
           </Button>
           <Button variant="outlined" color="error" onClick={() => onDelete(group.id, group.name)}>

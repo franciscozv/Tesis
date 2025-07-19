@@ -1,5 +1,5 @@
 'use client';
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type Row, type Column, type Table } from "@tanstack/react-table";
 import { Button, Input, Select, MenuItem, FormHelperText, FormControl } from "@mui/material";
 
 export type Person = {
@@ -15,7 +15,7 @@ export type Person = {
 };
 
 // Componente para celdas de texto editables
-const TextCell = ({ getValue, row, column, table }) => {
+const TextCell = ({ getValue, row, column, table }: { getValue: () => any, row: Row<any>, column: Column<any>, table: Table<any> }) => {
   const initialValue = getValue();
   const isEditing = table.options.meta?.editingRowId === row.original.id;
   const error = table.options.meta?.validationErrors?.[column.id];
@@ -24,7 +24,7 @@ const TextCell = ({ getValue, row, column, table }) => {
     <FormControl error={!!error} style={{ width: '100%' }}>
       <Input
         defaultValue={initialValue}
-        onChange={(e) => table.options.meta?.updateData(row.index, column.id, e.target.value)}
+        onChange={(e) => table.options.meta?.updateData?.(row.index, column.id, e.target.value)}
         style={{ width: '100%' }}
       />
       {error && <FormHelperText>{error}</FormHelperText>}
@@ -38,7 +38,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
 // Componente para celdas de fecha editables
-const DateCell = ({ getValue, row, column, table }) => {
+const DateCell = ({ getValue, row, column, table }: { getValue: () => any, row: Row<any>, column: Column<any>, table: Table<any> }) => {
   const initialValue = getValue();
   const isEditing = table.options.meta?.editingRowId === row.original.id;
   const error = table.options.meta?.validationErrors?.[column.id];
@@ -56,7 +56,7 @@ const DateCell = ({ getValue, row, column, table }) => {
       <DatePicker
         value={initialValue ? dayjs(initialValue) : null}
         onChange={(newValue) => {
-          table.options.meta?.updateData(
+          table.options.meta?.updateData?.(
             row.index,
             column.id,
             newValue ? newValue.toISOString() : null
@@ -80,7 +80,7 @@ const DateCell = ({ getValue, row, column, table }) => {
 };
 
 // Componente para celda de género editable (Select)
-const GenderCell = ({ getValue, row, column, table }) => {
+const GenderCell = ({ getValue, row, column, table }: { getValue: () => any, row: Row<any>, column: Column<any>, table: Table<any> }) => {
   const initialValue = getValue();
   const isEditing = table.options.meta?.editingRowId === row.original.id;
   const error = table.options.meta?.validationErrors?.[column.id];
@@ -89,7 +89,7 @@ const GenderCell = ({ getValue, row, column, table }) => {
     <FormControl error={!!error} style={{ width: '100%' }}>
       <Select
         defaultValue={initialValue}
-        onChange={(e) => table.options.meta?.updateData(row.index, column.id, e.target.value)}
+        onChange={(e) => table.options.meta?.updateData?.(row.index, column.id, e.target.value)}
         style={{ width: '100%' }}
       >
         <MenuItem value="Masculino">Masculino</MenuItem>
@@ -164,16 +164,16 @@ export const getColumns = (
 
       return isEditing ? (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow(person.id)}>
+          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow?.(person.id)}>
             Guardar
           </Button>
-          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit()}>
+          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit?.()}>
             Cancelar
           </Button>
         </div>
       ) : (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId(person.id)}>
+          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId?.(person.id)}>
             Editar
           </Button>
           <Button variant="outlined" color="error" onClick={() => onDelete(person.id, `${person.firstname} ${person.lastname}`)}>

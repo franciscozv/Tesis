@@ -4,7 +4,7 @@ import CreateGroupForm from "../../components/features/group/CreateGroupForm";
 
 import { deleteGroup, getGroups, updateGroup } from "~/services/groupService";
 import { DataTable } from "~/components/ui/DataTable";
-import { getColumns, Group } from "./columns";
+import { getColumns, type Group } from "./columns";
 import {
   Button,
   Typography,
@@ -43,7 +43,7 @@ const Page = () => {
       old.map((row, index) => {
         if (index === rowIndex) {
           return {
-            ...old[rowIndex],
+            ...row,
             [columnId]: value,
           };
         }
