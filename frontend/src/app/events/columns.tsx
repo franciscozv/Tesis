@@ -14,7 +14,6 @@ export type Event = {
   endDateTime: string;
   location: string;
   state: string;
-  eventTypeId: number;
 };
 
 // Componente para celdas de texto editables
