@@ -37,13 +37,15 @@ const PeopleValidationSchema = z.object({
 		.min(9, "El teléfono debe tener 9 dígitos")
 		.max(9, "El teléfono debe tener 9 dígitos")
 		.regex(/^[0-9]+$/, "El teléfono solo puede contener números"),
-	baptismDate: z.coerce.date().max(new Date(), { message: "La fecha de bautismo debe ser en el pasado" }),
-	convertionDate: z.coerce.date().max(new Date(), {
-		message: "La fecha de conversión debe ser en el pasado",
-	}),
-	birthdate: z.coerce.date().max(new Date(), {
-		message: "La fecha de nacimiento debe ser en el pasado",
-	}),
+	baptismDate: z.coerce
+		.date()
+		.max(new Date(new Date().setHours(23, 59, 59, 999)), { message: "La fecha de bautismo no puede ser futura" }),
+	convertionDate: z.coerce
+		.date()
+		.max(new Date(new Date().setHours(23, 59, 59, 999)), { message: "La fecha de conversión no puede ser futura" }),
+	birthdate: z.coerce
+		.date()
+		.max(new Date(new Date().setHours(23, 59, 59, 999)), { message: "La fecha de nacimiento no puede ser futura" }),
 	gender: z.string(),
 });
 
