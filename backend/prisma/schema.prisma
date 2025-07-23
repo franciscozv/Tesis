@@ -63,14 +63,12 @@ enum State {
   REJECTED
 }
 
-// model PostEvent {
-//   id          Int      @id @default(autoincrement())
-//   photoUrl   String
-//   comment     String
-//   conclution   String
-//   eventId     Int?     // ← Clave foránea opcional
-//   // event       Event?   @relation(fields: [eventId], references: [id])
-// }
+model PostEvent {
+  id          Int      @id @default(autoincrement())
+  photoUrl   String
+  comment     String
+  conclution   String
+}
 
 model Responsibility {
   id          Int      @id @default(autoincrement())
