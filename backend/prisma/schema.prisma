@@ -54,7 +54,6 @@ model Event {
   reviewComment String? // Comentario de aprobación/rechazo
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  // postEvents  PostEvent[]
 }
 
 enum State {
@@ -63,12 +62,14 @@ enum State {
   REJECTED
 }
 
-model PostEvent {
-  id          Int      @id @default(autoincrement())
-  photoUrl   String
-  comment     String
-  conclution   String
-}
+// model PostEvent {
+//   id          Int      @id @default(autoincrement())
+//   photoUrl    String
+//   comment     String
+//   conclution  String
+//   eventId     Int
+//   event       Event?   @relation(fields: [eventId], references: [id])
+// }
 
 model Responsibility {
   id          Int      @id @default(autoincrement())

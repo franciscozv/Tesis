@@ -10,7 +10,6 @@ import { groupRouter } from "@/api/group/groupRouter";
 import { eventRouter } from "./api/event/eventRouter";
 import { responsibilityRouter } from "./api/responsibility/responsibilityRouter";
 import { peopleRouter } from "./api/people/peopleRouter";
-import { postEventRouter } from "./api/postEvent/postEventRouter";
 import { eventTypeRouter } from "./api/eventType/eventTypeRouter";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
@@ -40,7 +39,6 @@ app.use("/groups", groupRouter);
 app.use("/events", eventRouter);
 app.use("/responsibilities", responsibilityRouter);
 app.use("/people", peopleRouter);
-app.use("/post-events", postEventRouter);
 app.use("/event-types", eventTypeRouter);
 // Swagger UI
 app.use(openAPIRouter);
