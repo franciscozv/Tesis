@@ -1,6 +1,7 @@
 'use client';
 import { type ColumnDef } from "@tanstack/react-table";
-import { Button, Input, FormHelperText, FormControl, Select, MenuItem, Chip, Menu, Checkbox, FormControlLabel } from "@mui/material";
+import { Button, Input, FormHelperText, FormControl, Select, MenuItem, Chip, Menu, Checkbox, FormControlLabel, IconButton, Tooltip } from "@mui/material";
+import { Edit, Delete, Check, Close } from '@mui/icons-material';
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useState } from 'react';
@@ -14,6 +15,7 @@ export type Event = {
   endDateTime: string;
   location: string;
   state: string;
+  reviewComment?: string;
 };
 
 // Componente para celdas de texto editables
@@ -80,7 +82,8 @@ const DateTimeCell = ({ getValue, row, column, table }: { getValue: () => any, r
 
 
 export const getColumns = (
-  onDelete: (id: number, name: string) => void
+  onDelete: (id: number, name: string) => void,
+  onOpenStatusDialog: (id: number, action: "APPROVED" | "REJECTED") => void
 ): ColumnDef<Event>[] => [
   {
     accessorKey: "title",
@@ -120,7 +123,7 @@ export const getColumns = (
       return filterValue.includes(row.getValue(columnId));
     },
     cell: ({ row }: { row: Row<any> }) => {
-      const state = row.original.state;
+      const { state, reviewComment } = row.original;
       const color: 'info' | 'success' | 'error' | 'default' =
         state === 'PENDING' ? 'info'
         : state === 'APPROVED' ? 'success'
@@ -133,7 +136,15 @@ export const getColumns = (
         : state === 'REJECTED' ? 'Rechazado'
         : state;
 
-      return <Chip label={translatedState} color={color} style={{ width: '100%' }} />;
+      const chip = <Chip label={translatedState} color={color} style={{ width: '100%' }} />;
+
+      return reviewComment ? (
+        <Tooltip title={reviewComment} arrow>
+          <span>{chip}</span>
+        </Tooltip>
+      ) : (
+        chip
+      );
     },
     size: 150,
   },
@@ -149,21 +160,43 @@ export const getColumns = (
 
       return isEditing ? (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="success" onClick={() => table.options.meta?.saveRow?.(event.id)}>
-            Guardar
-          </Button>
-          <Button variant="outlined" color="warning" onClick={() => table.options.meta?.cancelEdit?.()}>
-            Cancelar
-          </Button>
+          <Tooltip title="Guardar">
+            <IconButton color="success" onClick={() => table.options.meta?.saveRow?.(event.id)}>
+              <Check />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Cancelar">
+            <IconButton color="warning" onClick={() => table.options.meta?.cancelEdit?.()}>
+              <Close />
+            </IconButton>
+          </Tooltip>
         </div>
       ) : (
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button variant="outlined" color="primary" onClick={() => table.options.meta?.setEditingRowId?.(event.id)}>
-            Editar
-          </Button>
-          <Button variant="outlined" color="error" onClick={() => onDelete(event.id, event.title)}>
-            Eliminar
-          </Button>
+          <Tooltip title="Editar">
+            <IconButton color="primary" onClick={() => table.options.meta?.setEditingRowId?.(event.id)}>
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton color="error" onClick={() => onDelete(event.id, event.title)}>
+              <Delete />
+            </IconButton>
+          </Tooltip>
+          {event.state === 'PENDING' && (
+            <>
+              <Tooltip title="Aprobar">
+                <IconButton color="success" onClick={() => onOpenStatusDialog(event.id, 'APPROVED')}>
+                  <Check />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Rechazar">
+                <IconButton color="error" onClick={() => onOpenStatusDialog(event.id, 'REJECTED')}>
+                  <Close />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
         </div>
       );
     },

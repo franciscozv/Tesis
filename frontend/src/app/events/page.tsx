@@ -12,6 +12,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  DialogContentText,
 } from "@mui/material";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
 import { DataTable } from "~/components/ui/DataTable";
@@ -29,6 +30,25 @@ const Page = () => {
   const [statusAction, setStatusAction] = useState<"APPROVED" | "REJECTED" | null>(null);
   const [statusEventId, setStatusEventId] = useState<number | null>(null);
   const [statusComment, setStatusComment] = useState("");
+  const [stateFilter, setStateFilter] = useState<string[]>(['PENDING', 'APPROVED', 'REJECTED']);
+
+  const handleStateFilterChange = (value: string) => {
+    let newFilter: string[];
+    if (value === 'ALL') {
+      if (stateFilter.length === 3) {
+        newFilter = [];
+      } else {
+        newFilter = ['PENDING', 'APPROVED', 'REJECTED'];
+      }
+    } else {
+      if (stateFilter.includes(value)) {
+        newFilter = stateFilter.filter((v) => v !== value);
+      } else {
+        newFilter = [...stateFilter, value];
+      }
+    }
+    setStateFilter(newFilter);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -143,7 +163,7 @@ const Page = () => {
     }
   };
 
-  const columns = useMemo(() => getColumns(handleDelete), []);
+  const columns = useMemo(() => getColumns(handleDelete, handleOpenStatusDialog), [handleDelete, handleOpenStatusDialog]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -174,6 +194,9 @@ const Page = () => {
             cancelEdit: handleCancel,
             validationErrors,
           }}
+          enableStateFilter
+          stateFilter={stateFilter}
+          onStateFilterChange={handleStateFilterChange}
         />
       )}
 
@@ -187,11 +210,16 @@ const Page = () => {
         />
       )}
 
-      <Dialog open={openStatusDialog} onClose={handleCloseStatusDialog}>
-        <DialogTitle>
+      <Dialog open={openStatusDialog} onClose={handleCloseStatusDialog} fullWidth maxWidth="sm">
+        <DialogTitle variant="h5">
           {statusAction === "APPROVED" ? "Aprobar Evento" : "Rechazar Evento"}
         </DialogTitle>
         <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {statusAction === "APPROVED"
+              ? "Para aprobar el evento, por favor, añade un comentario a continuación."
+              : "Para rechazar el evento, por favor, proporciona un motivo en el campo de comentarios."}
+          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
@@ -199,18 +227,24 @@ const Page = () => {
             type="text"
             fullWidth
             multiline
-            minRows={2}
+            minRows={3}
             value={statusComment}
             onChange={(e) => setStatusComment(e.target.value)}
-            placeholder={statusAction === "APPROVED" ? "¿Por qué apruebas este evento?" : "¿Por qué rechazas este evento?"}
+            placeholder={statusAction === "APPROVED" ? "Ej: Todo parece correcto." : "Ej: Faltan detalles en la descripción."}
+            variant="outlined"
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseStatusDialog} color="secondary">
+        <DialogActions sx={{ p: '16px 24px' }}>
+          <Button onClick={handleCloseStatusDialog} color="secondary" variant="outlined">
             Cancelar
           </Button>
-          <Button onClick={handleConfirmStatus} color={statusAction === "APPROVED" ? "success" : "error"}>
-            {statusAction === "APPROVED" ? "Aprobar" : "Rechazar"}
+          <Button 
+            onClick={handleConfirmStatus} 
+            color={statusAction === "APPROVED" ? "success" : "error"} 
+            variant="contained"
+            sx={{ ml: 2 }}
+          >
+            {statusAction === "APPROVED" ? "Confirmar Aprobación" : "Confirmar Rechazo"}
           </Button>
         </DialogActions>
       </Dialog>
