@@ -39,7 +39,7 @@ app.use("/groups", groupRouter);
 app.use("/events", eventRouter);
 app.use("/responsibilities", responsibilityRouter);
 app.use("/people", peopleRouter);
-app.use("/event-types", eventTypeRouter);
+app.use("/event-type", eventTypeRouter);
 // Swagger UI
 app.use(openAPIRouter);
 

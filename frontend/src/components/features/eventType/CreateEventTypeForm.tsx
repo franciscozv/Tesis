@@ -20,6 +20,7 @@ type Props = {
 const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [color, setColor] = useState("#000000");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {}
@@ -28,7 +29,7 @@ const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = eventTypeSchema.safeParse({ name, description });
+    const result = eventTypeSchema.safeParse({ name, description, color });
 
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
@@ -42,6 +43,7 @@ const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
       await createEventType({
         ...result.data,
         description: result.data.description ?? "",
+        color,
       });
       setName("");
       setDescription("");
@@ -93,6 +95,19 @@ const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
                 helperText={errors.description ? errors.description[0] : ""}
               />
             </Grid>
+            <Grid item xs={12}>
+  <TextField
+    label="Color"
+    fullWidth
+    type="color"
+    value={color}
+    onChange={(e) => setColor(e.target.value)}
+    error={!!errors.color}
+    helperText={errors.color ? errors.color[0] : ""}
+    InputLabelProps={{ shrink: true }}
+  />
+</Grid>
+
             <Grid item xs={12}>
               <Button
                 type="submit"

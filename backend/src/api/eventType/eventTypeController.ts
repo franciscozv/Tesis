@@ -15,8 +15,8 @@ class EventTypeController {
     };
 
     public createEventType: RequestHandler = async (req: Request, res: Response) => {
-        const { name, description } = req.body;
-        const serviceResponse = await eventTypeService.create({ name, description });
+        const { name, description, color } = req.body;
+        const serviceResponse = await eventTypeService.create({ name, description, color });
         res.status(serviceResponse.statusCode).send(serviceResponse);
     };
 
@@ -28,10 +28,11 @@ class EventTypeController {
 
     public updateEventType: RequestHandler = async (req: Request, res: Response) => {
         const id = Number.parseInt(req.params.id as string, 10);
-        const { name, description } = req.body;
+        const { name, description, color } = req.body;
         const serviceResponse = await eventTypeService.updateById(id, {
             name,
             description,
+            color,
         });
         res.status(serviceResponse.statusCode).send(serviceResponse);
     };

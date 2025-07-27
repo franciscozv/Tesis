@@ -1,14 +1,14 @@
 import { env } from "~/env";
 import { del, get, post, put } from "./api";
 
-const EVENT_TYPE_API_URL = `${env.NEXT_PUBLIC_CLIENTVAR}/event-types`;
+const EVENT_TYPE_API_URL = `${env.NEXT_PUBLIC_CLIENTVAR}/event-type`;
 
 export const getEventTypes = async () => {
     const response = await get(EVENT_TYPE_API_URL);
     return response.responseObject || [];
 };
 
-export const createEventType = async (eventTypeData: { name: string; description: string }) => {
+export const createEventType = async (eventTypeData: { name: string; description: string, color: string }) => {
     return await post(EVENT_TYPE_API_URL, eventTypeData);
 };
 

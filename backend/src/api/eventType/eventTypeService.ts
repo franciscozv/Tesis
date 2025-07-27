@@ -48,15 +48,15 @@ export class EventTypeService {
     }
   }
 
-  async create(data: { name: string; description: string }): Promise<ServiceResponse<EventType | null>> {
+  async create(data: { name: string; description: string; color: string }): Promise<ServiceResponse<EventType | null>> {
     try {
-      const { name, description } = data;
+      const { name, description, color } = data;
 
-      if (!name || !description) {
-        return ServiceResponse.failure("Name and description are required", null, StatusCodes.BAD_REQUEST);
+      if (!name || !description || !color) {
+        return ServiceResponse.failure("Name, color and description are required", null, StatusCodes.BAD_REQUEST);
       }
 
-      const newEventType = await this.eventTypeRepository.createAsync({ name, description });
+      const newEventType = await this.eventTypeRepository.createAsync({ name, description, color });
       return ServiceResponse.success<EventType>("Event type created successfully", newEventType);
     } catch (ex) {
       const errorMessage = `Error creating event type: ${(ex as Error).message}`;
@@ -82,7 +82,7 @@ export class EventTypeService {
     }
   }
 
-  async updateById(id: number, data: { name: string; description: string }): Promise<ServiceResponse<EventType | null>> {
+  async updateById(id: number, data: { name: string; description: string; color: string }): Promise<ServiceResponse<EventType | null>> {
     try {
       const updatedEventType = await this.eventTypeRepository.updateByIdAsync(id, data);
       if (!updatedEventType) {

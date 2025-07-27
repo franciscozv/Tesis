@@ -51,7 +51,9 @@ model Event {
   endDateTime      DateTime
   location    String
   state      State   @default(PENDING)
-  reviewComment String? // Comentario de aprobación/rechazo
+  reviewComment String? 
+  eventTypeId Int                     
+  eventType   EventType @relation(fields: [eventTypeId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -83,6 +85,8 @@ model EventType {
   id          Int      @id @default(autoincrement())
   name        String   @unique
   description String
+  color       String
+  events      Event[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

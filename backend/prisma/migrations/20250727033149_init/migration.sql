@@ -50,21 +50,12 @@ CREATE TABLE "Event" (
     "endDateTime" TIMESTAMP(3) NOT NULL,
     "location" TEXT NOT NULL,
     "state" "State" NOT NULL DEFAULT 'PENDING',
+    "reviewComment" TEXT,
+    "eventTypeId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "PostEvent" (
-    "id" SERIAL NOT NULL,
-    "photoUrl" TEXT NOT NULL,
-    "comment" TEXT NOT NULL,
-    "conclution" TEXT NOT NULL,
-    "eventId" INTEGER,
-
-    CONSTRAINT "PostEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -83,6 +74,7 @@ CREATE TABLE "EventType" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "color" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -96,4 +88,4 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "EventType_name_key" ON "EventType"("name");
 
 -- AddForeignKey
-ALTER TABLE "PostEvent" ADD CONSTRAINT "PostEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Event" ADD CONSTRAINT "Event_eventTypeId_fkey" FOREIGN KEY ("eventTypeId") REFERENCES "EventType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

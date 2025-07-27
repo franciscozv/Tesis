@@ -25,11 +25,12 @@ export class EventTypeRepository {
       : null;
   }
 
-  async createAsync(data: Omit<EventType, "id" | "createdAt" | "updatedAt">): Promise<EventType> {
+  async createAsync(data: Omit<EventType, "id" | "createdAt" | "updatedAt" | "events">): Promise<EventType> {
     const newEventType = await prisma.eventType.create({
       data: {
         name: data.name,
         description: data.description,
+        color: data.color,
       },
     });
     return {
@@ -50,22 +51,26 @@ export class EventTypeRepository {
     }
   }
 
-  async updateByIdAsync(id: number, data: { name: string; description: string }): Promise<EventType | null> {
-    try {
-      const updatedEventType = await prisma.eventType.update({
-        where: { id },
-        data: {
-          name: data.name,
-          description: data.description,
-        },
-      });
-      return {
-        ...updatedEventType,
-        createdAt: updatedEventType.createdAt,
-        updatedAt: updatedEventType.updatedAt,
-      };
-    } catch (error) {
-      return null;
-    }
+  async updateByIdAsync(
+  id: number,
+  data: { name: string; description: string; color: string }
+): Promise<EventType | null> {
+  try {
+    const updatedEventType = await prisma.eventType.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        color: data.color, // <- añadido
+      },
+    });
+    return {
+      ...updatedEventType,
+      createdAt: updatedEventType.createdAt,
+      updatedAt: updatedEventType.updatedAt,
+    };
+  } catch (error) {
+    return null;
   }
+}
 }

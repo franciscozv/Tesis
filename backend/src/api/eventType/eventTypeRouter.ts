@@ -15,16 +15,16 @@ eventTypeRegistry.register("EventType", EventTypeSchema);
 
 eventTypeRegistry.registerPath({
   method: "get",
-  path: "/eventTypes",
-  tags: ["EventType"],
+  path: "/event-type",
+  tags: ["Event Type"],
   responses: createApiResponse(z.array(EventTypeSchema), "Success"),
 });
 eventTypeRouter.get("/", eventTypeController.getEventTypes);
 
 eventTypeRegistry.registerPath({
   method: "get",
-  path: "/eventTypes/{id}",
-  tags: ["EventType"],
+  path: "/event-type/{id}",
+  tags: ["Event Type"],
   request: { params: GetEventTypeSchema.shape.params },
   responses: createApiResponse(EventTypeSchema, "Success"),
 });
@@ -33,8 +33,8 @@ eventTypeRouter.get("/:id", validateRequest(GetEventTypeSchema), eventTypeContro
 
 eventTypeRegistry.registerPath({
   method: "post",
-  path: "/eventTypes",
-  tags: ["EventType"],
+  path: "/event-type",
+  tags: ["Event Type"],
   request: {
     body: {
       content: {
@@ -51,8 +51,8 @@ eventTypeRouter.post("/", validateRequest(CreateEventTypeSchema), eventTypeContr
 
 eventTypeRegistry.registerPath({
   method: "delete",
-  path: "/eventTypes/{id}",
-  tags: ["EventType"],
+  path: "/event-type/{id}",
+  tags: ["Event Type"],
   request: { params: GetEventTypeSchema.shape.params },
   responses: {
     204: {
@@ -67,8 +67,8 @@ eventTypeRouter.delete("/:id", validateRequest(GetEventTypeSchema), eventTypeCon
 
 eventTypeRegistry.registerPath({
   method: "put",
-  path: "/eventTypes/{id}",
-  tags: ["EventType"],
+  path: "/event-type/{id}",
+  tags: ["Event Type"],
   request: {
     params: GetEventTypeSchema.shape.params,
     body: {

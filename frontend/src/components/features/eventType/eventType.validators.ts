@@ -7,4 +7,7 @@ export const eventTypeSchema = z.object({
   description: z.string()
     .min(1, "La descripción del tipo de evento es requerida")
     .regex(/^[a-zA-Z\s,]+$/, "La descripción solo puede contener letras, espacios y comas"),
+  color: z.string()
+    .min(1, "El color del tipo de evento es requerido")
+    .regex(/^#[0-9A-Fa-f]{6}$/, "El color debe ser un código hexadecimal válido"),
 });
