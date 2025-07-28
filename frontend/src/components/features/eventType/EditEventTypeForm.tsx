@@ -1,3 +1,4 @@
+import ColorPicker from '~/components/ui/ColorPicker';
 import React, { useState, useEffect } from 'react';
 import { updateEventType } from '~/services/eventTypeService';
 import { eventTypeSchema } from './eventType.validators';
@@ -23,19 +24,21 @@ type Props = {
 const EditEventTypeForm: React.FC<Props> = ({ eventType, onUpdate, onCancel }) => {
   const [name, setName] = useState(eventType.name);
   const [description, setDescription] = useState(eventType.description || '');
+  const [color, setColor] = useState(eventType.color || '#000000');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
   useEffect(() => {
     setName(eventType.name);
     setDescription(eventType.description || '');
+    setColor(eventType.color || '#000000');
     setErrors({}); // Clear errors when eventType changes
   }, [eventType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = eventTypeSchema.safeParse({ name, description });
+    const result = eventTypeSchema.safeParse({ name, description, color });
 
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
@@ -46,7 +49,7 @@ const EditEventTypeForm: React.FC<Props> = ({ eventType, onUpdate, onCancel }) =
     setLoading(true);
 
     try {
-      await updateEventType(eventType.id, result.data);
+      await updateEventType(eventType.id, { ...result.data, color });
       onUpdate(); // Notificar que se actualizó exitosamente
     } catch (error) {
         if (error instanceof Error) {
@@ -93,6 +96,12 @@ const EditEventTypeForm: React.FC<Props> = ({ eventType, onUpdate, onCancel }) =
                 onChange={(e) => setDescription(e.target.value)}
                 error={!!errors.description}
                 helperText={errors.description ? errors.description[0] : ""}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <ColorPicker
+                selectedColor={color}
+                onColorChange={setColor}
               />
             </Grid>
             <Grid xs={12}>

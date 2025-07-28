@@ -12,7 +12,7 @@ export const createEventType = async (eventTypeData: { name: string; description
     return await post(EVENT_TYPE_API_URL, eventTypeData);
 };
 
-export const updateEventType = async (id: number, eventTypeData: { name?: string; description?: string }) => {
+export const updateEventType = async (id: number, eventTypeData: { name?: string; description?: string, color?: string }) => {
     return await put(`${EVENT_TYPE_API_URL}/${id}`, eventTypeData);
 };
 

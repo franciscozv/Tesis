@@ -1,3 +1,4 @@
+import ColorPicker from "~/components/ui/ColorPicker";
 import React, { useState } from "react";
 import { createEventType } from "~/services/eventTypeService";
 import { eventTypeSchema } from "./eventType.validators";
@@ -96,17 +97,11 @@ const CreateEventTypeForm: React.FC<Props> = ({ onEventTypeCreated }) => {
               />
             </Grid>
             <Grid item xs={12}>
-  <TextField
-    label="Color"
-    fullWidth
-    type="color"
-    value={color}
-    onChange={(e) => setColor(e.target.value)}
-    error={!!errors.color}
-    helperText={errors.color ? errors.color[0] : ""}
-    InputLabelProps={{ shrink: true }}
-  />
-</Grid>
+              <ColorPicker
+                selectedColor={color}
+                onColorChange={setColor}
+              />
+            </Grid>
 
             <Grid item xs={12}>
               <Button

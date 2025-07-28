@@ -1,11 +1,13 @@
 'use client';
 import { type ColumnDef, type Row, type Column, type Table } from "@tanstack/react-table";
-import { Button, Input, FormHelperText, FormControl } from "@mui/material";
+import { Button, Input, FormHelperText, FormControl, Box } from "@mui/material";
+import ColorPicker from "~/components/ui/ColorPicker";
 
 export type EventType = {
   id: number;
   name: string;
   description: string;
+  color: string;
 };
 
 // Componente para celdas de texto editables
@@ -28,6 +30,32 @@ const TextCell = ({ getValue, row, column, table }: { getValue: () => any, row: 
   );
 };
 
+const ColorCell = ({ getValue, row, column, table }: { getValue: () => any, row: Row<any>, column: Column<any>, table: Table<any> }) => {
+  const initialValue = getValue();
+  const isEditing = table.options.meta?.editingRowId === row.original.id;
+  const error = table.options.meta?.validationErrors?.[column.id];
+
+  return isEditing ? (
+    <FormControl error={!!error} style={{ width: '100%' }}>
+      <ColorPicker
+        selectedColor={initialValue}
+        onColorChange={(color) => table.options.meta?.updateData?.(row.index, column.id, color)}
+      />
+      {error && <FormHelperText>{error}</FormHelperText>}
+    </FormControl>
+  ) : (
+    <Box
+      sx={{
+        width: 24,
+        height: 24,
+        backgroundColor: initialValue,
+        borderRadius: '50%',
+        border: '1px solid #ccc'
+      }}
+    />
+  );
+};
+
 export const getColumns = (
   onDelete: (id: number, name: string) => void
 ): ColumnDef<EventType>[] => [
@@ -42,6 +70,12 @@ export const getColumns = (
     header: "Descripción",
     cell: TextCell,
     size: 400,
+  },
+  {
+    accessorKey: "color",
+    header: "Color",
+    size: 100,
+    cell: ColorCell,
   },
   {
     id: "actions",
