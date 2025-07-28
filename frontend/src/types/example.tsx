@@ -3,8 +3,8 @@
 // evita la duplicación y facilita la gestión de los tipos.
 
 export interface EventType {
-  id: number;
-  name: string;
-  description: string;
-  color: string;
+	id: number;
+	name: string;
+	description: string;
+	color: string;
 }

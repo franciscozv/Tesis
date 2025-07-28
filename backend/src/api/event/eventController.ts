@@ -9,7 +9,7 @@ class EventController {
 	};
 
 	public createEvent: RequestHandler = async (req: Request, res: Response) => {
-		const { title, description, startDateTime, endDateTime, location } = req.body;
+		const { title, description, startDateTime, endDateTime, location, eventTypeId } = req.body;
 		const parsedStartDateTime = new Date(startDateTime);
 		const parsedEndDateTime = new Date(endDateTime);
 		const serviceResponse = await eventService.create({
@@ -18,6 +18,7 @@ class EventController {
 			startDateTime: parsedStartDateTime,
 			endDateTime: parsedEndDateTime,
 			location,
+			eventTypeId: Number(eventTypeId),
 		});
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};

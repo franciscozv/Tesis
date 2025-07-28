@@ -15,6 +15,7 @@ export const EventSchema = z.object({
 	location: z.string(),
 	state: StateEnum,
 	reviewComment: z.string().nullable(),
+	eventTypeId: z.number().int(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -41,6 +42,7 @@ export const CreateEventSchema = z
 			.string()
 			.min(3, "Location must be at least 3 characters long")
 			.max(100, "Location must be at most 100 characters long"),
+		eventTypeId: z.number().int(),
 	})
 	.refine((data) => data.endDateTime > data.startDateTime, {
 		message: "La fecha de fin debe ser posterior a la de inicio",
@@ -84,6 +86,7 @@ export const UpdateEventSchema = z
 			.max(100, "Location must be at most 100 characters long")
 			.optional(),
 		state: StateEnum.optional(),
+		eventTypeId: z.number().int().optional(),
 	})
 	.refine(
 		(data) => {

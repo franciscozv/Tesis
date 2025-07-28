@@ -1,7 +1,7 @@
-import { Button as MuiButton, type ButtonProps } from '@mui/material';
+import { type ButtonProps, Button as MuiButton } from "@mui/material";
 
 const Button = (props: ButtonProps) => {
-  return <MuiButton {...props} />;
+	return <MuiButton {...props} />;
 };
 
 export default Button;
