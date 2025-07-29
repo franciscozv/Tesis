@@ -8,6 +8,12 @@ class EventController {
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
+	public getEventById: RequestHandler = async (req: Request, res: Response) => {
+		const { id } = req.params;
+		const serviceResponse = await eventService.findById(Number(id));
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
+
 	public createEvent: RequestHandler = async (req: Request, res: Response) => {
 		const { title, description, startDateTime, endDateTime, location, eventTypeId } = req.body;
 		const parsedStartDateTime = new Date(startDateTime);
@@ -25,15 +31,16 @@ class EventController {
 
 	public updateEvent: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const { title, description, startDateTime, endDateTime, location } = req.body;
-		const parsedStartDateTime = new Date(startDateTime);
-		const parsedEndDateTime = new Date(endDateTime);
+		const { title, description, startDateTime, endDateTime, location, eventTypeId } = req.body;
+		const parsedStartDateTime = startDateTime ? new Date(startDateTime) : undefined;
+		const parsedEndDateTime = endDateTime ? new Date(endDateTime) : undefined;
 		const serviceResponse = await eventService.update(Number(id), {
 			title,
 			description,
 			startDateTime: parsedStartDateTime,
 			endDateTime: parsedEndDateTime,
 			location,
+			eventTypeId: eventTypeId ? Number(eventTypeId) : undefined,
 		});
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};

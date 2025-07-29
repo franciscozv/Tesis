@@ -1,5 +1,5 @@
 "use client";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography, Snackbar, Alert } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { eventTypeSchema } from "~/components/features/eventType/eventType.validators";
 import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
@@ -24,6 +24,15 @@ const Page = () => {
 		id: number;
 		name: string;
 	} | null>(null);
+	const [notification, setNotification] = useState<{
+		open: boolean;
+		message: string;
+		severity: 'success' | 'error' | 'warning' | 'info';
+	}>({
+		open: false,
+		message: '',
+		severity: 'info'
+	});
 
 	const fetchData = async () => {
 		setLoading(true);
@@ -32,9 +41,22 @@ const Page = () => {
 			setEventTypes(data || []);
 		} catch (error) {
 			console.error("Error al obtener tipos de evento:", error);
+			showNotification("Error al cargar los tipos de evento", "error");
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const showNotification = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+		setNotification({
+			open: true,
+			message,
+			severity
+		});
+	};
+
+	const handleCloseNotification = () => {
+		setNotification(prev => ({ ...prev, open: false }));
 	};
 
 	useEffect(() => {
@@ -51,9 +73,18 @@ const Page = () => {
 			try {
 				await deleteEventType(eventTypeToDelete.id);
 				fetchData(); // Refrescar datos
+				showNotification("Tipo de evento eliminado exitosamente", "success");
 			} catch (error) {
 				console.error("Error al eliminar el tipo de evento:", error);
-				alert("Error al eliminar el tipo de evento");
+				
+				// Verificar si es un error de conflicto (409) - tipo de evento en uso
+				if (error instanceof Error && 'status' in error && error.status === 409) {
+					showNotification("No se puede eliminar el tipo de evento porque está siendo utilizado por uno o más eventos.", "warning");
+				} else if (error instanceof Error && error.message.includes("could not be deleted")) {
+					showNotification("No se puede eliminar el tipo de evento porque está siendo utilizado por uno o más eventos.", "warning");
+				} else {
+					showNotification("Error al eliminar el tipo de evento", "error");
+				}
 			} finally {
 				setOpenConfirmDialog(false);
 				setEventTypeToDelete(null);
@@ -103,9 +134,10 @@ const Page = () => {
 			try {
 				await updateEventType(eventTypeId, validationResult.data);
 				setEditingRowId(null); // Salir del modo edición
+				showNotification("Tipo de evento actualizado exitosamente", "success");
 			} catch (error) {
 				console.error("Error al actualizar el tipo de evento:", error);
-				alert("Error al actualizar el tipo de evento");
+				showNotification("Error al actualizar el tipo de evento", "error");
 				fetchData(); // Revertir cambios si falla la API
 			}
 		}
@@ -160,6 +192,17 @@ const Page = () => {
 					description={`¿Estás seguro de que deseas eliminar el tipo de evento "${eventTypeToDelete.name}"? Esta acción no se puede deshacer.`}
 				/>
 			)}
+
+			<Snackbar
+				open={notification.open}
+				autoHideDuration={6000}
+				onClose={handleCloseNotification}
+				anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+			>
+				<Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }}>
+					{notification.message}
+				</Alert>
+			</Snackbar>
 		</Box>
 	);
 };

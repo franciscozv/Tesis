@@ -11,9 +11,16 @@ const handleResponse = async (response: Response) => {
 		} catch (e) {
 			errorData = { message: `Error desconocido. Status: ${response.status}` };
 		}
-		throw new Error(
+		
+		// Crear un error personalizado que incluya el status code
+		const error = new Error(
 			errorData.message || `Error en la solicitud: ${response.statusText}`,
-		);
+		) as Error & { status?: number; data?: any };
+		
+		error.status = response.status;
+		error.data = errorData;
+		
+		throw error;
 	}
 };
 

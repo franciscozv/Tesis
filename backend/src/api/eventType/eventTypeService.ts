@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import type { EventType } from "@/api/eventType/eventTypeModel";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { EventTypeRepository } from "@/api/eventType/eventTypeRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
@@ -73,12 +74,31 @@ export class EventTypeService {
       }
       return ServiceResponse.success("Event type deleted successfully", null, StatusCodes.OK);
     } catch (ex) {
-      logger.error(`Error deleting group with id ${id}: ${(ex as Error).message}`);
-			return ServiceResponse.failure(
-				"An error occurred while deleting the event type.",
-				null,
-				StatusCodes.INTERNAL_SERVER_ERROR,
-			);
+      if (ex instanceof Error && ex.message === "Event type not found") {
+        return ServiceResponse.failure("Event type not found", null, StatusCodes.NOT_FOUND);
+      }
+      if (ex instanceof Error && ex.message.includes("currently in use by one or more events")) {
+        logger.error(`Cannot delete event type with id ${id}: ${ex.message}`);
+        return ServiceResponse.failure(
+          "Cannot delete event type because it is currently in use by one or more events.",
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+      if (ex instanceof PrismaClientKnownRequestError && ex.code === 'P2003') {
+        logger.error(`Foreign key constraint failed for event type with id ${id}: ${ex.message}`);
+        return ServiceResponse.failure(
+          "Cannot delete event type because it is currently in use by one or more events.",
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+      logger.error(`Error deleting event type with id ${id}: ${(ex as Error).message}`);
+      return ServiceResponse.failure(
+        "An error occurred while deleting the event type.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

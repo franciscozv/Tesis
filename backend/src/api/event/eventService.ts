@@ -33,6 +33,24 @@ export class EventService {
 			);
 		}
 	}
+
+	async findById(id: number): Promise<ServiceResponse<Event | null>> {
+		try {
+			const event = await this.eventRepository.findByIdAsync(id);
+			if (!event) {
+				return ServiceResponse.failure("Event not found", null, StatusCodes.NOT_FOUND);
+			}
+			return ServiceResponse.success<Event>("Event found", event);
+		} catch (ex) {
+			const errorMessage = `Error finding event by id: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+			return ServiceResponse.failure(
+				"An error occurred while retrieving the event.",
+				null,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
 	async create(data: z.infer<typeof CreateEventSchema>): Promise<ServiceResponse<Event | null>> {
 		try {
 			const { title, description, startDateTime, endDateTime, location, eventTypeId } = data;
@@ -62,14 +80,20 @@ export class EventService {
 		try {
 			const { title, description, location, startDateTime, endDateTime, eventTypeId } = data;
 
-			const updatedEvent = await this.eventRepository.updateAsync(id, {
+			const updateData: any = {
 				title,
 				description,
 				location,
 				startDateTime,
 				endDateTime,
-				eventType: { connect: { id: eventTypeId } },
-			});
+			};
+
+			// Solo incluir eventType si eventTypeId está presente
+			if (eventTypeId) {
+				updateData.eventType = { connect: { id: eventTypeId } };
+			}
+
+			const updatedEvent = await this.eventRepository.updateAsync(id, updateData);
 			if (!updatedEvent) {
 				return ServiceResponse.failure("Event not found", null, StatusCodes.NOT_FOUND);
 			}

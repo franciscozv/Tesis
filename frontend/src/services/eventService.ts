@@ -13,11 +13,22 @@ export type Event = {
 	state: string;
 	reviewComment?: string;
 	eventTypeId: number;
+	eventType?: {
+		id: number;
+		name: string;
+		description: string;
+		color: string;
+	};
 };
 
 export const getEvents = async (): Promise<Event[]> => {
 	const response = await get(EVENT_API_URL);
 	return response.responseObject || [];
+};
+
+export const getEventById = async (id: number): Promise<Event> => {
+	const response = await get(`${EVENT_API_URL}/${id}`);
+	return response.responseObject;
 };
 
 export const createEvent = async (

@@ -4,12 +4,19 @@ import type { Prisma } from "@prisma/client";
 
 export class EventRepository {
 	async findAllAsync(): Promise<Event[]> {
-		const events = await prisma.event.findMany();
+		const events = await prisma.event.findMany({
+			include: {
+				eventType: true,
+			},
+		});
 		return events;
 	}
 	async findByIdAsync(id: number): Promise<Event | null> {
 		return prisma.event.findUnique({
 			where: { id },
+			include: {
+				eventType: true,
+			},
 		});
 	}
 	async createAsync(data: Prisma.EventCreateInput): Promise<Event> {
@@ -21,6 +28,9 @@ export class EventRepository {
 		return prisma.event.update({
 			where: { id },
 			data,
+			include: {
+				eventType: true,
+			},
 		});
 	}
 	async deleteByIdAsync(id: number): Promise<Event | null> {
@@ -31,6 +41,9 @@ export class EventRepository {
 	async findAllPendingAsync(): Promise<Event[]> {
 		return prisma.event.findMany({
 			where: { state: "PENDING" },
+			include: {
+				eventType: true,
+			},
 		});
 	}
 }

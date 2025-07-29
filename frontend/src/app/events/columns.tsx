@@ -13,12 +13,78 @@ import {
 	MenuItem,
 	Select,
 	Tooltip,
+	Box,
+	Typography,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Column, Row, Table } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getEventTypes } from "~/services/eventTypeService";
+import PlanningButton from "~/components/features/event/PlanningButton";
+
+// Tipo para los tipos de evento
+type EventType = {
+	id: number;
+	name: string;
+	description: string;
+	color: string;
+};
+
+// Componente para mostrar el tipo de evento con color
+const EventTypeChip = ({ eventType }: { eventType?: { name: string; color: string; description: string } }) => {
+	if (!eventType) {
+		return <Chip label="Sin tipo" variant="outlined" size="small" />;
+	}
+
+	return (
+		<Tooltip title={eventType.description} arrow>
+			<Chip
+				label={eventType.name}
+				size="small"
+				sx={{
+					backgroundColor: eventType.color,
+					color: getContrastColor(eventType.color),
+					fontWeight: 'bold',
+					fontSize: '0.7rem',
+					height: '18px',
+					maxWidth: '120px',
+					'& .MuiChip-label': {
+						padding: '0 6px',
+						whiteSpace: 'nowrap',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+					},
+					'&:hover': {
+						backgroundColor: eventType.color,
+						opacity: 0.8,
+						transform: 'scale(1.02)',
+						transition: 'all 0.2s ease-in-out',
+					},
+					boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+				}}
+			/>
+		</Tooltip>
+	);
+};
+
+// Función para determinar el color del texto basado en el color de fondo
+const getContrastColor = (hexColor: string): string => {
+	// Remover el # si existe
+	const hex = hexColor.replace('#', '');
+	
+	// Convertir a RGB
+	const r = parseInt(hex.substr(0, 2), 16);
+	const g = parseInt(hex.substr(2, 2), 16);
+	const b = parseInt(hex.substr(4, 2), 16);
+	
+	// Calcular luminosidad
+	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+	
+	// Retornar blanco o negro basado en la luminosidad
+	return luminance > 0.5 ? '#000000' : '#ffffff';
+};
 
 export type Event = {
 	id: number;
@@ -29,6 +95,13 @@ export type Event = {
 	location: string;
 	state: string;
 	reviewComment?: string;
+	eventTypeId: number;
+	eventType?: {
+		id: number;
+		name: string;
+		description: string;
+		color: string;
+	};
 };
 
 // Componente para celdas de texto editables
@@ -115,6 +188,145 @@ const DateTimeCell = ({
 	);
 };
 
+// Componente para celdas de título con tipo de evento integrado
+const TitleCell = ({
+	getValue,
+	row,
+	column,
+	table,
+}: {
+	getValue: () => any;
+	row: Row<any>;
+	column: Column<any>;
+	table: Table<any>;
+}) => {
+	const initialValue = getValue();
+	const isEditing = table.options.meta?.editingRowId === row.original.id;
+	const error = table.options.meta?.validationErrors?.[column.id];
+
+	return isEditing ? (
+		<FormControl error={!!error} style={{ width: "100%" }}>
+			<Input
+				defaultValue={initialValue}
+				onChange={(e) =>
+					table.options.meta?.updateData?.(row.index, column.id, e.target.value)
+				}
+				style={{ width: "100%" }}
+			/>
+			{error && <FormHelperText>{error}</FormHelperText>}
+		</FormControl>
+	) : (
+		<Typography 
+			variant="body2" 
+			sx={{ 
+				fontWeight: 'medium',
+				lineHeight: 1.2,
+			}}
+		>
+			{initialValue}
+		</Typography>
+	);
+};
+
+// Componente para editar el tipo de evento
+const EventTypeCell = ({
+	getValue,
+	row,
+	column,
+	table,
+}: {
+	getValue: () => any;
+	row: Row<any>;
+	column: Column<any>;
+	table: Table<any>;
+}) => {
+	const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+	const [loading, setLoading] = useState(false);
+	const isEditing = table.options.meta?.editingRowId === row.original.id;
+	const error = table.options.meta?.validationErrors?.[column.id];
+	const currentEventType = row.original.eventType;
+
+	// Cargar tipos de evento cuando se entra en modo edición
+	useEffect(() => {
+		if (isEditing && eventTypes.length === 0) {
+			setLoading(true);
+			getEventTypes()
+				.then((types) => {
+					setEventTypes(types || []);
+				})
+				.catch((error) => {
+					console.error("Error al cargar tipos de evento:", error);
+				})
+				.finally(() => {
+					setLoading(false);
+				});
+		}
+	}, [isEditing, eventTypes.length]);
+
+	return isEditing ? (
+		<FormControl error={!!error} style={{ width: "100%" }}>
+			<Select
+				value={currentEventType?.id || ""}
+				onChange={(e) => {
+					const selectedType = eventTypes.find(type => type.id === e.target.value);
+					table.options.meta?.updateData?.(row.index, "eventTypeId", e.target.value);
+					table.options.meta?.updateData?.(row.index, "eventType", selectedType);
+				}}
+				displayEmpty
+				size="small"
+				disabled={loading}
+				renderValue={(value) => {
+					if (!value) return <em>Seleccionar tipo</em>;
+					const selectedType = eventTypes.find(type => type.id === value);
+					if (!selectedType) return <em>Seleccionar tipo</em>;
+					
+					return (
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+							<Box
+								sx={{
+									width: '12px',
+									height: '12px',
+									backgroundColor: selectedType.color,
+									borderRadius: '50%',
+									flexShrink: 0,
+									boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+								}}
+							/>
+							<Typography variant="body2">{selectedType.name}</Typography>
+						</Box>
+					);
+				}}
+			>
+				<MenuItem value="">
+					<em>Seleccionar tipo</em>
+				</MenuItem>
+				{eventTypes.map((type) => (
+					<MenuItem key={type.id} value={type.id}>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+							<Box
+								sx={{
+									width: '12px',
+									height: '12px',
+									backgroundColor: type.color,
+									borderRadius: '50%',
+									flexShrink: 0,
+									boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+								}}
+							/>
+							<Typography variant="body2" sx={{ flex: 1 }}>{type.name}</Typography>
+						</Box>
+					</MenuItem>
+				))}
+			</Select>
+			{error && <FormHelperText>{error}</FormHelperText>}
+		</FormControl>
+	) : (
+		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '32px' }}>
+			<EventTypeChip eventType={currentEventType} />
+		</Box>
+	);
+};
+
 export const getColumns = (
 	onDelete: (id: number, name: string) => void,
 	onOpenStatusDialog: (id: number, action: "APPROVED" | "REJECTED") => void,
@@ -122,7 +334,7 @@ export const getColumns = (
 	{
 		accessorKey: "title",
 		header: "Título",
-		cell: TextCell,
+		cell: TitleCell,
 		size: 200,
 	},
 	{
@@ -148,6 +360,12 @@ export const getColumns = (
 		header: "Ubicación",
 		cell: TextCell,
 		size: 200,
+	},
+	{
+		accessorKey: "eventType",
+		header: "Tipo de Evento",
+		cell: EventTypeCell,
+		size: 150,
 	},
 	{
 		accessorKey: "state",
@@ -257,6 +475,7 @@ export const getColumns = (
 							</Tooltip>
 						</>
 					)}
+					<PlanningButton eventId={event.id} eventState={event.state} />
 				</div>
 			);
 		},

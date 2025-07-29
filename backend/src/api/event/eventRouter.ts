@@ -29,6 +29,20 @@ eventRegistry.registerPath({
 eventRouter.get("/", eventController.getEvents);
 
 eventRegistry.registerPath({
+	method: "get",
+	path: "/events/{id}",
+	tags: ["Event"],
+	request: {
+		params: z.object({
+			id: z.number(),
+		}),
+	},
+	responses: createApiResponse(EventSchema, "Success"),
+});
+
+eventRouter.get("/:id", eventController.getEventById);
+
+eventRegistry.registerPath({
 	method: "post",
 	path: "/events",
 	tags: ["Event"],

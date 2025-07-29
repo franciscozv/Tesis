@@ -41,14 +41,24 @@ export class EventTypeRepository {
   }
 
   async deleteByIdAsync(id: number): Promise<boolean> {
-    try {
-      await prisma.eventType.delete({
-        where: { id },
-      });
-      return true;
-    } catch (error) {
-      return false;
+    const eventType = await prisma.eventType.findUnique({
+      where: { id },
+      include: { events: true },
+    });
+
+    if (!eventType) {
+      throw new Error("Event type not found");
     }
+
+    if (eventType.events.length > 0) {
+      throw new Error("Cannot delete event type because it is currently in use by one or more events.");
+    }
+
+    await prisma.eventType.delete({
+      where: { id },
+    });
+
+    return true;
   }
 
   async updateByIdAsync(

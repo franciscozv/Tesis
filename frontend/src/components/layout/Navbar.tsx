@@ -74,6 +74,9 @@ const Navbar = () => {
 							<MenuItem component={Link} href="/events" onClick={handleClose}>
 								Eventos
 							</MenuItem>
+							<MenuItem component={Link} href="/request" onClick={handleClose}>
+								Planificar
+							</MenuItem>
 							<MenuItem
 								component={Link}
 								href="/eventType"
