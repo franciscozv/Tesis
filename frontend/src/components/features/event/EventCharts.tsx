@@ -6,38 +6,48 @@ import { getEvents } from "~/services/eventService";
 import { getEventTypes } from "~/services/eventTypeService";
 
 const EventCharts = () => {
-	const [eventsByState, setEventsByState] = useState([]);
-	const [eventsByType, setEventsByType] = useState([]);
+	const [eventsByState, setEventsByState] = useState<{ name: string; cantidad: number }[]>([]);
+	const [eventsByType, setEventsByType] = useState<{ name: string; cantidad: number }[]>([]);
 
 	useEffect(() => {
 		const fetchData = async () => {
 			const events = await getEvents();
 			const eventTypes = await getEventTypes();
 
-			const stateTranslations = {
+			const stateTranslations: Record<string, string> = {
 				approved: "Aprobado",
 				rejected: "Rechazado",
 				pending: "Pendiente",
 			};
 
-			const eventsByStateData = events.reduce((acc, event) => {
+			type EventsByStateAccumulator = Record<string, { name: string; cantidad: number }>;
+
+			const eventsByStateData = events.reduce<EventsByStateAccumulator>((acc, event) => {
 				const stateKey = event.state.toLowerCase();
-				const translatedState = stateTranslations[stateKey] || event.state;
-				if (!acc[event.state]) {
-					acc[event.state] = { name: translatedState, cantidad: 0 };
+				const translatedState = stateTranslations[stateKey] ?? event.state;
+				
+				const existingEntry = acc[event.state];
+				if (!existingEntry) {
+					acc[event.state] = { name: translatedState, cantidad: 1 };
+				} else {
+					existingEntry.cantidad++;
 				}
-				acc[event.state].cantidad++;
 				return acc;
 			}, {});
 			setEventsByState(Object.values(eventsByStateData));
 
-			const eventsByTypeData = events.reduce((acc, event) => {
-				const eventType = eventTypes.find(et => et.id === event.eventTypeId);
+			type EventsByTypeAccumulator = Record<string, { name: string; cantidad: number }>;
+
+			const eventsByTypeData = events.reduce<EventsByTypeAccumulator>((acc, event) => {
+				const eventType = eventTypes.find((et: { id: number }) => et.id === event.eventTypeId);
 				const typeName = eventType ? eventType.name : "Unknown";
-				if (!acc[typeName]) {
-					acc[typeName] = { name: typeName, cantidad: 0 };
+				
+				const existingEntry = acc[typeName];
+				if (!existingEntry) {
+					acc[typeName] = { name: typeName, cantidad: 1 };
+				} else {
+					existingEntry.cantidad++;
 				}
-				acc[typeName].cantidad++;
 				return acc;
 			}, {});
 			setEventsByType(Object.values(eventsByTypeData));

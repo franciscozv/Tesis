@@ -16,7 +16,7 @@ import {
 	Tabs,
 	Tab,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Settings, CalendarMonth, LocationOn, Category, Schedule } from "@mui/icons-material";
 import { getEventById } from "~/services/eventService";
@@ -164,7 +164,8 @@ const ObstaclesTab = ({ event }: { event: Event }) => {
 };
 
 // Componente principal de la página de planificación
-const PlanningPage = () => {
+// Componente que usa useSearchParams
+const PlanningPageContent = () => {
 	const searchParams = useSearchParams();
 	const eventId = searchParams.get('eventId') || '';
 	const [activeTab, setActiveTab] = useState(0);
@@ -390,6 +391,19 @@ const PlanningPage = () => {
 				{tabs[activeTab]?.component}
 			</Box>
 		</Box>
+	);
+};
+
+// Componente principal que envuelve el contenido en Suspense
+const PlanningPage = () => {
+	return (
+		<Suspense fallback={
+			<Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+				<CircularProgress />
+			</Box>
+		}>
+			<PlanningPageContent />
+		</Suspense>
 	);
 };
 
