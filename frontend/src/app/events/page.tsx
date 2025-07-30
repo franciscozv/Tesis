@@ -141,8 +141,13 @@ const Page = () => {
 			}
 
 			setValidationErrors({}); // Limpiar errores si la validación es exitosa
+			const dataToUpdate = {
+				...validationResult.data,
+				startDateTime: validationResult.data.startDateTime ? new Date(validationResult.data.startDateTime).toISOString() : undefined,
+				endDateTime: validationResult.data.endDateTime ? new Date(validationResult.data.endDateTime).toISOString() : undefined,
+			};
 			try {
-				await updateEvent(eventId, validationResult.data);
+				await updateEvent(eventId, dataToUpdate);
 				setEditingRowId(null); // Salir del modo edición
 			} catch (error) {
 				console.error("Error al actualizar el evento:", error);
