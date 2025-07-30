@@ -8,71 +8,87 @@ const roboto = Roboto({
 	display: "swap",
 });
 
-// Define a modern color palette
 const palette = {
 	primary: {
-		main: "#1976D2", // A deep, professional blue
-		light: "#63A4FF",
-		dark: "#004BA0",
+		main: "#6D5E0F",
+		light: "#F8E287",
+		dark: "#534600",
 		contrastText: "#FFFFFF",
 	},
 	secondary: {
-		main: "#FFC107", // A vibrant amber for accents
-		light: "#FFF350",
-		dark: "#C79100",
-		contrastText: "#000000",
+		main: "#665E40",
+		light: "#EEE2BC",
+		dark: "#4E472A",
+		contrastText: "#FFFFFF",
+	},
+	tertiary: {
+		main: "#43664E",
+		light: "#C5ECCE",
+		dark: "#2C4E38",
+		contrastText: "#FFFFFF",
+	},
+	error: {
+		main: "#BA1A1A",
+		light: "#FFDAD6",
+		dark: "#93000A",
+		contrastText: "#FFFFFF",
 	},
 	background: {
-		default: "#F4F6F8", // A light grey for the background
-		paper: "#FFFFFF", // White for paper elements
+		default: "#FFF9EE",
+		paper: "#FFF9EE",
+	},
+	surface: {
+		default: "#FFF9EE",
+		paper: "#FFF9EE",
 	},
 	text: {
-		primary: "#333333",
-		secondary: "#555555",
+		primary: "#1E1B13",
+		secondary: "#4B4739",
+	},
+	surfaceVariant: {
+		main: "#EAE2D0",
+		contrastText: "#4B4739",
+	},
+	outline: {
+		main: "#7C7767",
+		variant: "#CDC6B4",
+	},
+	// Colores adicionales del Material Theme Builder
+	success: {
+		main: "#43664E",
+		light: "#C5ECCE",
+		dark: "#2C4E38",
+		contrastText: "#FFFFFF",
+	},
+	warning: {
+		main: "#665E40",
+		light: "#EEE2BC",
+		dark: "#4E472A",
+		contrastText: "#FFFFFF",
+	},
+	info: {
+		main: "#6D5E0F",
+		light: "#F8E287",
+		dark: "#534600",
+		contrastText: "#FFFFFF",
 	},
 };
 
-// Create the theme instance
 let theme = createTheme({
 	palette,
 	typography: {
 		fontFamily: roboto.style.fontFamily,
-		h1: {
-			fontSize: "2.5rem",
-			fontWeight: 700,
-		},
-		h2: {
-			fontSize: "2rem",
-			fontWeight: 600,
-		},
-		h3: {
-			fontSize: "1.75rem",
-			fontWeight: 600,
-		},
-		h4: {
-			fontSize: "1.5rem",
-			fontWeight: 500,
-		},
-		h5: {
-			fontSize: "1.25rem",
-			fontWeight: 500,
-		},
-		h6: {
-			fontSize: "1rem",
-			fontWeight: 500,
-		},
 	},
 	shape: {
-		borderRadius: 8, // Softer corners for a modern look
+		borderRadius: 16,
 	},
 	components: {
 		MuiButton: {
 			styleOverrides: {
 				root: {
-					textTransform: "none", // More readable buttons
 					boxShadow: "none",
 					"&:hover": {
-						boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+						boxShadow: "none",
 					},
 				},
 			},
@@ -85,50 +101,40 @@ let theme = createTheme({
 				},
 			],
 		},
-		MuiTextField: {
-			defaultProps: {
-				variant: "outlined",
-			},
-		},
-		MuiOutlinedInput: {
+		MuiChip: {
 			styleOverrides: {
 				root: {
-					"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-						borderColor: palette.primary.main,
-					},
+					fontWeight: "bold",
+				},
+			},
+		},
+		MuiCard: {
+			styleOverrides: {
+				root: {
+					backgroundColor: "#FFF9EE",
+					border: "1px solid #CDC6B4",
 				},
 			},
 		},
 		MuiAppBar: {
 			styleOverrides: {
 				root: {
-					backgroundColor: palette.background.paper,
-					color: palette.text.primary,
-					boxShadow: "0px 2px 4px -1px rgba(0,0,0,0.06)",
+					backgroundColor: "#FFF9EE",
+					color: "#1E1B13",
+					borderBottom: "1px solid #CDC6B4",
 				},
 			},
 		},
 		MuiPaper: {
 			styleOverrides: {
 				root: {
-					boxShadow: "0px 4px 12px rgba(0,0,0,0.05)",
-				},
-			},
-		},
-		MuiInputBase: {
-			styleOverrides: {
-				input: {
-					"&::placeholder": {
-						color: palette.text.secondary, // Ensure placeholder text is visible
-						opacity: 1, // Ensure placeholder is not transparent
-					},
+					backgroundColor: "#FFF9EE",
 				},
 			},
 		},
 	},
 });
 
-// Make typography responsive
 theme = responsiveFontSizes(theme);
 
 export default theme;

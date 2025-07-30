@@ -13,6 +13,7 @@ import {
 import { Settings, LocationOn, Category, Schedule } from "@mui/icons-material";
 import PlanningButton from "./PlanningButton";
 import type { Event } from "~/services/eventService";
+import { getContrastColor, getStateColors } from "~/utils/themeColors";
 
 interface EventInfoDialogProps {
 	open: boolean;
@@ -45,8 +46,9 @@ const EventInfoDialog = ({ open, event, onClose }: EventInfoDialogProps) => {
 						size="small"
 						sx={{
 							backgroundColor: event.eventType.color,
-							color: 'white',
+							color: getContrastColor(event.eventType.color),
 							fontWeight: 'bold',
+							borderRadius: '8px',
 						}}
 					/>
 				)}
@@ -90,15 +92,18 @@ const EventInfoDialog = ({ open, event, onClose }: EventInfoDialogProps) => {
 								label={
 									event.state === "PENDING" ? "Pendiente" :
 									event.state === "APPROVED" ? "Aprobado" :
-									"Rechazado"
+									event.state === "REJECTED" ? "Rechazado" :
+									event.state === "CANCELLED" ? "Cancelado" :
+									event.state
 								}
 								size="small"
-								color={
-									event.state === "PENDING" ? "warning" :
-									event.state === "APPROVED" ? "success" :
-									"error"
-								}
-								sx={{ ml: 1 }}
+								sx={{ 
+									ml: 1,
+									backgroundColor: getStateColors[event.state as keyof typeof getStateColors]?.backgroundColor || '#EAE2D0',
+									color: getStateColors[event.state as keyof typeof getStateColors]?.color || '#4B4739',
+									fontWeight: 'bold',
+									borderRadius: '8px',
+								}}
 							/>
 						</Typography>
 					</Box>

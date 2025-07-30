@@ -1,14 +1,14 @@
-import { Box, Button, Typography } from "@mui/material";
+"use client";
+import { Container, Typography } from "@mui/material";
+import EventCharts from "../components/features/event/EventCharts";
 
 export default function HomePage() {
 	return (
-		<Box sx={{ p: 4 }}>
+		<Container maxWidth="lg">
 			<Typography variant="h4" component="h1" gutterBottom>
-				Página de Inicio
+				Dashboard
 			</Typography>
-			<Button variant="contained" color="primary">
-				Hola, Material UI
-			</Button>
-		</Box>
+			<EventCharts />
+		</Container>
 	);
 }

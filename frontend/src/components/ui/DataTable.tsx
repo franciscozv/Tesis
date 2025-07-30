@@ -1,5 +1,8 @@
 "use client";
 
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import {
 	Button,
@@ -36,6 +39,8 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
+import { themeColors } from "~/utils/themeColors";
+import { tableStyles } from "./DataTable.styles";
 
 interface DataTableProps<TData extends { id: number }, TValue> {
 	columns: ColumnDef<TData, TValue>[];
@@ -143,14 +148,7 @@ export function DataTable<TData extends { id: number }, TValue>({
 	return (
 		<div>
 			{data.length > 0 && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "1rem",
-						marginBottom: "1rem",
-					}}
-				>
+				<div style={tableStyles.toolbar}>
 					<Input
 						placeholder="Buscar en todas las columnas..."
 						value={globalFilter ?? ""}
@@ -171,14 +169,7 @@ export function DataTable<TData extends { id: number }, TValue>({
 								onClose={handleFilterClose}
 								anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
 							>
-								<div
-									style={{
-										padding: 16,
-										display: "flex",
-										flexDirection: "column",
-										gap: 4,
-									}}
-								>
+								<div style={tableStyles.filterPopover}>
 									<FormControlLabel
 										control={
 											<Checkbox
@@ -267,15 +258,18 @@ export function DataTable<TData extends { id: number }, TValue>({
 				<Typography
 					variant="h6"
 					component="div"
-					style={{ textAlign: "center", margin: "2rem 0" }}
+					style={tableStyles.noData}
 				>
 					No hay datos para mostrar.
 				</Typography>
 			) : (
 				<>
-					<TableContainer component={Paper} style={{ overflowX: "auto" }}>
-						<Table style={{ width: "100%", tableLayout: "fixed" }}>
-							<TableHead>
+					<TableContainer 
+						component={Paper} 
+						style={tableStyles.container}
+					>
+						<Table style={tableStyles.table}>
+							<TableHead style={tableStyles.tableHead}>
 								{table.getHeaderGroups().map((headerGroup) => (
 									<TableRow key={headerGroup.id}>
 										{headerGroup.headers.map((header) => {
@@ -284,12 +278,13 @@ export function DataTable<TData extends { id: number }, TValue>({
 												<TableCell
 													key={header.id}
 													style={{
-														position: "relative",
+														...tableStyles.headerCell,
 														width: header.getSize(),
 													}}
 												>
 													<div
 														style={{
+															...tableStyles.headerContent,
 															cursor: header.column.getCanSort()
 																? "pointer"
 																: "default",
@@ -301,7 +296,6 @@ export function DataTable<TData extends { id: number }, TValue>({
 																	? `${column.getAfter("right")}px`
 																	: undefined,
 															zIndex: column.getIsPinned() ? 1 : 0,
-															background: "white",
 														}}
 														onClick={header.column.getToggleSortingHandler()}
 													>
@@ -311,27 +305,19 @@ export function DataTable<TData extends { id: number }, TValue>({
 																	header.column.columnDef.header,
 																	header.getContext(),
 																)}
-														{{
-															asc: " 🔼",
-															desc: " 🔽",
-														}[header.column.getIsSorted() as string] ?? null}
+														{header.column.getCanSort() && !header.column.getIsSorted() && <UnfoldMoreIcon fontSize="small" />}
+{header.column.getIsSorted() === "asc" && <ArrowUpwardIcon fontSize="small" />}
+{header.column.getIsSorted() === "desc" && <ArrowDownwardIcon fontSize="small" />}
 													</div>
 													{header.column.getCanResize() && (
 														<div
 															onMouseDown={header.getResizeHandler()}
 															onTouchStart={header.getResizeHandler()}
 															style={{
-																position: "absolute",
-																right: 0,
-																top: 0,
-																height: "100%",
-																width: "3px",
+																...tableStyles.columnResizer,
 																background: header.column.getIsResizing()
-																	? "blue"
-																	: "lightgray",
-																cursor: "col-resize",
-																userSelect: "none",
-																touchAction: "none",
+																	? tableStyles.columnResizerActive.background
+																	: tableStyles.columnResizerInactive.background,
 															}}
 														/>
 													)}
@@ -342,14 +328,22 @@ export function DataTable<TData extends { id: number }, TValue>({
 								))}
 							</TableHead>
 							<TableBody>
-								{table.getRowModel().rows.map((row) => (
-									<TableRow key={row.id}>
+								{table.getRowModel().rows.map((row, index) => (
+									<TableRow 
+										key={row.id}
+										style={{
+											backgroundColor: index % 2 === 0 
+												? tableStyles.rowEven.backgroundColor
+												: tableStyles.rowOdd.backgroundColor,
+										}}
+									>
 										{row.getVisibleCells().map((cell) => {
 											const { column } = cell;
 											return (
 												<TableCell
 													key={cell.id}
 													style={{
+														...tableStyles.bodyCell,
 														position: column.getIsPinned()
 															? "sticky"
 															: "relative",
@@ -358,7 +352,9 @@ export function DataTable<TData extends { id: number }, TValue>({
 																? `${column.getAfter("right")}px`
 																: undefined,
 														zIndex: column.getIsPinned() ? 1 : 0,
-														background: "white",
+														background: index % 2 === 0 
+															? tableStyles.rowEven.backgroundColor
+															: tableStyles.rowOdd.backgroundColor,
 														width: cell.column.getSize(),
 													}}
 												>
@@ -374,15 +370,7 @@ export function DataTable<TData extends { id: number }, TValue>({
 							</TableBody>
 						</Table>
 					</TableContainer>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "center",
-							alignItems: "center",
-							marginTop: "1rem",
-							gap: "1rem",
-						}}
-					>
+					<div style={tableStyles.pagination}>
 						<Button
 							onClick={() => table.setPageIndex(0)}
 							disabled={!table.getCanPreviousPage()}
@@ -395,9 +383,9 @@ export function DataTable<TData extends { id: number }, TValue>({
 						>
 							Anterior
 						</Button>
-						<span style={{ margin: "0 1rem" }}>
+						<span style={tableStyles.paginationText}>
 							Página{" "}
-							<strong>
+							<strong style={tableStyles.paginationNumber}>
 								{table.getState().pagination.pageIndex + 1} de{" "}
 								{table.getPageCount()}
 							</strong>

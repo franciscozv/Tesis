@@ -32,7 +32,7 @@ const Navbar = () => {
 		<AppBar
 			position="static"
 			elevation={0}
-			sx={{ backgroundColor: theme.palette.background.paper }}
+			
 		>
 			<Container maxWidth="xl">
 				<Toolbar disableGutters>
@@ -100,7 +100,7 @@ const Navbar = () => {
 							variant="contained"
 							component={Link}
 							href="/auth/login"
-							sx={{ boxShadow: theme.shadows[1] }}
+							
 						>
 							Login
 						</Button>

@@ -21,6 +21,7 @@ import { useSearchParams } from "next/navigation";
 import { Settings, CalendarMonth, LocationOn, Category, Schedule } from "@mui/icons-material";
 import { getEventById } from "~/services/eventService";
 import type { Event } from "~/services/eventService";
+import { getContrastColor, getStateColors } from "~/utils/themeColors";
 
 // Componente para la pestaña de Participantes
 const ParticipantsTab = ({ event }: { event: Event }) => {
@@ -288,8 +289,9 @@ const PlanningPage = () => {
 													sx={{
 														ml: 1,
 														backgroundColor: event.eventType.color,
-														color: 'white',
+														color: getContrastColor(event.eventType.color),
 														fontWeight: 'bold',
+														borderRadius: '8px',
 													}}
 												/>
 											</Typography>
@@ -340,15 +342,18 @@ const PlanningPage = () => {
 												label={
 													event.state === "PENDING" ? "Pendiente" :
 													event.state === "APPROVED" ? "Aprobado" :
-													"Rechazado"
+													event.state === "REJECTED" ? "Rechazado" :
+													event.state === "CANCELLED" ? "Cancelado" :
+													event.state
 												}
 												size="small"
-												color={
-													event.state === "PENDING" ? "warning" :
-													event.state === "APPROVED" ? "success" :
-													"error"
-												}
-												sx={{ ml: 1 }}
+												sx={{ 
+													ml: 1,
+													backgroundColor: getStateColors[event.state as keyof typeof getStateColors]?.backgroundColor || '#EAE2D0',
+													color: getStateColors[event.state as keyof typeof getStateColors]?.color || '#4B4739',
+													fontWeight: 'bold',
+													borderRadius: '8px',
+												}}
 											/>
 										</Typography>
 									</Box>

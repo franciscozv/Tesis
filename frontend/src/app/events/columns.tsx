@@ -63,28 +63,15 @@ const EventTypeChip = ({ eventType }: { eventType?: { name: string; color: strin
 						transition: 'all 0.2s ease-in-out',
 					},
 					boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+					borderRadius: '8px',
 				}}
 			/>
 		</Tooltip>
 	);
 };
 
-// Función para determinar el color del texto basado en el color de fondo
-const getContrastColor = (hexColor: string): string => {
-	// Remover el # si existe
-	const hex = hexColor.replace('#', '');
-	
-	// Convertir a RGB
-	const r = parseInt(hex.substr(0, 2), 16);
-	const g = parseInt(hex.substr(2, 2), 16);
-	const b = parseInt(hex.substr(4, 2), 16);
-	
-	// Calcular luminosidad
-	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-	
-	// Retornar blanco o negro basado en la luminosidad
-	return luminance > 0.5 ? '#000000' : '#ffffff';
-};
+// Importar la función de utilidad de colores
+import { getContrastColor } from "~/utils/themeColors";
 
 export type Event = {
 	id: number;

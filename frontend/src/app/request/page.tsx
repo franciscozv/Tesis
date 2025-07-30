@@ -20,6 +20,7 @@ import { getEvents } from "~/services/eventService";
 import PlanningButton from "~/components/features/event/PlanningButton";
 import EventInfoDialog from "~/components/features/event/EventInfoDialog";
 import type { Event } from "~/services/eventService";
+import { getContrastColor, getStateColors } from "~/utils/themeColors";
 
 const RequestPage = () => {
 	const [approvedEvents, setApprovedEvents] = useState<Event[]>([]);
@@ -131,8 +132,9 @@ const RequestPage = () => {
 																	size="small"
 																	sx={{
 																		backgroundColor: event.eventType.color,
-																		color: 'white',
+																		color: getContrastColor(event.eventType.color),
 																		fontWeight: 'bold',
+																		borderRadius: '8px',
 																	}}
 																/>
 															)}
