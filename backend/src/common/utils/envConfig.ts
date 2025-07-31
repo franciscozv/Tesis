@@ -5,6 +5,7 @@ dotenv.config();
 
 const envSchema = z.object({
 	NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
+	LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "fatal"]).default("info"),
 
 	HOST: z.string().min(1).default("localhost"),
 

@@ -1,48 +1,50 @@
-# Etapa base: pnpm y corepack
+# ---- Base Stage ----
+# Sets up pnpm in a base image to be reused.
 FROM node:20-slim AS base
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-
 WORKDIR /app
+RUN npm install -g pnpm
 
-# Etapa de dependencias solo de producción
-FROM base AS prod-deps
+# ---- Builder Stage ----
+# This stage installs dependencies and builds the Next.js application.
+FROM base AS builder
 
+# Copy dependency definition files
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile --ignore-scripts
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
 
-# Etapa de build
-FROM base AS build
-
-COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
-
+# Copy the rest of the application source code
 COPY . .
 
-# Copia el archivo .env si lo necesitas en build (ej: para NEXT_PUBLIC_*)
-COPY .env .env
+# Set the build-time environment variable for the API URL.
+# The value will be passed in by docker-compose during the build.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Build the Next.js application for production
 RUN pnpm run build
 
-# Etapa final de ejecución
-FROM node:20-alpine AS runner
+# ---- Production Stage ----
+# This stage sets up the final production image.
+FROM base AS production
 
-WORKDIR /app
+# Copy production dependencies definition
+COPY package.json pnpm-lock.yaml ./
+# Install only production dependencies
+RUN pnpm install --prod --frozen-lockfile
 
-# Copiar node_modules y build
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./package.json
+# Create a non-root user for enhanced security
+RUN addgroup --system --gid 1001 nextjs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
-# Copiar .env si se requiere en producción
-COPY --from=build /app/.env .env
+# Copy the essential output from the builder stage
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+COPY --from=builder --chown=nextjs:nextjs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nextjs /app/node_modules ./node_modules
 
-ENV NODE_ENV=production
-
+# Expose the port Next.js will run on
 EXPOSE 3000
 
-# Iniciar el servidor Next.js
+# Set the command to start the Next.js server in production mode
 CMD ["pnpm", "start"]

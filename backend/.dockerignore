@@ -1,0 +1,15 @@
+# Archivos de configuración local
+.env
+
+# Dependencias y logs
+node_modules
+npm-debug.log
+pnpm-debug.log
+
+# Directorio de build (se generará dentro de Docker)
+dist
+
+# Git y VSCode
+.git
+.gitignore
+.vscode

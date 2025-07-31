@@ -1,35 +1,47 @@
-# Base stage with pnpm setup
-FROM node:23.11.1-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# ---- Base Stage ----
+# Sets up pnpm in a base image to be reused.
+FROM node:20-slim AS base
 WORKDIR /app
+RUN npm install -g pnpm
 
-# Production dependencies stage
-FROM base AS prod-deps
-COPY package.json pnpm-lock.yaml ./
-# Install only production dependencies
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile --ignore-scripts
+# ---- Builder Stage ----
+# This stage installs all dependencies (including devDependencies) and builds the application.
+FROM base AS builder
 
-# Build stage - install all dependencies and build
-FROM base AS build
+# Copy dependency definition files and install all dependencies
 COPY package.json pnpm-lock.yaml ./
-# Install all dependencies (including dev dependencies)
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the application source code
 COPY . .
+
+# Generate Prisma client - this is necessary for Prisma to work correctly
+RUN pnpm prisma generate
+
+# Build the TypeScript source code into JavaScript
 RUN pnpm run build
 
-# Final stage - combine production dependencies and build output
-FROM node:23.11.1-alpine AS runner
-WORKDIR /app
-COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/dist ./dist
+# ---- Production Stage ----
+# This stage creates the final, lightweight image with only production assets.
+FROM base AS production
 
-# Use the node user from the image
+# Copy production dependencies definition
+COPY package.json pnpm-lock.yaml ./
+# Install only production dependencies
+RUN pnpm install --prod --frozen-lockfile
+
+# Create a non-root user for security purposes
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 node
 USER node
 
-# Expose port 8080
-EXPOSE 8080
+# Copy the built application and necessary modules from the builder stage
+COPY --from=builder --chown=node:nodejs /app/dist ./dist
+COPY --from=builder --chown=node:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=node:nodejs /app/prisma ./prisma
 
-# Start the server
-CMD ["node", "dist/index.js"]
+# Expose the port the application will run on. The actual port number is passed via .env.
+EXPOSE ${PORT:-8080}
+
+# The command to start the application in production mode.
+CMD ["node", "dist/server.js"]
