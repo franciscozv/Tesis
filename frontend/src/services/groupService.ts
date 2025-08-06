@@ -16,9 +16,9 @@ export const getGroup = async (id: number) => {
 export const createGroup = async (groupData: {
 	name: string;
 	description: string;
-  mision: string;
-  vision: string;
-  color: string;
+  mision?: string;
+  vision?: string;
+  color?: string;
 }) => {
 	return await post(GROUP_API_URL, groupData);
 };
