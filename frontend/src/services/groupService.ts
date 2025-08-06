@@ -16,13 +16,16 @@ export const getGroup = async (id: number) => {
 export const createGroup = async (groupData: {
 	name: string;
 	description: string;
+  mision: string;
+  vision: string;
+  color: string;
 }) => {
 	return await post(GROUP_API_URL, groupData);
 };
 
 export const updateGroup = async (
 	id: number,
-	groupData: { name?: string; description?: string },
+	groupData: { name?: string; description?: string; mision?: string; vision?: string; color?: string; },
 ) => {
 	const response = await put(`${GROUP_API_URL}/${id}`, groupData);
 	return response.responseObject; // Asume que el objeto actualizado está en responseObject

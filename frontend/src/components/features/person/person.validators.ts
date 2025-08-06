@@ -44,7 +44,7 @@ export const personSchema = z.object({
 					message: "La fecha de nacimiento debe ser en el pasado",
 				}),
 		),
-	gender: z.string(),
+	gender: z.enum(['MASCULINO', 'FEMENINO'], { required_error: "El género es requerido" }),
 });
-console.log("Person schema loaded");
+
 export type PersonSchema = z.infer<typeof personSchema>;

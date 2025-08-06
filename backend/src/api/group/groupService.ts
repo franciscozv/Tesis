@@ -15,13 +15,6 @@ export class GroupService {
 	async findAll(): Promise<ServiceResponse<Group[] | null>> {
 		try {
 			const groups = await this.groupRepository.findAllAsync();
-			if (!groups) {
-				return ServiceResponse.failure(
-					"An error occurred while retrieving groups.",
-					null,
-					StatusCodes.INTERNAL_SERVER_ERROR,
-				);
-			}
 			return ServiceResponse.success<Group[]>("Groups found", groups);
 		} catch (ex) {
 			const errorMessage = `Error finding all groups: ${(ex as Error).message}`;
@@ -48,21 +41,13 @@ export class GroupService {
 		}
 	}
 
-	async create(data: {
-		name: string;
-		description: string;
-	}): Promise<ServiceResponse<Group | null>> {
+	async create(data: Omit<Group, "id" | "createdAt" | "updatedAt">): Promise<ServiceResponse<Group | null>> {
 		try {
-			const { name, description } = data;
-
-			if (!name) {
+			if (!data.name) {
 				return ServiceResponse.failure("Name is required", null, StatusCodes.BAD_REQUEST);
 			}
 
-			const newGroup = await this.groupRepository.createAsync({
-				name,
-				description,
-			});
+			const newGroup = await this.groupRepository.createAsync(data);
 
 			return ServiceResponse.success<Group>("Group created", newGroup, StatusCodes.CREATED);
 		} catch (ex) {
@@ -78,13 +63,18 @@ export class GroupService {
 
 	async deleteById(id: number): Promise<ServiceResponse<null>> {
 		try {
-			const deleted = await this.groupRepository.deleteByIdAsync(id);
-			if (!deleted) {
-				return ServiceResponse.failure("Group not found", null, StatusCodes.NOT_FOUND);
-			}
+			await this.groupRepository.deleteByIdAsync(id);
 			return ServiceResponse.success("Group deleted successfully", null, StatusCodes.OK);
 		} catch (ex) {
-			logger.error(`Error deleting group with id ${id}: ${(ex as Error).message}`);
+			const errorMessage = `Error deleting group with id ${id}: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+      if ((ex as Error).message.includes("with members")) {
+        return ServiceResponse.failure(
+					"Cannot delete a group with members.",
+					null,
+					StatusCodes.BAD_REQUEST,
+				);
+      }
 			return ServiceResponse.failure(
 				"An error occurred while deleting the group.",
 				null,
@@ -93,7 +83,7 @@ export class GroupService {
 		}
 	}
 
-	async updateById(id: number, data: { name: string; description?: string }): Promise<ServiceResponse<Group | null>> {
+	async updateById(id: number, data: Partial<Omit<Group, "id" | "createdAt" | "updatedAt">>): Promise<ServiceResponse<Group | null>> {
 		try {
 			const updatedGroup = await this.groupRepository.updateByIdAsync(id, data);
 			if (!updatedGroup) {

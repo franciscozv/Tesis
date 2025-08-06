@@ -3,7 +3,11 @@ import { PeopleOnGroups } from './peopleOnGroupsModel';
 
 export class PeopleOnGroupsRepository {
   async addPersonToGroup(data: PeopleOnGroups) {
-    return await prisma.peopleOnGroups.create({ data });
+    return await prisma.peopleOnGroups.upsert({
+      where: { personId_groupId: { personId: data.personId, groupId: data.groupId } },
+      update: { status: 'ACTIVE' }, // Or any other logic for existing members
+      create: data,
+    });
   }
 
   async getPeopleInGroup(groupId: number) {

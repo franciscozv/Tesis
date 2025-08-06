@@ -21,7 +21,23 @@ export type Person = {
 	gender: string;
 };
 
-// Componente para celdas de texto editables
+// Helper function to format dates
+const formatDate = (dateString: string) => {
+	try {
+		const date = new Date(dateString);
+		if (isNaN(date.getTime())) {
+			return "Invalid date";
+		}
+		const day = String(date.getDate()).padStart(2, "0");
+		const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+		const year = date.getFullYear();
+		return `${day}/${month}/${year}`;
+	} catch (error) {
+		return "Invalid date";
+	}
+};
+
+// Component for editable text cells
 const TextCell = ({
 	getValue,
 	row,
@@ -53,10 +69,7 @@ const TextCell = ({
 	);
 };
 
-import { DatePicker } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
-
-// Componente para celdas de fecha editables
+// Component for editable date cells
 const DateCell = ({
 	getValue,
 	row,
@@ -71,44 +84,28 @@ const DateCell = ({
 	const initialValue = getValue();
 	const isEditing = table.options.meta?.editingRowId === row.original.id;
 	const error = table.options.meta?.validationErrors?.[column.id];
-	const yesterday = dayjs().subtract(1, "day");
 
-	const toDisplayDate = (dateString: string) => {
-		if (!dateString) return "N/A";
-		const date = dayjs(dateString);
-		if (!date.isValid()) return "N/A";
-		return date.format("DD/MM/YYYY");
-	};
+	// When not editing, display the formatted date
+	if (!isEditing) {
+		return <span>{formatDate(initialValue)}</span>;
+	}
 
-	return isEditing ? (
+	// When editing, show an input field
+	return (
 		<FormControl error={!!error} style={{ width: "100%" }}>
-			<DatePicker
-				value={initialValue ? dayjs(initialValue) : null}
-				onChange={(newValue) => {
-					table.options.meta?.updateData?.(
-						row.index,
-						column.id,
-						newValue ? newValue.toISOString() : null,
-					);
-				}}
-				maxDate={yesterday}
-				format="DD/MM/YYYY"
-				slotProps={{
-					textField: {
-						variant: "standard",
-						fullWidth: true,
-						error: !!error,
-						helperText: error,
-					},
-				}}
+			<Input
+				defaultValue={initialValue} // Or format it as needed for the input type
+				onChange={(e) =>
+					table.options.meta?.updateData?.(row.index, column.id, e.target.value)
+				}
+				style={{ width: "100%" }}
+				type="date" // Use date type for better UX
 			/>
+			{error && <FormHelperText>{error}</FormHelperText>}
 		</FormControl>
-	) : (
-		<span>{toDisplayDate(initialValue)}</span>
 	);
 };
 
-// Componente para celda de género editable (Select)
 const GenderCell = ({
 	getValue,
 	row,
@@ -122,82 +119,68 @@ const GenderCell = ({
 }) => {
 	const initialValue = getValue();
 	const isEditing = table.options.meta?.editingRowId === row.original.id;
-	const error = table.options.meta?.validationErrors?.[column.id];
 
 	return isEditing ? (
-		<FormControl error={!!error} style={{ width: "100%" }}>
-			<Select
-				defaultValue={initialValue}
-				onChange={(e) =>
-					table.options.meta?.updateData?.(row.index, column.id, e.target.value)
-				}
-				style={{ width: "100%" }}
-			>
-				<MenuItem value="Masculino">Masculino</MenuItem>
-				<MenuItem value="Femenino">Femenino</MenuItem>
-			</Select>
-			{error && <FormHelperText>{error}</FormHelperText>}
-		</FormControl>
+		<Select
+			value={initialValue}
+			onChange={(e) =>
+				table.options.meta?.updateData?.(row.index, column.id, e.target.value)
+			}
+			style={{ width: "100%" }}
+		>
+			<MenuItem value="MASCULINO">Masculino</MenuItem>
+			<MenuItem value="FEMENINO">Femenino</MenuItem>
+		</Select>
 	) : (
 		<span>{initialValue}</span>
 	);
 };
 
-export const getColumns = (
-	onDelete: (id: number, name: string) => void,
-): ColumnDef<Person>[] => [
-	{
-		accessorKey: "firstname",
-		header: "Nombre",
-		cell: TextCell,
-		size: 150,
-	},
-	{
-		accessorKey: "lastname",
-		header: "Apellido",
-		cell: TextCell,
-		size: 150,
-	},
-	{
-		accessorKey: "phone",
-		header: "Teléfono",
-		cell: TextCell,
-		size: 120,
-	},
-	{
-		accessorKey: "address",
-		header: "Dirección",
-		cell: TextCell,
-		size: 250,
-	},
-	{
-		accessorKey: "birthdate",
-		header: "F. Nacimiento",
-		cell: DateCell,
-		size: 150,
-	},
-	{
-		accessorKey: "convertionDate",
-		header: "F. Conversión",
-		cell: DateCell,
-		size: 150,
-	},
-	{
-		accessorKey: "baptismDate",
-		header: "F. Bautismo",
-		cell: DateCell,
-		size: 150,
-	},
-	{
-		accessorKey: "gender",
-		header: "Género",
-		cell: GenderCell,
-		size: 120,
-	},
+export const getColumns = (onDelete: (id: number, name: string) => void): ColumnDef<Person>[] => [
+    {
+        accessorKey: "firstname",
+        header: "Nombre",
+        cell: TextCell,
+    },
+    {
+        accessorKey: "lastname",
+        header: "Apellido",
+        cell: TextCell,
+    },
+    {
+        accessorKey: "address",
+        header: "Dirección",
+        cell: TextCell,
+    },
+    {
+        accessorKey: "phone",
+        header: "Teléfono",
+        cell: TextCell,
+    },
+    {
+        accessorKey: "baptismDate",
+        header: "Fecha de Bautismo",
+        cell: DateCell, // Use the new DateCell
+    },
+    {
+        accessorKey: "convertionDate",
+        header: "Fecha de Conversión",
+        cell: DateCell, // Use the new DateCell
+    },
+    {
+        accessorKey: "birthdate",
+        header: "Fecha de Nacimiento",
+        cell: DateCell, // Use the new DateCell
+    },
+    {
+        accessorKey: "gender",
+        header: "Género",
+        cell: GenderCell,
+    },
 	{
 		id: "actions",
 		header: "Acciones",
-		size: 180, // Asignar un tamaño fijo para los botones
+		size: 180,
 		enableResizing: false,
 		cell: ({ row, table }) => {
 			const isEditing = table.options.meta?.editingRowId === row.original.id;
@@ -232,9 +215,7 @@ export const getColumns = (
 					<Button
 						variant="outlined"
 						color="error"
-						onClick={() =>
-							onDelete(person.id, `${person.firstname} ${person.lastname}`)
-						}
+						onClick={() => onDelete(person.id, `${person.firstname} ${person.lastname}`)}
 					>
 						Eliminar
 					</Button>

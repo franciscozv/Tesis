@@ -11,8 +11,7 @@ export const addPersonToGroup = async (data: {
 };
 
 export const getPeopleInGroup = async (groupId: number) => {
-  const response = await get(`${PEOPLE_ON_GROUPS_API_URL}/${groupId}`);
-  return response.responseObject || [];
+  return await get(`${PEOPLE_ON_GROUPS_API_URL}/${groupId}`);
 };
 
 export const removePersonFromGroup = async (personId: number, groupId: number) => {

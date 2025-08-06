@@ -15,8 +15,7 @@ class GroupController {
 	};
 
 	public createGroup: RequestHandler = async (req: Request, res: Response) => {
-		const { name, description } = req.body;
-		const serviceResponse = await groupService.create({ name, description });
+		const serviceResponse = await groupService.create(req.body);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
@@ -28,11 +27,7 @@ class GroupController {
 
 	public updateGroup: RequestHandler = async (req: Request, res: Response) => {
 		const id = Number.parseInt(req.params.id as string, 10);
-		const { name, description } = req.body;
-		const serviceResponse = await groupService.updateById(id, {
-			name,
-			description,
-		});
+		const serviceResponse = await groupService.updateById(id, req.body);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 }

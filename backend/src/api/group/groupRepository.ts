@@ -3,69 +3,47 @@ import type { Group } from "@/api/group/groupModel";
 import prisma from "@/lib/prisma";
 
 export class GroupRepository {
-	async findAllAsync(): Promise<Group[]> {
-		const groups = await prisma.group.findMany();
-		return groups.map((group) => ({
-			...group,
-			createdAt: group.createdAt, // Prisma ya devuelve Date
-			updatedAt: group.updatedAt,
-		}));
+	async findAllAsync(): Promise<any[]> {
+		return await prisma.group.findMany({
+			include: {
+				_count: {
+					select: { members: true },
+				},
+			},
+		});
 	}
 
 	async findByIdAsync(id: number): Promise<Group | null> {
-		const group = await prisma.group.findUnique({
+		return await prisma.group.findUnique({
 			where: { id },
 		});
-		return group
-			? {
-					...group,
-					createdAt: group.createdAt,
-					updatedAt: group.updatedAt,
-				}
-			: null;
 	}
 
 	async createAsync(data: Omit<Group, "id" | "createdAt" | "updatedAt">): Promise<Group> {
-		const newGroup = await prisma.group.create({
-			data: {
-				name: data.name,
-				description: data.description,
-			},
+		return await prisma.group.create({
+			data: data,
 		});
-		return {
-			...newGroup,
-			createdAt: newGroup.createdAt,
-			updatedAt: newGroup.updatedAt,
-		};
 	}
 
-	async deleteByIdAsync(id: number): Promise<boolean> {
-		try {
-			await prisma.group.delete({
-				where: { id },
-			});
-			return true;
-		} catch (error) {
-			return false;
+	async deleteByIdAsync(id: number): Promise<void> {
+		const group = await prisma.group.findUnique({
+			where: { id },
+			include: { members: true },
+		});
+
+		if (group?.members && group.members.length > 0) {
+			throw new Error("Cannot delete a group with members.");
 		}
+
+		await prisma.group.delete({
+			where: { id },
+		});
 	}
 
-	async updateByIdAsync(id: number, data: { name: string; description?: string }): Promise<Group | null> {
-		try {
-			const updatedGroup = await prisma.group.update({
-				where: { id },
-				data: {
-					name: data.name,
-					description: data.description,
-				},
-			});
-			return {
-				...updatedGroup,
-				createdAt: updatedGroup.createdAt,
-				updatedAt: updatedGroup.updatedAt,
-			};
-		} catch (error) {
-			return null;
-		}
+	async updateByIdAsync(id: number, data: Partial<Omit<Group, "id" | "createdAt" | "updatedAt">>): Promise<Group | null> {
+		return await prisma.group.update({
+			where: { id },
+			data: data,
+		});
 	}
 }

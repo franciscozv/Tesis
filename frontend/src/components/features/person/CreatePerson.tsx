@@ -169,8 +169,8 @@ const CreatePerson: React.FC<Props> = ({ onPersonCreated }) => {
 									<MenuItem value="">
 										<em>Seleccionar género</em>
 									</MenuItem>
-									<MenuItem value="Masculino">Masculino</MenuItem>
-									<MenuItem value="Femenino">Femenino</MenuItem>
+									<MenuItem value="MASCULINO">Masculino</MenuItem>
+									<MenuItem value="FEMENINO">Femenino</MenuItem>
 								</Select>
 								{errors.gender && (
 									<FormHelperText>{errors.gender[0]}</FormHelperText>

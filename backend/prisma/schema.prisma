@@ -21,29 +21,29 @@ model User {
 }
 
 model People {
-  id          Int       @id @default(autoincrement())
-  firstname        String
-  lastname         String
-  address         String
-  phone         String
-  baptismDate  DateTime
+  id             Int              @id @default(autoincrement())
+  firstname      String
+  lastname       String
+  address        String
+  phone          String
+  baptismDate    DateTime
   convertionDate DateTime
-  birthdate        DateTime
-  gender        String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  groups      PeopleOnGroups[]
+  birthdate      DateTime
+  gender         String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  groups         PeopleOnGroups[]
 }
 
 model Group {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
   mision      String?
   vision      String?
   color       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   members     PeopleOnGroups[]
 }
 

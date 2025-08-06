@@ -1,173 +1,146 @@
-"use client";
-import { useEffect, useState } from "react";
-import CreateGroupForm from "../../components/features/group/CreateGroupForm";
+'use client';
 
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { groupSchema } from "~/components/features/group/group.validators";
-import ConfirmationDialog from "~/components/ui/ConfirmationDialog";
-import { DataTable } from "~/components/ui/DataTable";
-import { deleteGroup, getGroups, updateGroup } from "~/services/groupService";
-import { type Group, getColumns } from "./columns";
+import { useEffect, useState } from 'react';
+import { getGroups, createGroup, deleteGroup } from '~/services/groupService';
+import { List, ListItem, ListItemText, Typography, Container, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, ListItemButton, Snackbar, Alert } from '@mui/material';
+import Link from 'next/link';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ConfirmationDialog from '~/components/ui/ConfirmationDialog';
 
-const Page = () => {
-	const [groups, setGroups] = useState<Group[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-	const [groupToDelete, setGroupToDelete] = useState<{
-		id: number;
-		name: string;
-	} | null>(null);
-	const [editingRowId, setEditingRowId] = useState<number | null>(null);
-	const [originalData, setOriginalData] = useState<Group[]>([]);
-	const [validationErrors, setValidationErrors] = useState<
-		Record<string, string>
-	>({});
+const colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
 
-	const fetchData = async () => {
-		try {
-			const data = await getGroups();
-			setGroups(data || []);
-			setOriginalData(data || []);
-		} catch (error) {
-			console.error("Error al obtener grupos:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+export default function GroupsPage() {
+  const [groups, setGroups] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [newGroup, setNewGroup] = useState({ name: '', description: '', mision: '', vision: '', color: colors[0] });
+  const [errors, setErrors] = useState({ name: false, description: false });
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' | 'info' });
 
-	const handleUpdateData = (rowIndex: number, columnId: string, value: any) => {
-		setGroups((old) =>
-			old.map((row, index) => {
-				if (index === rowIndex) {
-					return {
-						...row,
-						[columnId]: value,
-					};
-				}
-				return row;
-			}),
-		);
-	};
+  const fetchGroups = async () => {
+    const groupsData = await getGroups();
+    setGroups(groupsData);
+  };
 
-	const handleSaveRow = async (id: number) => {
-		const rowToSave = groups.find((row) => row.id === id);
-		if (!rowToSave) return;
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
-		const validationResult = groupSchema.safeParse(rowToSave);
+  const showNotification = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setNotification({ open: true, message, severity });
+  };
 
-		if (!validationResult.success) {
-			const newErrors: Record<string, string> = {};
-			for (const [key, value] of Object.entries(
-				validationResult.error.flatten().fieldErrors,
-			)) {
-				if (value) newErrors[key] = value.join(", ");
-			}
-			setValidationErrors(newErrors);
-			return;
-		}
+  const handleCloseNotification = () => {
+    setNotification(prev => ({ ...prev, open: false }));
+  };
 
-		setValidationErrors({});
+  const validate = () => {
+    const newErrors = { name: newGroup.name === '', description: newGroup.description === '' };
+    setErrors(newErrors);
+    return !newErrors.name && !newErrors.description;
+  };
 
-		try {
-			const updatedGroup = await updateGroup(id, validationResult.data);
-			setGroups((old) =>
-				old.map((row) => (row.id === id ? updatedGroup : row)),
-			);
-			setEditingRowId(null);
-		} catch (error) {
-			console.error("Error al guardar el grupo:", error);
-			// Optionally set an error message for the user
-		}
-	};
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => {
+    setOpen(false);
+    setNewGroup({ name: '', description: '', mision: '', vision: '', color: colors[0] });
+    setErrors({ name: false, description: false });
+  };
 
-	const handleCancelEdit = () => {
-		setEditingRowId(null);
-		setGroups(originalData); // Revert to original data
-		setValidationErrors({});
-	};
+  const handleCreateGroup = async () => {
+    if (validate()) {
+      await createGroup(newGroup);
+      fetchGroups();
+      showNotification('Grupo creado exitosamente', 'success');
+      handleClose();
+    }
+  };
 
-	const handleDelete = (id: number, name: string) => {
-		setGroupToDelete({ id, name });
-		setOpenConfirmDialog(true);
-	};
+  const handleDeleteClick = (id: number, name: string) => {
+    setGroupToDelete({ id, name });
+    setOpenConfirmDialog(true);
+  };
 
-	const handleConfirmDelete = async () => {
-		if (groupToDelete) {
-			try {
-				const data = await deleteGroup(groupToDelete.id);
+  const handleConfirmDelete = async () => {
+    if (groupToDelete) {
+      const res = await deleteGroup(groupToDelete.id);
+      if (res.success) {
+        showNotification(res.message, 'success');
+        fetchGroups();
+      } else {
+        showNotification(res.message, 'error');
+      }
+      setOpenConfirmDialog(false);
+      setGroupToDelete(null);
+    }
+  };
 
-				if (data) {
-					fetchData();
-				} else {
-					alert(`Error al eliminar grupo: ${data.message}`);
-				}
-			} catch (error) {
-				console.error("Error al eliminar:", error);
-			} finally {
-				setOpenConfirmDialog(false);
-				setGroupToDelete(null);
-			}
-		}
-	};
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewGroup(prev => ({ ...prev, [name]: value }));
+  };
 
-	const handleCancelDelete = () => {
-		setOpenConfirmDialog(false);
-		setGroupToDelete(null);
-	};
+  return (
+    <Container>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <Typography variant="h4" gutterBottom>Grupos</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpen}>Crear Grupo</Button>
+      </div>
+      <List>
+        {groups.map((group) => (
+          <ListItem
+            key={group.id}
+            disablePadding
+            secondaryAction={
+              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(group.id, group.name)} disabled={group._count.members > 0}>
+                <DeleteIcon />
+              </IconButton>}
+          >
+            <ListItemButton component={Link} href={`/group/${group.id}`}>
+                <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: group.color, mr: 2, flexShrink: 0 }} />
+                <ListItemText primary={group.name} secondary={group.description} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
 
-	useEffect(() => {
-		fetchData();
-	}, []);
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Crear Nuevo Grupo</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus required error={errors.name} helperText={errors.name ? 'El nombre es requerido' : ''} margin="dense" label="Nombre del Grupo" type="text" fullWidth variant="standard" name="name" value={newGroup.name} onChange={handleInputChange} />
+          <TextField required error={errors.description} helperText={errors.description ? 'La descripción es requerida' : ''} margin="dense" label="Descripción del Grupo" type="text" fullWidth variant="standard" name="description" value={newGroup.description} onChange={handleInputChange} />
+          <TextField margin="dense" label="Misión" type="text" fullWidth variant="standard" name="mision" value={newGroup.mision} onChange={handleInputChange} />
+          <TextField margin="dense" label="Visión" type="text" fullWidth variant="standard" name="vision" value={newGroup.vision} onChange={handleInputChange} />
+          <Typography sx={{ mt: 2 }}>Color</Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+            {colors.map(color => (
+              <Box key={color} onClick={() => setNewGroup(prev => ({ ...prev, color }))} sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: color, cursor: 'pointer', border: newGroup.color === color ? '2px solid #1976d2' : '2px solid transparent' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleCreateGroup} disabled={!newGroup.name || !newGroup.description}>Crear</Button>
+        </DialogActions>
+      </Dialog>
 
-	const columns = getColumns(handleDelete);
+      {groupToDelete && (
+        <ConfirmationDialog
+          open={openConfirmDialog}
+          onClose={() => setOpenConfirmDialog(false)}
+          onConfirm={handleConfirmDelete}
+          title="Confirmar Eliminación"
+          description={`¿Estás seguro de que deseas eliminar el grupo "${groupToDelete.name}"? Esta acción no se puede deshacer.`}
+        />
+      )}
 
-	return (
-		<Box sx={{ p: 3 }}>
-			<Typography variant="h4" component="h1" gutterBottom>
-				Gestión de Grupos
-			</Typography>
-
-			<Box sx={{ my: 4 }}>
-				<CreateGroupForm onGroupCreated={fetchData} />
-			</Box>
-
-			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-					<CircularProgress />
-					<Typography variant="body1" sx={{ ml: 2 }}>
-						Cargando grupos...
-					</Typography>
-				</Box>
-			) : groups.length === 0 ? (
-				<Typography variant="body1" sx={{ my: 4 }}>
-					No se encontraron grupos.
-				</Typography>
-			) : (
-				<DataTable
-					columns={columns}
-					data={groups}
-					meta={{
-						editingRowId,
-						setEditingRowId,
-						updateData: handleUpdateData,
-						saveRow: handleSaveRow,
-						cancelEdit: handleCancelEdit,
-						validationErrors,
-					}}
-				/>
-			)}
-
-			{groupToDelete && (
-				<ConfirmationDialog
-					open={openConfirmDialog}
-					onClose={handleCancelDelete}
-					onConfirm={handleConfirmDelete}
-					title="Confirmar Eliminación"
-					description={`¿Estás seguro de que deseas eliminar el grupo "${groupToDelete.name}"? Esta acción no se puede deshacer.`}
-				/>
-			)}
-		</Box>
-	);
-};
-
-export default Page;
+      <Snackbar open={notification.open} autoHideDuration={6000} onClose={handleCloseNotification} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }}>
+          {notification.message}
+        </Alert>
+      </Snackbar>
+    </Container>
+  );
+}
