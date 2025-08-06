@@ -8,6 +8,11 @@ export const getGroups = async () => {
 	return response.responseObject || [];
 };
 
+export const getGroup = async (id: number) => {
+	const response = await get(`${GROUP_API_URL}/${id}`);
+	return response.responseObject;
+};
+
 export const createGroup = async (groupData: {
 	name: string;
 	description: string;
