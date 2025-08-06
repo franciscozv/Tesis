@@ -29,3 +29,5 @@ export const UpdatePeopleSchema = z.object({
 });
 
 export type People = z.infer<typeof PeopleSchema>;
+export type CreatePeopleInput = z.infer<typeof CreatePeopleSchema>['body'];
+export type UpdatePeopleInput = z.infer<typeof UpdatePeopleSchema>['body'];

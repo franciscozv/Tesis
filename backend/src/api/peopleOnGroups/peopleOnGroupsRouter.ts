@@ -3,7 +3,7 @@ import { PeopleOnGroupsController } from './peopleOnGroupsController';
 import { PeopleOnGroupsService } from './peopleOnGroupsService';
 import { PeopleOnGroupsRepository } from './peopleOnGroupsRepository';
 
-const router = Router();
+const router: Router = Router();
 const repository = new PeopleOnGroupsRepository();
 const service = new PeopleOnGroupsService(repository);
 const controller = new PeopleOnGroupsController(service);

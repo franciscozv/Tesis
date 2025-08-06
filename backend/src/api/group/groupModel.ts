@@ -9,7 +9,10 @@ export type Group = z.infer<typeof GroupSchema>;
 export const GroupSchema = z.object({
 	id: z.number(),
 	name: z.string(),
-	description: z.string(),
+	description: z.string().nullable(),
+	mision: z.string().optional().nullable(),
+	vision: z.string().optional().nullable(),
+	color: z.string().optional().nullable(),
 	createdAt: z.date().or(z.string().datetime()),
 	updatedAt: z.date().or(z.string().datetime()),
 });
