@@ -5,12 +5,7 @@ import { z } from "zod";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetGroupSchema, GroupSchema, UpdateGroupSchema, CreateGroupSchema } from "@/api/group/groupModel";
 import { groupController } from "./groupController";
-import {
-  AddPersonToGroupSchema,
-  PeopleOnGroupsSchema,
-  RemovePersonFromGroupSchema,
-  UpdatePersonInGroupSchema,
-} from "@/api/peopleOnGroups/peopleOnGroupsModel";
+import { GetPeopleInGroupSchema, AddPersonToGroupSchema, PeopleOnGroupsSchema, RemovePersonFromGroupSchema, UpdatePersonInGroupSchema } from "@/api/peopleOnGroups/peopleOnGroupsModel";
 import { peopleOnGroupsController } from "@/api/peopleOnGroups/peopleOnGroupsController";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import {
@@ -19,6 +14,7 @@ import {
   RemoveRoleFromGroupSchema,
 } from "@/api/groupRoleAssignment/groupRoleAssignmentModel";
 import { groupRoleAssignmentController } from "@/api/groupRoleAssignment/groupRoleAssignmentController";
+import { GetRolesForGroupSchema } from "@/api/groupRoleAssignment/groupRoleAssignmentModel";
 
 export const groupRegistry = new OpenAPIRegistry();
 export const groupRouter: Router = express.Router();
@@ -125,12 +121,12 @@ groupRegistry.registerPath({
   method: "get",
   path: "/groups/{groupId}/people",
   tags: ["Group"],
-  request: { params: AddPersonToGroupSchema.shape.params },
+  request: { params: GetPeopleInGroupSchema.shape.params },
   responses: createApiResponse(z.array(PeopleOnGroupsSchema), "Success"),
 });
 groupRouter.get(
   "/:groupId/people",
-  validateRequest(AddPersonToGroupSchema),
+  validateRequest(GetPeopleInGroupSchema),
   peopleOnGroupsController.getPeopleInGroup,
 );
 
@@ -204,12 +200,12 @@ groupRegistry.registerPath({
   method: "get",
   path: "/groups/{groupId}/roles",
   tags: ["Group"],
-  request: { params: AssignRoleToGroupSchema.shape.params },
+  request: { params: GetRolesForGroupSchema.shape.params },
   responses: createApiResponse(z.array(GroupRoleAssignmentSchema), "Success"),
 });
 groupRouter.get(
   "/:groupId/roles",
-  validateRequest(AssignRoleToGroupSchema),
+  validateRequest(GetRolesForGroupSchema),
   groupRoleAssignmentController.getRolesForGroup,
 );
 

@@ -13,6 +13,7 @@ export class PeopleRoleService {
 
   async findAll(): Promise<ServiceResponse<PeopleRole[] | null>> {
     try {
+      logger.info("Attempting to find all people roles");
       const peopleRoles = await this.peopleRoleRepository.findAllAsync();
       return ServiceResponse.success<PeopleRole[]>("People roles found", peopleRoles);
     } catch (ex) {

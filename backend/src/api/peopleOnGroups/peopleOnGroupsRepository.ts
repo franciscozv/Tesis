@@ -6,7 +6,7 @@ export class PeopleOnGroupsRepository {
     return await prisma.peopleOnGroups.upsert({
       where: { personId_groupId: { personId: data.personId, groupId: data.groupId } },
       update: { status: "ACTIVE", personRoleId: data.personRoleId },
-      create: data,
+      create: { ...data, status: "ACTIVE", personRoleId: data.personRoleId },
     });
   }
 

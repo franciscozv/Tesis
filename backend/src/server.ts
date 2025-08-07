@@ -40,11 +40,11 @@ app.use("/users", userRouter);
 app.use("/groups", groupRouter);
 app.use("/events", eventRouter);
 app.use("/responsibilities", responsibilityRouter);
+app.use("/people-roles", peopleRoleRouter);
 app.use("/people", peopleRouter);
 app.use("/event-type", eventTypeRouter);
-
 app.use("/places", placeRouter);
-app.use("/people-roles", peopleRoleRouter);
+
 // Swagger UI
 app.use(openAPIRouter);
 

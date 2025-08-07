@@ -22,6 +22,10 @@ export const AssignRoleToGroupSchema = z.object({
   }),
 });
 
+export const GetRolesForGroupSchema = z.object({
+  params: z.object({ groupId: commonValidations.id }),
+});
+
 // Schema for removing a role from a group
 export const RemoveRoleFromGroupSchema = z.object({
   params: z.object({

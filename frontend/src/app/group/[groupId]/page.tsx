@@ -41,6 +41,10 @@ import EventIcon from '@mui/icons-material/Event';
 
 const colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
 
+
+import { getRolesForGroup, assignRoleToGroup, removeRoleFromGroup } from "~/services/groupRoleAssignmentService";
+import { getPeopleRoles } from "~/services/peopleRoleService";
+
 function MemberRow(props: { row: any; onRemove: (id: number) => void }) {
   const { row } = props;
   const [open, setOpen] = useState(false);
@@ -58,6 +62,7 @@ function MemberRow(props: { row: any; onRemove: (id: number) => void }) {
         <TableCell component="th" scope="row">
           {`${row.person.firstname} ${row.person.lastname}`}
         </TableCell>
+        <TableCell>{row.personRole?.name || 'Sin rol'}</TableCell>
         <TableCell>{row.status}</TableCell>
         <TableCell align="right">
           <IconButton onClick={() => props.onRemove(row.person.id)}>
@@ -94,9 +99,13 @@ export default function GroupDetailsPage() {
   const [group, setGroup] = useState<any>(null);
   const [peopleInGroup, setPeopleInGroup] = useState<any[]>([]);
   const [allPeople, setAllPeople] = useState<any[]>([]);
+  const [groupRoles, setGroupRoles] = useState<any[]>([]);
+  const [allRoles, setAllRoles] = useState<any[]>([]);
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openAddRole, setOpenAddRole] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState<any>(null);
   const [editedGroup, setEditedGroup] = useState<any>(null);
   const [errors, setErrors] = useState({ name: false, description: false });
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -118,6 +127,10 @@ export default function GroupDetailsPage() {
     setPeopleInGroup(peopleInGroupData);
     const allPeopleData = await getPeople();
     setAllPeople(allPeopleData);
+    const groupRolesData = await getRolesForGroup(groupId);
+    setGroupRoles(groupRolesData);
+    const allRolesData = await getPeopleRoles();
+    setAllRoles(allRolesData);
   }, [groupId]);
 
   useEffect(() => {
@@ -147,9 +160,15 @@ export default function GroupDetailsPage() {
     setTimeout(() => headingRef.current?.focus(), 0);
   };
 
+  const handleOpenAddRole = () => setOpenAddRole(true);
+  const handleCloseAddRole = () => {
+    setOpenAddRole(false);
+    setSelectedRole(null);
+  };
+
   const handleAddPerson = async () => {
-    if (selectedPerson) {
-      await addPersonToGroup({ personId: selectedPerson.id, groupId });
+    if (selectedPerson && selectedRole) {
+      await addPersonToGroup({ personId: selectedPerson.id, groupId, personRoleId: selectedRole.id });
       showNotification('Miembro añadido exitosamente', 'success');
       fetchGroupData();
       handleCloseAdd();
@@ -159,6 +178,21 @@ export default function GroupDetailsPage() {
   const handleRemovePerson = async (personId: number) => {
     await removePersonFromGroup(personId, groupId);
     showNotification('Miembro eliminado exitosamente', 'success');
+    fetchGroupData();
+  };
+
+  const handleAddRole = async () => {
+    if (selectedRole) {
+      await assignRoleToGroup(groupId, selectedRole.id);
+      showNotification('Rol asignado exitosamente', 'success');
+      fetchGroupData();
+      handleCloseAddRole();
+    }
+  };
+
+  const handleRemoveRole = async (roleId: number) => {
+    await removeRoleFromGroup(groupId, roleId);
+    showNotification('Rol eliminado exitosamente', 'success');
     fetchGroupData();
   };
 
@@ -195,7 +229,8 @@ export default function GroupDetailsPage() {
       <Typography variant="h6">Visión</Typography>
       <Typography paragraph>{group.vision || 'No definida'}</Typography>
       
-      <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd} sx={{ my: 2 }}>
+      <Typography variant="h5" sx={{mt: 4, mb: 2}}>Miembros</Typography>
+      <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd} sx={{ mb: 2 }}>
         Añadir Miembro
       </Button>
 
@@ -205,6 +240,7 @@ export default function GroupDetailsPage() {
             <TableRow>
               <TableCell />
               <TableCell>Nombre</TableCell>
+              <TableCell>Rol</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell align="right">Acciones</TableCell>
             </TableRow>
@@ -212,6 +248,36 @@ export default function GroupDetailsPage() {
           <TableBody>
             {peopleInGroup.map((p) => (
               <MemberRow key={p.person.id} row={p} onRemove={handleRemovePerson} />
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Typography variant="h5" sx={{mt: 4, mb: 2}}>Roles del Grupo</Typography>
+      <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAddRole} sx={{ mb: 2 }}>
+        Añadir Rol
+      </Button>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Descripción</TableCell>
+              <TableCell align="right">Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {groupRoles.map((assignment) => (
+              <TableRow key={assignment.role.id}>
+                <TableCell>{assignment.role.name}</TableCell>
+                <TableCell>{assignment.role.description}</TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => handleRemoveRole(assignment.role.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -230,10 +296,39 @@ export default function GroupDetailsPage() {
             }}
             renderInput={(params) => <TextField {...params} label="Persona" margin="dense" />}
           />
+          <Autocomplete
+            options={groupRoles.map(gr => gr.role)}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            onChange={(event, newValue) => {
+              setSelectedRole(newValue);
+            }}
+            renderInput={(params) => <TextField {...params} label="Rol" margin="dense" />}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAdd}>Cancelar</Button>
-          <Button onClick={handleAddPerson}>Añadir</Button>
+          <Button onClick={handleAddPerson} disabled={!selectedPerson || !selectedRole}>Añadir</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Role Dialog */}
+      <Dialog open={openAddRole} onClose={handleCloseAddRole}>
+        <DialogTitle>Añadir Rol al Grupo</DialogTitle>
+        <DialogContent>
+          <Autocomplete
+            options={allRoles.filter(r => !groupRoles.some(gr => gr.role.id === r.id))}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            onChange={(event, newValue) => {
+              setSelectedRole(newValue);
+            }}
+            renderInput={(params) => <TextField {...params} label="Rol" margin="dense" />}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddRole}>Cancelar</Button>
+          <Button onClick={handleAddRole}>Añadir</Button>
         </DialogActions>
       </Dialog>
 

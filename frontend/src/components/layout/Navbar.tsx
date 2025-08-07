@@ -71,6 +71,9 @@ const Navbar = () => {
 							<MenuItem component={Link} href="/group" onClick={handleClose}>
 								Grupos
 							</MenuItem>
+							<MenuItem component={Link} href="/people-roles" onClick={handleClose}>
+								Roles de Personas
+							</MenuItem>
 							<MenuItem component={Link} href="/events" onClick={handleClose}>
 								Eventos
 							</MenuItem>

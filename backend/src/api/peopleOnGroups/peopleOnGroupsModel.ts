@@ -14,6 +14,10 @@ export const PeopleOnGroupsSchema = z.object({
   status: z.string(),
 });
 
+export const GetPeopleInGroupSchema = z.object({
+  params: z.object({ groupId: commonValidations.id }),
+});
+
 // Input Validation for 'POST /groups/:groupId/people' endpoint
 export const AddPersonToGroupSchema = z.object({
   params: z.object({ groupId: commonValidations.id }),
