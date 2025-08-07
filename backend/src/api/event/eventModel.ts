@@ -38,7 +38,7 @@ export const CreateEventSchema = z
 			.regex(/^[a-zA-Z\s]+$/, "Description can only contain letters and spaces"),
 		startDateTime: z.coerce.date().refine((date) => date >= startOfToday, { message: "La fecha de inicio no puede ser en el pasado" }),
 		endDateTime: z.coerce.date(),
-				placeId: z.number().int(),
+		placeId: z.number().int(),
 		eventTypeId: z.number().int(),
 	})
 	.refine((data) => data.endDateTime > data.startDateTime, {
@@ -77,7 +77,7 @@ export const UpdateEventSchema = z
 				{ message: "La fecha de inicio no puede ser en el pasado" },
 			),
 		endDateTime: z.coerce.date().optional(),
-				placeId: z.number().int().optional(),
+		placeId: z.number().int().optional(),
 		state: StateEnum.optional(),
 		eventTypeId: z.number().int().optional(),
 	})
