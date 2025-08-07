@@ -12,7 +12,7 @@ export const EventSchema = z.object({
 	description: z.string(),
 	startDateTime: z.coerce.date(),
 	endDateTime: z.coerce.date(),
-	location: z.string(),
+	placeId: z.number().int(),
 	state: StateEnum,
 	reviewComment: z.string().nullable(),
 	eventTypeId: z.number().int(),
@@ -38,10 +38,7 @@ export const CreateEventSchema = z
 			.regex(/^[a-zA-Z\s]+$/, "Description can only contain letters and spaces"),
 		startDateTime: z.coerce.date().refine((date) => date >= startOfToday, { message: "La fecha de inicio no puede ser en el pasado" }),
 		endDateTime: z.coerce.date(),
-		location: z
-			.string()
-			.min(3, "Location must be at least 3 characters long")
-			.max(100, "Location must be at most 100 characters long"),
+				placeId: z.number().int(),
 		eventTypeId: z.number().int(),
 	})
 	.refine((data) => data.endDateTime > data.startDateTime, {
@@ -80,11 +77,7 @@ export const UpdateEventSchema = z
 				{ message: "La fecha de inicio no puede ser en el pasado" },
 			),
 		endDateTime: z.coerce.date().optional(),
-		location: z
-			.string()
-			.min(3, "Location must be at least 3 characters long")
-			.max(100, "Location must be at most 100 characters long")
-			.optional(),
+				placeId: z.number().int().optional(),
 		state: StateEnum.optional(),
 		eventTypeId: z.number().int().optional(),
 	})

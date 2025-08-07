@@ -35,6 +35,16 @@ model People {
   groups         PeopleOnGroups[]
 }
 
+model PeopleRole {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  peopleOnGroups PeopleOnGroups[]
+  groupRoles  GroupRoleAssignment[]
+}
+
 model Group {
   id          Int              @id @default(autoincrement())
   name        String           @unique
@@ -45,6 +55,7 @@ model Group {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   members     PeopleOnGroups[]
+  groupRoles  GroupRoleAssignment[]
 }
 
 model PeopleOnGroups {
@@ -52,12 +63,23 @@ model PeopleOnGroups {
   person    People   @relation(fields: [personId], references: [id])
   groupId   Int
   group     Group    @relation(fields: [groupId], references: [id])
+  personRoleId Int
+  personRole PeopleRole @relation(fields: [personRoleId], references: [id])
   assignedAt DateTime @default(now())
   status    String   @default("ACTIVE")
 
   @@id([personId, groupId])
 }
 
+model GroupRoleAssignment {
+  id          Int      @id @default(autoincrement())
+  groupId    Int
+  group      Group    @relation(fields: [groupId], references: [id])
+  roleId     Int
+  role       PeopleRole @relation(fields: [roleId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 
 
 model Event {
@@ -66,13 +88,28 @@ model Event {
   description String
   startDateTime    DateTime
   endDateTime      DateTime
-  location    String
   state      State   @default(PENDING)
-  reviewComment String? 
-  eventTypeId Int                     
+  reviewComment String?
+  eventTypeId Int
   eventType   EventType @relation(fields: [eventTypeId], references: [id])
+  placeId     Int
+  place       Place     @relation(fields: [placeId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Place {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  address     String
+  phones      String
+  email       String
+  photoUrl    String
+  rooms      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
 }
 
 enum State {

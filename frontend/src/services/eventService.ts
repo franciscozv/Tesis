@@ -9,7 +9,7 @@ export type Event = {
 	description: string;
 	startDateTime: string;
 	endDateTime: string;
-	location: string;
+	placeId: number;
 	state: string;
 	reviewComment?: string;
 	eventTypeId: number;
@@ -18,6 +18,11 @@ export type Event = {
 		name: string;
 		description: string;
 		color: string;
+	};
+	place?: {
+		id: number;
+		name: string;
+		description: string;
 	};
 };
 

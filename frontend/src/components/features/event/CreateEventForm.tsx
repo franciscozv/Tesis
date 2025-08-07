@@ -22,15 +22,20 @@ import {
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs, { type Dayjs } from "dayjs";
 import { type Event, createEvent, updateEvent } from "~/services/eventService";
-// If the correct type is exported as 'EventTypeDto', for example, use:
 import { getEventTypes } from "~/services/eventTypeService";
+import { getPlaces } from "~/services/placeService"; // Import place service
 
-// Define the EventType type locally if needed:
 type EventType = {
 	id: number;
 	name: string;
 	color: string;
 };
+
+type Place = {
+	id: number;
+	name: string;
+};
+
 import { CreateEventFormSchema } from "./event.validators";
 
 type Props = {
@@ -47,8 +52,8 @@ const CreateEventForm: React.FC<Props> = ({
 	const [formData, setFormData] = useState({
 		title: "",
 		description: "",
-		location: "",
-		eventTypeId: "", // Initialize with empty string for select
+		placeId: "", // Changed from location to placeId
+		eventTypeId: "",
 	});
 
 	const [dateStart, setDateStart] = useState<Dayjs | null>(null);
@@ -60,17 +65,20 @@ const CreateEventForm: React.FC<Props> = ({
 		{},
 	);
 	const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+	const [places, setPlaces] = useState<Place[]>([]); // State for places
 
 	useEffect(() => {
-		const fetchEventTypes = async () => {
+		const fetchInitialData = async () => {
 			try {
-				const data = await getEventTypes();
-				setEventTypes(data);
+				const eventTypesData = await getEventTypes();
+				setEventTypes(eventTypesData);
+				const placesData = await getPlaces();
+				setPlaces(placesData);
 			} catch (error) {
-				console.error("Error fetching event types:", error);
+				console.error("Error fetching initial data:", error);
 			}
 		};
-		fetchEventTypes();
+		fetchInitialData();
 	}, []);
 
 	useEffect(() => {
@@ -79,10 +87,10 @@ const CreateEventForm: React.FC<Props> = ({
 			setFormData({
 				title: currentEvent.title,
 				description: currentEvent.description,
-				location: currentEvent.location,
+				placeId: currentEvent.placeId ? String(currentEvent.placeId) : "",
 				eventTypeId: currentEvent.eventTypeId
 					? String(currentEvent.eventTypeId)
-					: "", // Ensure it's a string or empty
+					: "",
 			});
 			setDateStart(dayjs(currentEvent.startDateTime));
 			setTimeStart(dayjs(currentEvent.startDateTime));
@@ -92,7 +100,7 @@ const CreateEventForm: React.FC<Props> = ({
 			setFormData({
 				title: "",
 				description: "",
-				location: "",
+				placeId: "",
 				eventTypeId: "",
 			});
 			setDateStart(null);
@@ -145,6 +153,7 @@ const CreateEventForm: React.FC<Props> = ({
 			startDateTime,
 			endDateTime,
 			eventTypeId: Number(formData.eventTypeId),
+			placeId: Number(formData.placeId), // Add placeId
 		};
 
 		const result = CreateEventFormSchema.safeParse(dataToSend);
@@ -171,7 +180,7 @@ const CreateEventForm: React.FC<Props> = ({
 			setFormData({
 				title: "",
 				description: "",
-				location: "",
+				placeId: "",
 				eventTypeId: "",
 			});
 			setDateStart(null);
@@ -300,18 +309,31 @@ const CreateEventForm: React.FC<Props> = ({
 							/>
 						</Grid>
 
-						<Grid item xs={12} component="div">
-							<TextField
-								label="Ubicación"
-								name="location"
-								fullWidth
-								value={formData.location}
-								onChange={(e) =>
-									setFormData({ ...formData, location: e.target.value })
-								}
-								error={!!errors.location}
-								helperText={errors.location ? errors.location[0] : ""}
-							/>
+						<Grid item xs={12}>
+							<FormControl fullWidth error={!!errors.placeId}>
+								<InputLabel id="place-select-label">Lugar</InputLabel>
+								<Select
+									labelId="place-select-label"
+									id="place-select"
+									value={formData.placeId}
+									label="Lugar"
+									onChange={(e) =>
+										setFormData({
+											...formData,
+											placeId: e.target.value as string,
+										})
+									}
+								>
+									{places.map((place) => (
+										<MenuItem key={place.id} value={place.id}>
+											{place.name}
+										</MenuItem>
+									))}
+								</Select>
+								{errors.placeId && (
+									<FormHelperText>{errors.placeId[0]}</FormHelperText>
+								)}
+							</FormControl>
 						</Grid>
 
 						<Grid item xs={12}>

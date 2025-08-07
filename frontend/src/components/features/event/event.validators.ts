@@ -18,10 +18,7 @@ export const CreateEventFormSchema = z
 			message: "La fecha de inicio debe ser en el futuro",
 		}),
 		endDateTime: z.coerce.date(),
-		location: z
-			.string()
-			.min(3, "La ubicación debe tener al menos 3 caracteres")
-			.max(100, "La ubicación debe tener como máximo 100 caracteres"),
+		placeId: z.number().min(1, "Debes seleccionar un lugar"),
 		eventTypeId: z.number().min(1, "Debes seleccionar un tipo de evento"),
 	})
 	.refine((data) => data.endDateTime > data.startDateTime, {
@@ -55,11 +52,7 @@ export const UpdateEventFormSchema = z
 				{ message: "La fecha de inicio debe ser en el futuro" },
 			),
 		endDateTime: z.coerce.date().optional(),
-		location: z
-			.string()
-			.min(3, "La ubicación debe tener al menos 3 caracteres")
-			.max(100, "La ubicación debe tener como máximo 100 caracteres")
-			.optional(),
+		placeId: z.number().min(1, "Debes seleccionar un lugar").optional(),
 		eventTypeId: z
 			.number()
 			.min(1, "Debes seleccionar un tipo de evento")

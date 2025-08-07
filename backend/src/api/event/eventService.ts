@@ -53,14 +53,14 @@ export class EventService {
 	}
 	async create(data: z.infer<typeof CreateEventSchema>): Promise<ServiceResponse<Event | null>> {
 		try {
-			const { title, description, startDateTime, endDateTime, location, eventTypeId } = data;
+			const { title, description, startDateTime, endDateTime, placeId, eventTypeId } = data;
 
 			const newEvent = await this.eventRepository.createAsync({
 				title,
 				description,
 				startDateTime,
 				endDateTime,
-				location,
+				place: { connect: { id: placeId } },
 				eventType: { connect: { id: eventTypeId } },
 			});
 
@@ -78,19 +78,17 @@ export class EventService {
 
 	async update(id: number, data: UpdateEventInput): Promise<ServiceResponse<Event | null>> {
 		try {
-			const { title, description, location, startDateTime, endDateTime, eventTypeId } = data;
+			const { title, description, placeId, startDateTime, endDateTime, eventTypeId } = data;
 
 			const updateData: any = {
 				title,
 				description,
-				location,
 				startDateTime,
 				endDateTime,
 			};
 
-			// Solo incluir eventType si eventTypeId está presente
-			if (eventTypeId) {
-				updateData.eventType = { connect: { id: eventTypeId } };
+			if (placeId) {
+				updateData.place = { connect: { id: placeId } };
 			}
 
 			const updatedEvent = await this.eventRepository.updateAsync(id, updateData);

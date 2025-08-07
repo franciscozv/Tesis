@@ -84,6 +84,9 @@ const Navbar = () => {
 							>
 								Tipos de Evento
 							</MenuItem>
+							<MenuItem component={Link} href="/place" onClick={handleClose}>
+								Lugares
+							</MenuItem>
 							<MenuItem
 								component={Link}
 								href="/responsibility"

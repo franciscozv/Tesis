@@ -7,6 +7,7 @@ export class EventRepository {
 		const events = await prisma.event.findMany({
 			include: {
 				eventType: true,
+				place: true,
 			},
 		});
 		return events;
@@ -16,6 +17,7 @@ export class EventRepository {
 			where: { id },
 			include: {
 				eventType: true,
+				place: true,
 			},
 		});
 	}
@@ -30,6 +32,7 @@ export class EventRepository {
 			data,
 			include: {
 				eventType: true,
+				place: true,
 			},
 		});
 	}
@@ -43,6 +46,7 @@ export class EventRepository {
 			where: { state: "PENDING" },
 			include: {
 				eventType: true,
+				place: true,
 			},
 		});
 	}
