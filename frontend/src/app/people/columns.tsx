@@ -69,6 +69,9 @@ const TextCell = ({
 	);
 };
 
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+
 // Component for editable date cells
 const DateCell = ({
 	getValue,
@@ -90,18 +93,23 @@ const DateCell = ({
 		return <span>{formatDate(initialValue)}</span>;
 	}
 
-	// When editing, show an input field
+	// When editing, show a DatePicker
 	return (
 		<FormControl error={!!error} style={{ width: "100%" }}>
-			<Input
-				defaultValue={initialValue} // Or format it as needed for the input type
-				onChange={(e) =>
-					table.options.meta?.updateData?.(row.index, column.id, e.target.value)
-				}
-				style={{ width: "100%" }}
-				type="date" // Use date type for better UX
+			<DatePicker
+				value={initialValue ? dayjs(initialValue) : null}
+				onChange={(newValue) => {
+					table.options.meta?.updateData?.(row.index, column.id, newValue ? newValue.toISOString() : null);
+				}}
+				format="DD/MM/YYYY"
+				slotProps={{
+					textField: {
+						fullWidth: true,
+						error: !!error,
+						helperText: error,
+					},
+				}}
 			/>
-			{error && <FormHelperText>{error}</FormHelperText>}
 		</FormControl>
 	);
 };
@@ -120,6 +128,8 @@ const GenderCell = ({
 	const initialValue = getValue();
 	const isEditing = table.options.meta?.editingRowId === row.original.id;
 
+	const formattedValue = initialValue === 'MASCULINO' ? 'Masculino' : 'Femenino';
+
 	return isEditing ? (
 		<Select
 			value={initialValue}
@@ -132,7 +142,7 @@ const GenderCell = ({
 			<MenuItem value="FEMENINO">Femenino</MenuItem>
 		</Select>
 	) : (
-		<span>{initialValue}</span>
+		<span>{formattedValue}</span>
 	);
 };
 

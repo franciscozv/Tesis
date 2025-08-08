@@ -27,7 +27,9 @@ import {
   Collapse,
   Grid,
   Snackbar,
-  Alert
+  Alert,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -83,7 +85,7 @@ function MemberRow(props: { row: any; onRemove: (id: number) => void }) {
                 <Grid item xs={12} sm={6}><Typography><CakeIcon sx={{verticalAlign: 'middle', mr: 1}}/> <b>Nacimiento:</b> {formatDate(row.person.birthdate)}</Typography></Grid>
                 <Grid item xs={12} sm={6}><Typography><EventIcon sx={{verticalAlign: 'middle', mr: 1}}/> <b>Bautismo:</b> {formatDate(row.person.baptismDate)}</Typography></Grid>
                 <Grid item xs={12} sm={6}><Typography><EventIcon sx={{verticalAlign: 'middle', mr: 1}}/> <b>Conversión:</b> {formatDate(row.person.convertionDate)}</Typography></Grid>
-                <Grid item xs={12} sm={6}><Typography><b>Género:</b> {row.person.gender}</Typography></Grid>
+                <Grid item xs={12} sm={6}><Typography><b>Género:</b> {row.person.gender === 'MASCULINO' ? 'Masculino' : 'Femenino'}</Typography></Grid>
               </Grid>
             </Box>
           </Collapse>
@@ -216,6 +218,15 @@ export default function GroupDetailsPage() {
 
   return (
     <Container>
+      <Breadcrumbs sx={{ mb: 3 }}>
+        <Link href="/" color="inherit" underline="hover">
+          Inicio
+        </Link>
+        <Link href="/group" color="inherit" underline="hover">
+          Grupos
+        </Link>
+        <Typography color="text.primary">{group.name}</Typography>
+      </Breadcrumbs>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2}}>
           <Box sx={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: group.color, flexShrink: 0 }} />

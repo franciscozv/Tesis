@@ -94,7 +94,7 @@ export default function GroupsPage() {
             key={group.id}
             disablePadding
             secondaryAction={
-              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(group.id, group.name)} disabled={group._count.members > 0}>
+              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(group.id, group.name)} disabled={group._count?.members > 0}>
                 <DeleteIcon />
               </IconButton>}
           >

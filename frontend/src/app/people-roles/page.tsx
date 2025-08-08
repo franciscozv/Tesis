@@ -63,12 +63,13 @@ export default function PeopleRolesPage() {
     if (validate()) {
       if (isEditing && currentRole.id) {
         await updatePeopleRole(currentRole.id, currentRole);
+        setPeopleRoles(peopleRoles.map(role => (role.id === currentRole.id ? { ...role, ...currentRole } : role)));
         showNotification('Rol actualizado exitosamente', 'success');
       } else {
-        await createPeopleRole(currentRole as Omit<PeopleRole, 'id' | 'createdAt' | 'updatedAt'>);
+        const newRole = await createPeopleRole(currentRole as Omit<PeopleRole, 'id' | 'createdAt' | 'updatedAt'>);
+        setPeopleRoles([...peopleRoles, newRole]);
         showNotification('Rol creado exitosamente', 'success');
       }
-      fetchPeopleRoles();
       handleClose();
     }
   };
@@ -80,11 +81,24 @@ export default function PeopleRolesPage() {
 
   const handleConfirmDelete = async () => {
     if (roleToDelete) {
-      await deletePeopleRole(roleToDelete.id);
-      showNotification('Rol eliminado exitosamente', 'success');
-      fetchPeopleRoles();
-      setOpenConfirmDialog(false);
-      setRoleToDelete(null);
+      try {
+        await deletePeopleRole(roleToDelete.id);
+        setPeopleRoles(peopleRoles.filter(role => role.id !== roleToDelete.id));
+        showNotification('Rol eliminado exitosamente', 'success');
+      } catch (error: any) {
+        if (error.response && error.response.status === 409) {
+          showNotification(
+            'Este rol de persona está en uso y no se puede eliminar.',
+            'error'
+          );
+        } else {
+          showNotification('Error al eliminar el rol de persona.', 'error');
+        }
+        console.error(error);
+      } finally {
+        setOpenConfirmDialog(false);
+        setRoleToDelete(null);
+      }
     }
   };
 

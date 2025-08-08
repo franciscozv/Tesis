@@ -115,6 +115,7 @@ const RequestPage = () => {
 										>
 											<ListItemText
 												primary={event.title}
+												secondaryTypographyProps={{ component: 'div' }}
 												secondary={
 													<Box>
 														<Typography variant="body2" color="text.secondary">
@@ -122,7 +123,7 @@ const RequestPage = () => {
 														</Typography>
 														<Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
 															<Chip
-																label={event.location}
+																label={event.place?.name || 'N/A'}
 																size="small"
 																variant="outlined"
 															/>
@@ -169,4 +170,4 @@ const RequestPage = () => {
 	);
 };
 
-export default RequestPage; 
+export default RequestPage;

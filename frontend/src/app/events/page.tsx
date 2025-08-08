@@ -201,11 +201,10 @@ const Page = () => {
 	return (
 		<Box sx={{ p: 3 }}>
 			<Typography variant="h4" component="h1" gutterBottom>
-				Gestión de Eventos
+				Eventos
 			</Typography>
-
-			<Box sx={{ my: 4 }}>
-				<CreateEventForm onEventCreated={fetchData} />
+			<Box sx={{ mb: 4 }}>
+				<CreateEventForm refreshEvents={fetchData} />
 			</Box>
 
 			{loading ? (

@@ -236,8 +236,8 @@ const PlanningPageContent = () => {
 				<Link href="/" color="inherit" underline="hover">
 					Inicio
 				</Link>
-				<Link href="/events" color="inherit" underline="hover">
-					Eventos
+				<Link href="/request" color="inherit" underline="hover">
+					Eventos Aprobados
 				</Link>
 				<Typography color="text.primary">Planificación</Typography>
 			</Breadcrumbs>
@@ -275,14 +275,14 @@ const PlanningPageContent = () => {
 									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 										<LocationOn fontSize="small" color="action" />
 										<Typography variant="body2">
-											<strong>Ubicación:</strong> {event.location}
+											<strong>Ubicación:</strong> {event.place?.name}
 										</Typography>
 									</Box>
 									
 									{event.eventType && (
 										<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 											<Category fontSize="small" color="action" />
-											<Typography variant="body2">
+											<Typography variant="body2" component="div">
 												<strong>Tipo:</strong> 
 												<Chip
 													label={event.eventType.name}
@@ -337,7 +337,7 @@ const PlanningPageContent = () => {
 									
 									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 										<Category fontSize="small" color="action" />
-										<Typography variant="body2">
+										<Typography variant="body2" component="div">
 											<strong>Estado:</strong> 
 											<Chip
 												label={

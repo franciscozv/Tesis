@@ -42,12 +42,14 @@ type Props = {
 	onEventCreated?: () => void;
 	eventToEdit?: Event | null;
 	onCancelEdit?: () => void;
+	refreshEvents?: () => void;
 };
 
 const CreateEventForm: React.FC<Props> = ({
 	onEventCreated,
 	eventToEdit,
 	onCancelEdit,
+	refreshEvents,
 }) => {
 	const [formData, setFormData] = useState({
 		title: "",
@@ -189,6 +191,7 @@ const CreateEventForm: React.FC<Props> = ({
 			setTimeEnd(null);
 			onEventCreated?.();
 			onCancelEdit?.();
+			refreshEvents?.();
 		} catch (err) {
 			if (err instanceof Error) {
 				alert(

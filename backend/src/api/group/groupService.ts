@@ -1,7 +1,7 @@
 // groupService.ts
 import { StatusCodes } from "http-status-codes";
-import type { Group } from "@/api/group/groupModel";
-import { GroupRepository } from "@/api/group/groupRepository";
+import type { Group } from "@prisma/client";
+import { GroupRepository, GroupWithMemberCount } from "@/api/group/groupRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 
@@ -102,7 +102,7 @@ export class GroupService {
 
 	async getMemberCountByGroup(): Promise<ServiceResponse<{ name: string; members: number }[] | null>> {
 		try {
-			const groups = await this.groupRepository.findAllAsync();
+			const groups = await this.groupRepository.findAllWithMemberCountAsync();
 			const memberCount = groups.map((group) => ({
 				name: group.name,
 				members: group._count.members,

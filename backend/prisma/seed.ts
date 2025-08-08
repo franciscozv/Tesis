@@ -1,141 +1,206 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { faker } from '@faker-js/faker';
+
+import { PrismaClient } from "@prisma/client";
+import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
 
-const TOTAL_USERS = 10;
-const TOTAL_PEOPLE = 50;
-const TOTAL_EVENT_TYPES = 12;
-const TOTAL_RESPONSIBILITIES = 20;
-const TOTAL_EVENTS = 40;
-const TOTAL_GROUPS = 5; // New requirement
-
 async function main() {
-  console.log(`🧹 Limpiando la base de datos...`);
-  // The order is important to avoid foreign key constraint errors
+  // Clean up existing data in a specific order to avoid constraint violations
+  await prisma.groupRoleAssignment.deleteMany({});
   await prisma.peopleOnGroups.deleteMany({});
   await prisma.event.deleteMany({});
-  await prisma.eventType.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.people.deleteMany({});
+  await prisma.peopleRole.deleteMany({});
   await prisma.group.deleteMany({});
+  await prisma.eventType.deleteMany({});
+  await prisma.place.deleteMany({});
   await prisma.responsibility.deleteMany({});
 
-  console.log(`🌱 Iniciando la siembra...`);
-
-  // --- User Creation ---
-  console.log(`Creando ${TOTAL_USERS} usuarios...`);
-  const users: Prisma.UserCreateInput[] = [];
-  for (let i = 0; i < TOTAL_USERS; i++) {
-    users.push({
-      name: faker.person.fullName(),
-      email: faker.internet.email({ provider: 'test.local' }),
-      password: faker.internet.password(),
+  // Create Users
+  const users = [];
+  for (let i = 0; i < 20; i++) {
+    const user = await prisma.user.create({
+      data: {
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: faker.internet.password(),
+      },
     });
+    users.push(user);
   }
-  await prisma.user.createMany({ data: users });
 
-  // --- People Creation ---
-  console.log(`Creando ${TOTAL_PEOPLE} personas...`);
-  const peopleData: Prisma.PeopleCreateInput[] = [];
-  for (let i = 0; i < TOTAL_PEOPLE; i++) {
-    peopleData.push({
-      firstname: faker.person.firstName(),
-      lastname: faker.person.lastName(),
-      address: faker.location.streetAddress(),
-      phone: '9' + faker.string.numeric(8),
-      baptismDate: faker.date.past({ years: 10 }),
-      convertionDate: faker.date.past({ years: 15 }),
-      birthdate: faker.date.birthdate({ min: 18, max: 70, mode: 'age' }),
-      gender: faker.helpers.arrayElement(['MASCULINO', 'FEMENINO']),
+  // Create People
+  const people = [];
+  for (let i = 0; i < 50; i++) {
+    const person = await prisma.people.create({
+      data: {
+        firstname: faker.person.firstName().replace(/[^a-zA-Z\s]/g, '').substring(0, 50) || 'DefaultFirstName',
+        lastname: faker.person.lastName().replace(/[^a-zA-Z\s]/g, '').substring(0, 50) || 'DefaultLastName',
+        address: faker.location.streetAddress(),
+        phone: '9' + faker.string.numeric(8),
+        baptismDate: faker.date.past(),
+        convertionDate: faker.date.past(),
+        birthdate: faker.date.birthdate(),
+        gender: faker.helpers.arrayElement(["MASCULINO", "FEMENINO"]),
+      },
     });
+    people.push(person);
   }
-  await prisma.people.createMany({ data: peopleData });
-  const allPeople = await prisma.people.findMany();
 
-  // --- Group Creation (New Logic) ---
-  console.log(`Creando ${TOTAL_GROUPS} grupos con todos los campos...`);
-  const createdGroups = [];
-  for (let i = 0; i < TOTAL_GROUPS; i++) {
+  // Create PeopleRoles
+  const peopleRoles = [];
+  const roleNames = ["Líder de Grupo", "Miembro Activo", "Tesorero", "Secretario", "Líder de Alabanza", "Maestro de Jóvenes", "Diácono"];
+  for (const name of roleNames) {
+    const role = await prisma.peopleRole.create({
+      data: {
+        name,
+        description: faker.lorem.sentence(),
+      },
+    });
+    peopleRoles.push(role);
+  }
+
+  // Create Groups
+  const groups = [];
+  const groupNames = [
+    "Jovenes en Accion",
+    "Mujeres de Fe",
+    "Hombres de Valor",
+    "Alabanza y Adoracion",
+    "Escuela Dominical",
+    "Misiones Globales",
+    "Ayuda Comunitaria",
+    "Estudio Biblico",
+    "Grupo de Oracion",
+    "Matrimonios",
+  ];
+
+  for (const name of groupNames) {
     const group = await prisma.group.create({
       data: {
-        name: `${faker.commerce.productAdjective()} ${faker.animal.type()} Team ${i + 1}`,
-        description: faker.lorem.sentence(),
-        mision: faker.company.catchPhrase(),
-        vision: faker.company.catchPhrase(),
+        name,
+        description: faker.lorem.sentence({ min: 5, max: 10 }).substring(0, 50),
+        mision: faker.lorem.paragraph(),
+        vision: faker.lorem.paragraph(),
         color: faker.color.rgb(),
       },
     });
-    createdGroups.push(group);
-  }
-  console.log(`${createdGroups.length} grupos creados.`);
-
-  // --- Assigning People to Groups (New Logic) ---
-  console.log('Asignando miembros a los grupos...');
-  for (const group of createdGroups) {
-    // Assign a random number of members to each group (e.g., 2 to 10)
-    const membersToAssignCount = faker.number.int({ min: 2, max: 10 });
-    const shuffledPeople = faker.helpers.shuffle(allPeople);
-    const membersToAssign = shuffledPeople.slice(0, membersToAssignCount);
-
-    for (const person of membersToAssign) {
-      await prisma.peopleOnGroups.create({
-        data: {
-          groupId: group.id,
-          personId: person.id,
-        },
-      });
-    }
-    console.log(`Asignados ${membersToAssignCount} miembros al grupo "${group.name}".`);
+    groups.push(group);
   }
 
-  // --- EventType Creation ---
-  console.log(`Creando ${TOTAL_EVENT_TYPES} tipos de evento...`);
-  const eventTypes: Prisma.EventTypeCreateInput[] = [];
-  for (let i = 0; i < TOTAL_EVENT_TYPES; i++) {
-    eventTypes.push({
-      name: faker.company.catchPhrase(),
-      description: faker.lorem.words(5),
-      color: faker.color.rgb(),
-    });
-  }
-  await prisma.eventType.createMany({ data: eventTypes });
-
-  // --- Responsibility Creation ---
-  console.log(`Creando ${TOTAL_RESPONSIBILITIES} responsabilidades...`);
-  const responsibilities: Prisma.ResponsibilityCreateInput[] = [];
-  for (let i = 0; i < TOTAL_RESPONSIBILITIES; i++) {
-    responsibilities.push({
-      name: faker.person.jobTitle(),
-      description: faker.lorem.words(4),
-    });
-  }
-  await prisma.responsibility.createMany({ data: responsibilities });
-
-  // --- Event Creation ---
-  console.log(`Creando ${TOTAL_EVENTS} eventos...`);
-  const createdEventTypes = await prisma.eventType.findMany();
-  const events: Prisma.EventCreateInput[] = [];
-  for (let i = 0; i < TOTAL_EVENTS; i++) {
-    const randomEventType = faker.helpers.arrayElement(createdEventTypes);
-    events.push({
-      title: faker.company.buzzPhrase(),
-      description: faker.lorem.paragraph(),
-      startDateTime: faker.date.soon({ days: 30 }),
-      endDateTime: faker.date.soon({ days: 30, refDate: new Date() }),
-      location: faker.location.city(),
-      state: faker.helpers.arrayElement(['PENDING', 'APPROVED', 'REJECTED']),
-      reviewComment: faker.datatype.boolean() ? faker.lorem.sentence() : null,
-      eventType: {
-        connect: { id: randomEventType.id },
+  // Create EventTypes
+  const eventTypes = [];
+  const eventTypeNames = [
+    "Reunion General",
+    "Ensayo de Coro",
+    "Servicio Dominical",
+    "Evento Especial de Jovenes",
+    "Celula de Oracion",
+  ];
+  for (const name of eventTypeNames) {
+    const eventType = await prisma.eventType.create({
+      data: {
+        name,
+        description: faker.lorem.sentence({ min: 3, max: 7 }).replace(/[^a-zA-Z\s,]/g, ''),
+        color: faker.color.rgb(),
       },
     });
-  }
-  for (const event of events) {
-    await prisma.event.create({ data: event });
+    eventTypes.push(eventType);
   }
 
-  console.log('Seeding finished.');
+  // Create Places
+  const places = [];
+  for (let i = 0; i < 5; i++) {
+    const place = await prisma.place.create({
+      data: {
+        name: `Salon ${faker.word.noun()} ${i}`,
+        description: faker.lorem.sentence(),
+        address: faker.location.streetAddress(),
+        phones: faker.phone.number(),
+        email: faker.internet.email(),
+        photoUrl: faker.image.url(),
+        rooms: faker.lorem.words(5),
+      },
+    });
+    places.push(place);
+  }
+
+  // Create Responsibilities
+  const responsibilities = [];
+  const responsibilityNames = [
+    "Direccion de Alabanza",
+    "Ensenanza Biblica",
+    "Logistica y Organizacion",
+    "Intercesion y Oracion",
+    "Bienvenida",
+  ];
+  for (const name of responsibilityNames) {
+    const responsibility = await prisma.responsibility.create({
+      data: {
+        name,
+        description: faker.lorem.sentence({ min: 10, max: 20 }).replace(/[^a-zA-Z\s,]/g, ''),
+      },
+    });
+    responsibilities.push(responsibility);
+  }
+
+  // Create Events
+  const events = [];
+  for (let i = 0; i < 25; i++) {
+    const startDateTime = faker.date.future();
+    const endDateTime = new Date(startDateTime.getTime() + faker.number.int({ min: 1, max: 3 }) * 60 * 60 * 1000); // 1-3 hours later
+    const event = await prisma.event.create({
+      data: {
+        title: faker.lorem.sentence(4),
+        description: faker.lorem.paragraph(),
+        startDateTime,
+        endDateTime,
+        state: faker.helpers.arrayElement(["PENDING", "APPROVED", "REJECTED"]),
+        reviewComment: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.5 }),
+        eventTypeId: faker.helpers.arrayElement(eventTypes).id,
+        placeId: faker.helpers.arrayElement(places).id,
+      },
+    });
+    events.push(event);
+  }
+
+  // Create PeopleOnGroups
+  for (const person of people) {
+    const numberOfGroups = faker.number.int({ min: 1, max: 3 }); // Assign person to 1-3 groups
+    const shuffledGroups = faker.helpers.shuffle(groups);
+    for (let i = 0; i < numberOfGroups; i++) {
+        if (shuffledGroups[i]) {
+            const role = faker.helpers.arrayElement(peopleRoles);
+            await prisma.peopleOnGroups.create({
+                data: {
+                    personId: person.id,
+                    groupId: shuffledGroups[i].id,
+                    personRoleId: role.id,
+                    status: "ACTIVE",
+                },
+            });
+        }
+    }
+  }
+
+  // Create GroupRoleAssignments
+  for (const group of groups) {
+    const numberOfRoles = faker.number.int({ min: 2, max: 5 }); // Assign 2-5 roles per group
+    const shuffledRoles = faker.helpers.shuffle(peopleRoles);
+    for (let i = 0; i < numberOfRoles; i++) {
+        if (shuffledRoles[i]) {
+            await prisma.groupRoleAssignment.create({
+                data: {
+                    groupId: group.id,
+                    roleId: shuffledRoles[i].id,
+                },
+            });
+        }
+    }
+  }
+
+  console.log("Database has been successfully seeded!");
 }
 
 main()

@@ -22,10 +22,10 @@ export default function RootLayout({
 	return (
 		<html lang="en" className={roboto.className}>
 			<body>
-				<ThemeRegistry>
-					<Navbar />
-					{children}
-				</ThemeRegistry>
+					<ThemeRegistry>
+						<Navbar />
+						{children}
+					</ThemeRegistry>
 			</body>
 		</html>
 	);

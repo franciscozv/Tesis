@@ -36,8 +36,8 @@ const EventInfoDialog = ({ open, event, onClose }: EventInfoDialogProps) => {
 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-			<DialogTitle>
-				<Typography variant="h6" gutterBottom>
+			<DialogTitle component="div">
+				<Typography variant="h6" component="h2" gutterBottom>
 					{event.title}
 				</Typography>
 				{event.eventType && (
@@ -66,7 +66,7 @@ const EventInfoDialog = ({ open, event, onClose }: EventInfoDialogProps) => {
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 						<LocationOn fontSize="small" color="action" />
 						<Typography variant="body2">
-							<strong>Ubicación:</strong> {event.location}
+							<strong>Ubicación:</strong> {event.place?.name || 'N/A'}
 						</Typography>
 					</Box>
 
@@ -86,7 +86,7 @@ const EventInfoDialog = ({ open, event, onClose }: EventInfoDialogProps) => {
 
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 						<Category fontSize="small" color="action" />
-						<Typography variant="body2">
+						<Typography variant="body2" component="div">
 							<strong>Estado:</strong> 
 							<Chip
 								label={

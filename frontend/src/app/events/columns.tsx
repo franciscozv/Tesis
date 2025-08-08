@@ -1,6 +1,7 @@
 "use client";
 import { Check, Close, Delete, Edit } from "@mui/icons-material";
 import {
+	Box,
 	Button,
 	Checkbox,
 	Chip,
@@ -13,16 +14,16 @@ import {
 	MenuItem,
 	Select,
 	Tooltip,
-	Box,
 	Typography,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Column, Row, Table } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { useState, useEffect } from "react";
-import { getEventTypes } from "~/services/eventTypeService";
+import { useEffect, useState } from "react";
 import PlanningButton from "~/components/features/event/PlanningButton";
+import { getEventTypes } from "~/services/eventTypeService";
+import { getPlaces } from "~/services/placeService";
 
 // Tipo para los tipos de evento
 type EventType = {
@@ -32,8 +33,19 @@ type EventType = {
 	color: string;
 };
 
+// Tipo para los lugares
+type Place = {
+	id: number;
+	name: string;
+	description: string;
+};
+
 // Componente para mostrar el tipo de evento con color
-const EventTypeChip = ({ eventType }: { eventType?: { name: string; color: string; description: string } }) => {
+const EventTypeChip = ({
+	eventType,
+}: {
+	eventType?: { name: string; color: string; description: string };
+}) => {
 	if (!eventType) {
 		return <Chip label="Sin tipo" variant="outlined" size="small" />;
 	}
@@ -46,24 +58,24 @@ const EventTypeChip = ({ eventType }: { eventType?: { name: string; color: strin
 				sx={{
 					backgroundColor: eventType.color,
 					color: getContrastColor(eventType.color),
-					fontWeight: 'bold',
-					fontSize: '0.7rem',
-					height: '18px',
-					maxWidth: '120px',
-					'& .MuiChip-label': {
-						padding: '0 6px',
-						whiteSpace: 'nowrap',
-						overflow: 'hidden',
-						textOverflow: 'ellipsis',
+					borderRadius: "8px",
+					boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+					fontSize: "0.7rem",
+					fontWeight: "bold",
+					height: "18px",
+					maxWidth: "120px",
+					"& .MuiChip-label": {
+						overflow: "hidden",
+						padding: "0 6px",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
 					},
-					'&:hover': {
+					"&:hover": {
 						backgroundColor: eventType.color,
 						opacity: 0.8,
-						transform: 'scale(1.02)',
-						transition: 'all 0.2s ease-in-out',
+						transform: "scale(1.02)",
+						transition: "all 0.2s ease-in-out",
 					},
-					boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-					borderRadius: '8px',
 				}}
 			/>
 		</Tooltip>
@@ -208,10 +220,10 @@ const TitleCell = ({
 			{error && <FormHelperText>{error}</FormHelperText>}
 		</FormControl>
 	) : (
-		<Typography 
-			variant="body2" 
-			sx={{ 
-				fontWeight: 'medium',
+		<Typography
+			variant="body2"
+			sx={{
+				fontWeight: "medium",
 				lineHeight: 1.2,
 			}}
 		>
@@ -260,28 +272,38 @@ const EventTypeCell = ({
 			<Select
 				value={currentEventType?.id || ""}
 				onChange={(e) => {
-					const selectedType = eventTypes.find(type => type.id === e.target.value);
-					table.options.meta?.updateData?.(row.index, "eventTypeId", e.target.value);
-					table.options.meta?.updateData?.(row.index, "eventType", selectedType);
+					const selectedType = eventTypes.find(
+						(type) => type.id === e.target.value,
+					);
+					table.options.meta?.updateData?.(
+						row.index,
+						"eventTypeId",
+						e.target.value,
+					);
+					table.options.meta?.updateData?.(
+						row.index,
+						"eventType",
+						selectedType,
+					);
 				}}
 				displayEmpty
 				size="small"
 				disabled={loading}
 				renderValue={(value) => {
 					if (!value) return <em>Seleccionar tipo</em>;
-					const selectedType = eventTypes.find(type => type.id === value);
+					const selectedType = eventTypes.find((type) => type.id === value);
 					if (!selectedType) return <em>Seleccionar tipo</em>;
-					
+
 					return (
-						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 							<Box
 								sx={{
-									width: '12px',
-									height: '12px',
+									width: "12px",
+									height: "12px",
 									backgroundColor: selectedType.color,
-									borderRadius: '50%',
+									borderRadius: "50%",
 									flexShrink: 0,
-									boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+									boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
 								}}
 							/>
 							<Typography variant="body2">{selectedType.name}</Typography>
@@ -294,18 +316,27 @@ const EventTypeCell = ({
 				</MenuItem>
 				{eventTypes.map((type) => (
 					<MenuItem key={type.id} value={type.id}>
-						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								width: "100%",
+							}}
+						>
 							<Box
 								sx={{
-									width: '12px',
-									height: '12px',
+									width: "12px",
+									height: "12px",
 									backgroundColor: type.color,
-									borderRadius: '50%',
+									borderRadius: "50%",
 									flexShrink: 0,
-									boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+									boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
 								}}
 							/>
-							<Typography variant="body2" sx={{ flex: 1 }}>{type.name}</Typography>
+							<Typography variant="body2" sx={{ flex: 1 }}>
+								{type.name}
+							</Typography>
 						</Box>
 					</MenuItem>
 				))}
@@ -313,9 +344,89 @@ const EventTypeCell = ({
 			{error && <FormHelperText>{error}</FormHelperText>}
 		</FormControl>
 	) : (
-		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '32px' }}>
+		<Box
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				minHeight: "32px",
+			}}
+		>
 			<EventTypeChip eventType={currentEventType} />
 		</Box>
+	);
+};
+
+// Componente para editar el lugar
+const PlaceCell = ({
+	getValue,
+	row,
+	column,
+	table,
+}: {
+	getValue: () => any;
+	row: Row<any>;
+	column: Column<any>;
+	table: Table<any>;
+}) => {
+	const [places, setPlaces] = useState<Place[]>([]);
+	const [loading, setLoading] = useState(false);
+	const isEditing = table.options.meta?.editingRowId === row.original.id;
+	const error = table.options.meta?.validationErrors?.["placeId"]; // Use placeId for error
+	const currentPlace = row.original.place;
+
+	// Cargar lugares cuando se entra en modo edición
+	useEffect(() => {
+		if (isEditing && places.length === 0) {
+			setLoading(true);
+			getPlaces()
+				.then((data) => {
+					setPlaces(data || []);
+				})
+				.catch((error) => {
+					console.error("Error al cargar los lugares:", error);
+				})
+				.finally(() => {
+					setLoading(false);
+				});
+		}
+	}, [isEditing, places.length]);
+
+	return isEditing ? (
+		<FormControl error={!!error} style={{ width: "100%" }}>
+			<Select
+				value={currentPlace?.id || ""}
+				onChange={(e) => {
+					const selectedPlace = places.find((p) => p.id === e.target.value);
+					table.options.meta?.updateData?.(
+						row.index,
+						"placeId",
+						e.target.value,
+					);
+					table.options.meta?.updateData?.(row.index, "place", selectedPlace);
+				}}
+				displayEmpty
+				size="small"
+				disabled={loading}
+				renderValue={(value) => {
+					if (!value) return <em>Seleccionar lugar</em>;
+					const selectedPlace = places.find((p) => p.id === value);
+					return selectedPlace ? selectedPlace.name : <em>Seleccionar lugar</em>;
+				}}
+			>
+				<MenuItem value="">
+					<em>Seleccionar lugar</em>
+				</MenuItem>
+				{places.map((place) => (
+					<MenuItem key={place.id} value={place.id}>
+						{place.name}
+					</MenuItem>
+				))}
+			</Select>
+			{error && <FormHelperText>{error}</FormHelperText>}
+		</FormControl>
+	) : (
+		<span>{currentPlace?.name || "N/A"}</span>
 	);
 };
 
@@ -348,9 +459,10 @@ export const getColumns = (
 		size: 200,
 	},
 	{
-		accessorKey: "place.name",
+		id: "place",
+		accessorFn: (row) => row.place?.name,
 		header: "Ubicación",
-		cell: TextCell,
+		cell: PlaceCell,
 		size: 200,
 	},
 	{
@@ -372,19 +484,19 @@ export const getColumns = (
 				state === "PENDING"
 					? "info"
 					: state === "APPROVED"
-						? "success"
-						: state === "REJECTED"
-							? "error"
-							: "default";
+					  ? "success"
+					  : state === "REJECTED"
+					    ? "error"
+					    : "default";
 
 			const translatedState =
 				state === "PENDING"
 					? "Pendiente"
 					: state === "APPROVED"
-						? "Aprobado"
-						: state === "REJECTED"
-							? "Rechazado"
-							: state;
+					  ? "Aprobado"
+					  : state === "REJECTED"
+					    ? "Rechazado"
+					    : state;
 
 			const chip = (
 				<Chip label={translatedState} color={color} style={{ width: "100%" }} />
