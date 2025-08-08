@@ -21,7 +21,7 @@ export default function PeopleRolesPage() {
 
   const fetchPeopleRoles = async () => {
     const roles = await getPeopleRoles();
-    setPeopleRoles(roles);
+    setPeopleRoles(roles.sort((a, b) => a.name.localeCompare(b.name)));
   };
 
   useEffect(() => {
@@ -62,14 +62,13 @@ export default function PeopleRolesPage() {
   const handleSave = async () => {
     if (validate()) {
       if (isEditing && currentRole.id) {
-        const updatedRole = await updatePeopleRole(currentRole.id, currentRole);
-        setPeopleRoles(peopleRoles.map(role => role.id === currentRole.id ? updatedRole : role));
+        await updatePeopleRole(currentRole.id, currentRole);
         showNotification('Rol actualizado exitosamente', 'success');
       } else {
-        const newRole = await createPeopleRole(currentRole as Omit<PeopleRole, 'id' | 'createdAt' | 'updatedAt'>);
-        setPeopleRoles([...peopleRoles, newRole]);
+        await createPeopleRole(currentRole as Omit<PeopleRole, 'id' | 'createdAt' | 'updatedAt'>);
         showNotification('Rol creado exitosamente', 'success');
       }
+      fetchPeopleRoles();
       handleClose();
     }
   };
