@@ -3,7 +3,7 @@ import type { Group } from "@/api/group/groupModel";
 import prisma from "@/lib/prisma";
 
 export class GroupRepository {
-	async findAllAsync(): Promise<any[]> {
+	async findAllAsync(): Promise<Group[]> {
 		return await prisma.group.findMany({
 			include: {
 				_count: {

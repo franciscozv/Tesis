@@ -99,6 +99,25 @@ export class GroupService {
 			);
 		}
 	}
+
+	async getMemberCountByGroup(): Promise<ServiceResponse<{ name: string; members: number }[] | null>> {
+		try {
+			const groups = await this.groupRepository.findAllAsync();
+			const memberCount = groups.map((group) => ({
+				name: group.name,
+				members: group._count.members,
+			}));
+			return ServiceResponse.success("Member count by group found", memberCount);
+		} catch (ex) {
+			const errorMessage = `Error getting member count by group: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+			return ServiceResponse.failure(
+				"An error occurred while getting member count by group.",
+				null,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
 }
 
 export const groupService = new GroupService();

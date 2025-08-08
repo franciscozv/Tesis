@@ -35,6 +35,14 @@ groupRouter.get("/", groupController.getGroups);
 
 groupRegistry.registerPath({
   method: "get",
+  path: "/groups/members-count",
+  tags: ["Group"],
+  responses: createApiResponse(z.array(z.object({ name: z.string(), members: z.number() })), "Success"),
+});
+groupRouter.get("/members-count", groupController.getMemberCountByGroup);
+
+groupRegistry.registerPath({
+  method: "get",
   path: "/groups/{id}",
   tags: ["Group"],
   request: { params: GetGroupSchema.shape.params },

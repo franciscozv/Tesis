@@ -34,3 +34,8 @@ export const updateGroup = async (
 export const deleteGroup = async (id: number) => {
 	return await del(`${GROUP_API_URL}/${id}`);
 };
+
+export const getMemberCountByGroup = async () => {
+	const response = await get(`${GROUP_API_URL}/members-count`);
+	return response.responseObject || [];
+};

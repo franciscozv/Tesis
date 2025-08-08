@@ -30,6 +30,11 @@ class GroupController {
 		const serviceResponse = await groupService.updateById(id, req.body);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
+
+	public getMemberCountByGroup: RequestHandler = async (_req: Request, res: Response) => {
+		const serviceResponse = await groupService.getMemberCountByGroup();
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
 }
 
 export const groupController = new GroupController();
