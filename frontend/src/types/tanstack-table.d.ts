@@ -8,5 +8,7 @@ declare module "@tanstack/react-table" {
 		updateData?: (rowIndex: number, columnId: string, value: any) => void;
 		saveRow?: (id: number) => void;
 		cancelEdit?: () => void;
+		eventTypes?: any[];
+		places?: any[];
 	}
 }

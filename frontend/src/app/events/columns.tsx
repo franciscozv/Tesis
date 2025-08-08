@@ -20,7 +20,6 @@ import { DateTimePicker } from "@mui/x-date-pickers";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Column, Row, Table } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
 import PlanningButton from "~/components/features/event/PlanningButton";
 import { getEventTypes } from "~/services/eventTypeService";
 import { getPlaces } from "~/services/placeService";
@@ -244,28 +243,10 @@ const EventTypeCell = ({
 	column: Column<any>;
 	table: Table<any>;
 }) => {
-	const [eventTypes, setEventTypes] = useState<EventType[]>([]);
-	const [loading, setLoading] = useState(false);
+	const eventTypes = table.options.meta?.eventTypes || [];
 	const isEditing = table.options.meta?.editingRowId === row.original.id;
 	const error = table.options.meta?.validationErrors?.[column.id];
 	const currentEventType = row.original.eventType;
-
-	// Cargar tipos de evento cuando se entra en modo edición
-	useEffect(() => {
-		if (isEditing && eventTypes.length === 0) {
-			setLoading(true);
-			getEventTypes()
-				.then((types) => {
-					setEventTypes(types || []);
-				})
-				.catch((error) => {
-					console.error("Error al cargar tipos de evento:", error);
-				})
-				.finally(() => {
-					setLoading(false);
-				});
-		}
-	}, [isEditing, eventTypes.length]);
 
 	return isEditing ? (
 		<FormControl error={!!error} style={{ width: "100%" }}>
@@ -288,7 +269,7 @@ const EventTypeCell = ({
 				}}
 				displayEmpty
 				size="small"
-				disabled={loading}
+				disabled={!eventTypes.length}
 				renderValue={(value) => {
 					if (!value) return <em>Seleccionar tipo</em>;
 					const selectedType = eventTypes.find((type) => type.id === value);
@@ -369,28 +350,10 @@ const PlaceCell = ({
 	column: Column<any>;
 	table: Table<any>;
 }) => {
-	const [places, setPlaces] = useState<Place[]>([]);
-	const [loading, setLoading] = useState(false);
+	const places = table.options.meta?.places || [];
 	const isEditing = table.options.meta?.editingRowId === row.original.id;
 	const error = table.options.meta?.validationErrors?.["placeId"]; // Use placeId for error
 	const currentPlace = row.original.place;
-
-	// Cargar lugares cuando se entra en modo edición
-	useEffect(() => {
-		if (isEditing && places.length === 0) {
-			setLoading(true);
-			getPlaces()
-				.then((data) => {
-					setPlaces(data || []);
-				})
-				.catch((error) => {
-					console.error("Error al cargar los lugares:", error);
-				})
-				.finally(() => {
-					setLoading(false);
-				});
-		}
-	}, [isEditing, places.length]);
 
 	return isEditing ? (
 		<FormControl error={!!error} style={{ width: "100%" }}>
@@ -407,7 +370,7 @@ const PlaceCell = ({
 				}}
 				displayEmpty
 				size="small"
-				disabled={loading}
+				disabled={!places.length}
 				renderValue={(value) => {
 					if (!value) return <em>Seleccionar lugar</em>;
 					const selectedPlace = places.find((p) => p.id === value);

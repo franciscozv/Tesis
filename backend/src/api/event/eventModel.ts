@@ -29,13 +29,11 @@ export const CreateEventSchema = z
 		title: z
 			.string()
 			.min(3, "Title must be at least 3 characters long")
-			.max(100, "Title must be at most 100 characters long")
-			.regex(/^[a-zA-Z\s]+$/, "Title can only contain letters and spaces"),
+			.max(100, "Title must be at most 100 characters long"),
 		description: z
 			.string()
 			.min(10, "Description must be at least 10 characters long")
-			.max(500, "Description must be at most 500 characters long")
-			.regex(/^[a-zA-Z\s]+$/, "Description can only contain letters and spaces"),
+			.max(500, "Description must be at most 500 characters long"),
 		startDateTime: z.coerce.date().refine((date) => date >= startOfToday, { message: "La fecha de inicio no puede ser en el pasado" }),
 		endDateTime: z.coerce.date(),
 		placeId: z.number().int(),
@@ -56,13 +54,11 @@ export const UpdateEventSchema = z
 			.string()
 			.min(3, "Title must be at least 3 characters long")
 			.max(100, "Title must be at most 100 characters long")
-			.regex(/^[a-zA-Z\s]+$/, "Title can only contain letters and spaces")
 			.optional(),
 		description: z
 			.string()
 			.min(10, "Description must be at least 10 characters long")
 			.max(500, "Description must be at most 500 characters long")
-			.regex(/^[a-zA-Z\s]+$/, "Description can only contain letters and spaces")
 			.optional(),
 		startDateTime: z.coerce
 			.date()

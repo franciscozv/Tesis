@@ -62,8 +62,8 @@ export default function PeopleRolesPage() {
   const handleSave = async () => {
     if (validate()) {
       if (isEditing && currentRole.id) {
-        await updatePeopleRole(currentRole.id, currentRole);
-        setPeopleRoles(peopleRoles.map(role => (role.id === currentRole.id ? { ...role, ...currentRole } : role)));
+        const updatedRole = await updatePeopleRole(currentRole.id, currentRole);
+        setPeopleRoles(peopleRoles.map(role => role.id === currentRole.id ? updatedRole : role));
         showNotification('Rol actualizado exitosamente', 'success');
       } else {
         const newRole = await createPeopleRole(currentRole as Omit<PeopleRole, 'id' | 'createdAt' | 'updatedAt'>);

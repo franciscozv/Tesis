@@ -22,6 +22,8 @@ import {
 	updateEvent,
 	updateEventStatus,
 } from "~/services/eventService";
+import { getEventTypes } from "~/services/eventTypeService";
+import { getPlaces } from "~/services/placeService";
 import { type Event, getColumns } from "./columns";
 
 const Page = () => {
@@ -66,13 +68,24 @@ const Page = () => {
 		setStateFilter(newFilter);
 	};
 
+	const [places, setPlaces] = useState<any[]>([]);
+	const [eventTypes, setEventTypes] = useState<any[]>([]);
+
 	const fetchData = async () => {
-		setLoading(true);
+		if (events.length === 0) {
+			setLoading(true);
+		}
 		try {
-			const data: Event[] = await getEvents();
-			setEvents(data || []);
+			const [eventsData, placesData, eventTypesData] = await Promise.all([
+				getEvents(),
+				getPlaces(), // Asumiendo que tienes un servicio getPlaces
+				getEventTypes(), // Asumiendo que tienes un servicio getEventTypes
+			]);
+			setEvents(eventsData || []);
+			setPlaces(placesData || []);
+			setEventTypes(eventTypesData || []);
 		} catch (error) {
-			console.error("Error al obtener eventos:", error);
+			console.error("Error al obtener datos:", error);
 		} finally {
 			setLoading(false);
 		}
@@ -183,8 +196,18 @@ const Page = () => {
 	const handleConfirmStatus = async () => {
 		if (statusEventId && statusAction) {
 			try {
-				await updateEventStatus(statusEventId, statusAction, statusComment);
-				fetchData();
+				const updatedEvent = await updateEventStatus(
+					statusEventId,
+					statusAction,
+					statusComment,
+				);
+				setEvents((prevEvents) =>
+					prevEvents.map((event) =>
+						event.id === statusEventId
+							? { ...event, ...updatedEvent.responseObject }
+							: event,
+					),
+				);
 			} catch (error) {
 				console.error("Error al actualizar estado del evento:", error);
 			} finally {
@@ -225,6 +248,8 @@ const Page = () => {
 						saveRow: handleSave,
 						cancelEdit: handleCancel,
 						validationErrors,
+						places,
+						eventTypes,
 					}}
 					enableStateFilter
 					stateFilter={stateFilter}
