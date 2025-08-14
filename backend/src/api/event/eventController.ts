@@ -62,6 +62,11 @@ class EventController {
 		const serviceResponse = await eventService.findAllPending();
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
+
+	public countApprovedEventsByMonth: RequestHandler = async (_req: Request, res: Response) => {
+		const serviceResponse = await eventService.countApprovedEventsByMonth();
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
 }
 
 export const eventController = new EventController();

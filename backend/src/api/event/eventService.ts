@@ -167,5 +167,20 @@ export class EventService {
 			);
 		}
 	}
+
+	async countApprovedEventsByMonth(): Promise<ServiceResponse<any>> {
+		try {
+			const result = await this.eventRepository.countApprovedEventsByMonth();
+			return ServiceResponse.success("Event count by month", result);
+		} catch (ex) {
+			const errorMessage = `Error counting approved events by month: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+			return ServiceResponse.failure(
+				"An error occurred while counting approved events by month.",
+				null,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
 }
 export const eventService = new EventService();

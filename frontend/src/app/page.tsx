@@ -2,6 +2,7 @@
 import { Container, Typography } from "@mui/material";
 import EventCharts from "../components/features/event/EventCharts";
 import MembersByGroupChart from "../components/features/dashboard/MembersByGroupChart";
+import ApprovedEventsChart from "../components/features/dashboard/ApprovedEventsChart";
 
 export default function HomePage() {
 	return (
@@ -12,7 +13,9 @@ export default function HomePage() {
 			<EventCharts />
 			<div style={{marginTop: "2rem"}}>
 			<MembersByGroupChart />
-
+			</div>
+			<div style={{marginTop: "2rem"}}>
+			<ApprovedEventsChart />
 			</div>
 		</Container>
 	);

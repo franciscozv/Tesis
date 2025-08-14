@@ -12,6 +12,7 @@ import { responsibilityRouter } from "./api/responsibility/responsibilityRouter"
 import { peopleRouter } from "./api/people/peopleRouter";
 import { eventTypeRouter } from "./api/eventType/eventTypeRouter";
 import { placeRouter } from "@/api/place/placeRouter";
+import { participantRouter } from "@/api/participant/participantRouter";
 import { peopleRoleRouter } from "./api/peopleRole/peopleRoleRouter";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
@@ -44,6 +45,7 @@ app.use("/people-roles", peopleRoleRouter);
 app.use("/people", peopleRouter);
 app.use("/event-type", eventTypeRouter);
 app.use("/places", placeRouter);
+app.use("/participants", participantRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

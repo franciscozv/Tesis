@@ -48,7 +48,7 @@ export const tableStyles = {
   },
   
   rowOdd: {
-    backgroundColor: themeColors.surfaceContainer,
+    backgroundColor: "#EBE4EA",
   },
   
   rowHover: {

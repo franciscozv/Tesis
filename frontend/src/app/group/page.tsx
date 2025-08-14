@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getGroups, createGroup, deleteGroup } from '~/services/groupService';
-import { List, ListItem, ListItemText, Typography, Container, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, ListItemButton, Snackbar, Alert } from '@mui/material';
+import { Grid, Card, CardContent, CardActionArea, CardActions, Typography, Container, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Snackbar, Alert } from '@mui/material';
 import Link from 'next/link';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -88,23 +88,32 @@ export default function GroupsPage() {
         <Typography variant="h4" gutterBottom>Grupos</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpen}>Crear Grupo</Button>
       </div>
-      <List>
+      <Grid container spacing={2}>
         {groups.map((group) => (
-          <ListItem
-            key={group.id}
-            disablePadding
-            secondaryAction={
-              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(group.id, group.name)} disabled={group._count?.members > 0}>
-                <DeleteIcon />
-              </IconButton>}
-          >
-            <ListItemButton component={Link} href={`/group/${group.id}`}>
-                <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: group.color, mr: 2, flexShrink: 0 }} />
-                <ListItemText primary={group.name} secondary={group.description} />
-            </ListItemButton>
-          </ListItem>
+          <Grid item xs={12} sm={6} md={4} key={group.id}>
+            <Card sx={{ backgroundColor: "#F1ECEE", borderRadius: "16px", height: '100%', display: 'flex', flexDirection: 'column', '&:hover': { backgroundColor: '#DCDAF5' } }}>
+              <CardActionArea component={Link} href={`/group/${group.id}`} sx={{ flexGrow: 1 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: group.color, mr: 2, flexShrink: 0 }} />
+                    <Typography variant="h6" component="div">
+                      {group.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {group.description}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+              <CardActions sx={{ justifyContent: 'flex-end' }}>
+                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(group.id, group.name)} disabled={group._count?.members > 0}>
+                  <DeleteIcon />
+                </IconButton>
+              </CardActions>
+            </Card>
+          </Grid>
         ))}
-      </List>
+      </Grid>
 
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Crear Nuevo Grupo</DialogTitle>

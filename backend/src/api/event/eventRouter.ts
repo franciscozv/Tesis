@@ -30,6 +30,15 @@ eventRouter.get("/", eventController.getEvents);
 
 eventRegistry.registerPath({
 	method: "get",
+	path: "/events/count-by-month",
+	tags: ["Event"],
+	responses: createApiResponse(z.array(z.object({ month: z.string(), eventCount: z.number() })), "Success"),
+});
+
+eventRouter.get("/count-by-month", eventController.countApprovedEventsByMonth);
+
+eventRegistry.registerPath({
+	method: "get",
 	path: "/events/{id}",
 	tags: ["Event"],
 	request: {

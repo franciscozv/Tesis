@@ -20,6 +20,17 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+// model Announcement {
+//   id          Int      @id @default(autoincrement())
+//   title       String
+//   content     String
+//   visiblityUntil DateTime?
+//   authorId    Int
+//   author      User     @relation(fields: [authorId], references: [id])
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
+
 model People {
   id             Int              @id @default(autoincrement())
   firstname      String
@@ -33,6 +44,7 @@ model People {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   groups         PeopleOnGroups[]
+  Participants   Participant[]
 }
 
 model PeopleRole {
@@ -96,6 +108,20 @@ model Event {
   place       Place     @relation(fields: [placeId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  participants Participant[]
+}
+
+model Participant {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  personId  Int
+  person    People   @relation(fields: [personId], references: [id])
+  responsibilityId Int
+  responsibility   Responsibility @relation(fields: [responsibilityId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([eventId, personId])
 }
 
 model Place {
@@ -118,14 +144,6 @@ enum State {
   REJECTED
 }
 
-// model PostEvent {
-//   id          Int      @id @default(autoincrement())
-//   photoUrl    String
-//   comment     String
-//   conclution  String
-//   eventId     Int
-//   event       Event?   @relation(fields: [eventId], references: [id])
-// }
 
 model Responsibility {
   id          Int      @id @default(autoincrement())
@@ -133,6 +151,7 @@ model Responsibility {
   description String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  participants Participant[]
 }
 
 model EventType {

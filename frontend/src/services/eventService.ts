@@ -63,3 +63,7 @@ export const updateEventStatus = async (
 export const deleteEvent = async (id: number) => {
 	return await del(`${EVENT_API_URL}/${id}`);
 };
+
+export const countApprovedEventsByMonth = async () => {
+	return await get(`${EVENT_API_URL}/count-by-month`);
+};

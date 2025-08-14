@@ -10,67 +10,37 @@ const roboto = Roboto({
 
 const palette = {
 	primary: {
-		main: "#6D5E0F",
-		light: "#F8E287",
-		dark: "#534600",
+		main: "#675496",
 		contrastText: "#FFFFFF",
 	},
 	secondary: {
-		main: "#665E40",
-		light: "#EEE2BC",
-		dark: "#4E472A",
+		main: "#98D05A",
 		contrastText: "#FFFFFF",
 	},
 	tertiary: {
-		main: "#43664E",
-		light: "#C5ECCE",
-		dark: "#2C4E38",
+		main: "#D05A98",
 		contrastText: "#FFFFFF",
 	},
 	error: {
-		main: "#BA1A1A",
-		light: "#FFDAD6",
-		dark: "#93000A",
+		main: "#B3261E",
 		contrastText: "#FFFFFF",
 	},
 	background: {
-		default: "#FFF9EE",
-		paper: "#FFF9EE",
-	},
-	surface: {
-		default: "#FFF9EE",
-		paper: "#FFF9EE",
+		default: "#FEFBFF",
+		paper: "#FEFBFF",
 	},
 	text: {
-		primary: "#1E1B13",
-		secondary: "#4B4739",
+		primary: "#333333",
+		secondary: "#555555",
 	},
-	surfaceVariant: {
-		main: "#EAE2D0",
-		contrastText: "#4B4739",
+	surface: {
+		main: "#FEFBFF",
+		variant: "#98D05A",
+		contrastText: "#333333",
+		onVariant: "#FFFFFF",
 	},
 	outline: {
-		main: "#7C7767",
-		variant: "#CDC6B4",
-	},
-	// Colores adicionales del Material Theme Builder
-	success: {
-		main: "#43664E",
-		light: "#C5ECCE",
-		dark: "#2C4E38",
-		contrastText: "#FFFFFF",
-	},
-	warning: {
-		main: "#665E40",
-		light: "#EEE2BC",
-		dark: "#4E472A",
-		contrastText: "#FFFFFF",
-	},
-	info: {
-		main: "#6D5E0F",
-		light: "#F8E287",
-		dark: "#534600",
-		contrastText: "#FFFFFF",
+		main: "#CCCCCC",
 	},
 };
 
@@ -111,24 +81,31 @@ let theme = createTheme({
 		MuiCard: {
 			styleOverrides: {
 				root: {
-					backgroundColor: "#FFF9EE",
-					border: "1px solid #CDC6B4",
+					backgroundColor: palette.surface.main,
+					border: `1px solid ${palette.outline.main}`,
 				},
 			},
 		},
 		MuiAppBar: {
 			styleOverrides: {
 				root: {
-					backgroundColor: "#FFF9EE",
-					color: "#1E1B13",
-					borderBottom: "1px solid #CDC6B4",
+					backgroundColor: "#EBE4EA",
+					color: palette.text.primary,
+					borderBottom: `1px solid ${palette.outline.main}`,
 				},
 			},
 		},
 		MuiPaper: {
 			styleOverrides: {
 				root: {
-					backgroundColor: "#FFF9EE",
+					backgroundColor: palette.surface.main,
+				},
+			},
+		},
+		MuiMenu: {
+			styleOverrides: {
+				paper: {
+					backgroundColor: "#EBE4EA",
 				},
 			},
 		},

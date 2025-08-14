@@ -50,4 +50,30 @@ export class EventRepository {
 			},
 		});
 	}
+	async countApprovedEventsByMonth(): Promise<any> {
+		const events = await prisma.event.findMany({
+			where: {
+				state: "APPROVED",
+			},
+			select: {
+				startDateTime: true,
+			},
+		});
+
+		console.log("events", events);
+
+		const eventCounts = events.reduce(
+			(acc, event) => {
+				const month = event.startDateTime.toISOString().slice(0, 7);
+				acc[month] = (acc[month] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>,
+		);
+
+		return Object.entries(eventCounts).map(([month, count]) => ({
+			month,
+			eventCount: count,
+		}));
+	}
 }

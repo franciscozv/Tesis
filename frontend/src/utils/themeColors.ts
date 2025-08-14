@@ -1,80 +1,64 @@
-// Colores del Material Theme Builder - Esquema Light
 export const themeColors = {
-  // Colores principales
   primary: {
-    main: "#6D5E0F",
-    light: "#F8E287",
-    dark: "#534600",
+    main: "#5A98D0",
+    light: "#8DBADD",
+    dark: "#2E4C68",
     onPrimary: "#FFFFFF",
-    onPrimaryContainer: "#534600",
+    onPrimaryContainer: "#FFFFFF",
   },
   secondary: {
-    main: "#665E40",
-    light: "#EEE2BC",
-    dark: "#4E472A",
+    main: "#98D05A",
+    light: "#B5E28C",
+    dark: "#74A53C",
     onSecondary: "#FFFFFF",
-    onSecondaryContainer: "#4E472A",
+    onSecondaryContainer: "#FFFFFF",
   },
   tertiary: {
-    main: "#43664E",
-    light: "#C5ECCE",
-    dark: "#2C4E38",
+    main: "#D05A98",
+    light: "#E38ACF",
+    dark: "#A53C74",
     onTertiary: "#FFFFFF",
-    onTertiaryContainer: "#2C4E38",
+    onTertiaryContainer: "#FFFFFF",
   },
   error: {
-    main: "#BA1A1A",
-    light: "#FFDAD6",
-    dark: "#93000A",
+    main: "#B3261E",
+    light: "#F9DEDC",
+    dark: "#410E0B",
     onError: "#FFFFFF",
-    onErrorContainer: "#93000A",
+    onErrorContainer: "#410E0B",
   },
-  
-  // Colores de superficie
-  background: "#FFF9EE",
-  onBackground: "#1E1B13",
-  surface: "#FFF9EE",
-  onSurface: "#1E1B13",
-  surfaceVariant: "#EAE2D0",
-  onSurfaceVariant: "#4B4739",
-  
-  // Colores de contorno
-  outline: "#7C7767",
-  outlineVariant: "#CDC6B4",
-  
-  // Colores de sombra
+  background: "#FDFBF7",
+  onBackground: "#333333",
+  surface: "#FDFBF7",
+  onSurface: "#333333",
+  surfaceVariant: "#E7E0EC",
+  onSurfaceVariant: "#49454F",
+  outline: "#CCCCCC",
+  outlineVariant: "#E7E0EC",
   shadow: "#000000",
   scrim: "#000000",
-  
-  // Colores inversos
-  inverseSurface: "#333027",
-  inverseOnSurface: "#F7F0E2",
-  inversePrimary: "#DBC66E",
-  
-  // Colores fijos
-  primaryFixed: "#F8E287",
-  onPrimaryFixed: "#221B00",
-  primaryFixedDim: "#DBC66E",
-  onPrimaryFixedVariant: "#534600",
-  
-  secondaryFixed: "#EEE2BC",
-  onSecondaryFixed: "#211B04",
-  secondaryFixedDim: "#D1C6A1",
-  onSecondaryFixedVariant: "#4E472A",
-  
-  tertiaryFixed: "#C5ECCE",
-  onTertiaryFixed: "#00210F",
-  tertiaryFixedDim: "#A9D0B3",
-  onTertiaryFixedVariant: "#2C4E38",
-  
-  // Contenedores de superficie
+  inverseSurface: "#333333",
+  inverseOnSurface: "#FDFBF7",
+  inversePrimary: "#5A98D0",
+  primaryFixed: "#8DBADD",
+  onPrimaryFixed: "#2E4C68",
+  primaryFixedDim: "#5A98D0",
+  onPrimaryFixedVariant: "#2E4C68",
+  secondaryFixed: "#B5E28C",
+  onSecondaryFixed: "#74A53C",
+  secondaryFixedDim: "#98D05A",
+  onSecondaryFixedVariant: "#74A53C",
+  tertiaryFixed: "#E38ACF",
+  onTertiaryFixed: "#A53C74",
+  tertiaryFixedDim: "#D05A98",
+  onTertiaryFixedVariant: "#A53C74",
   surfaceDim: "#E0D9CC",
   surfaceBright: "#FFF9EE",
   surfaceContainerLowest: "#FFFFFF",
-  surfaceContainerLow: "#FAF3E5",
-  surfaceContainer: "#F4EDDF",
-  surfaceContainerHigh: "#EEE8DA",
-  surfaceContainerHighest: "#E8E2D4",
+  surfaceContainerLow: "#FEFBFF",
+  surfaceContainer: "#FEFBFF",
+  surfaceContainerHigh: "#FEFBFF",
+  surfaceContainerHighest: "#FEFBFF",
 };
 
 // Función para obtener el color de contraste para texto sobre un fondo
@@ -134,4 +118,4 @@ export const getPriorityColors = {
     backgroundColor: themeColors.error.light,
     color: themeColors.error.onErrorContainer,
   },
-}; 
+};

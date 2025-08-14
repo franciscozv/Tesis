@@ -49,8 +49,34 @@ const EventTypeChip = ({
 		return <Chip label="Sin tipo" variant="outlined" size="small" />;
 	}
 
+	const tooltipContent = (
+		<>
+			<Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+				{eventType.name}
+			</Typography>
+			<Typography variant="body2">{eventType.description}</Typography>
+		</>
+	);
+
 	return (
-		<Tooltip title={eventType.description} arrow>
+		<Tooltip
+			title={tooltipContent}
+			arrow
+			componentsProps={{
+				tooltip: {
+					sx: {
+						backgroundColor: "#E6E0EC",
+						color: "#333333",
+						p: 1,
+					},
+				},
+				arrow: {
+					sx: {
+						color: "#E6E0EC",
+					},
+				},
+			}}
+		>
 			<Chip
 				label={eventType.name}
 				size="small"
@@ -462,12 +488,50 @@ export const getColumns = (
 					    : state;
 
 			const chip = (
-				<Chip label={translatedState} color={color} style={{ width: "100%" }} />
+				<Chip
+					label={translatedState}
+					color={color}
+					size="small"
+					sx={{ width: "100%", fontWeight: "medium" }}
+				/>
 			);
 
-			return reviewComment ? (
-				<Tooltip title={reviewComment} arrow>
-					<span>{chip}</span>
+			const tooltipTitle =
+				state === "REJECTED"
+					? "Motivo del rechazo"
+					: state === "APPROVED"
+					  ? "Comentario de aprobación"
+					  : "Comentario";
+
+			const tooltipContent = reviewComment ? (
+				<>
+					<Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+						{tooltipTitle}
+					</Typography>
+					<Typography variant="body2">{reviewComment}</Typography>
+				</>
+			) : null;
+
+			return tooltipContent ? (
+				<Tooltip
+					title={tooltipContent}
+					arrow
+					componentsProps={{
+						tooltip: {
+							sx: {
+								backgroundColor: "#E6E0EC",
+								color: "#333333",
+								p: 1,
+							},
+						},
+						arrow: {
+							sx: {
+								color: "#E6E0EC",
+							},
+						},
+					}}
+				>
+					{chip}
 				</Tooltip>
 			) : (
 				chip
