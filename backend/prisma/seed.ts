@@ -19,7 +19,7 @@ async function main() {
 
   // Create Users
   const users = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 100; i++) {
     const user = await prisma.user.create({
       data: {
         name: faker.person.fullName(),
@@ -32,7 +32,7 @@ async function main() {
 
   // Create People
   const people = [];
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 100; i++) {
     const person = await prisma.people.create({
       data: {
         firstname: faker.person.firstName().replace(/[^a-zA-Z\s]/g, '').substring(0, 50) || 'DefaultFirstName',
@@ -147,17 +147,19 @@ async function main() {
 
   // Create Events
   const events = [];
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 125; i++) {
     const startDateTime = faker.date.future();
     const endDateTime = new Date(startDateTime.getTime() + faker.number.int({ min: 1, max: 3 }) * 60 * 60 * 1000); // 1-3 hours later
+    const state = faker.helpers.arrayElement(["PENDING", "APPROVED", "REJECTED"]);
+    const reviewComment = state === "PENDING" ? null : faker.lorem.sentence();
     const event = await prisma.event.create({
       data: {
         title: faker.lorem.sentence(4),
         description: faker.lorem.paragraph(),
         startDateTime,
         endDateTime,
-        state: faker.helpers.arrayElement(["PENDING", "APPROVED", "REJECTED"]),
-        reviewComment: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.5 }),
+        state,
+        reviewComment,
         eventTypeId: faker.helpers.arrayElement(eventTypes).id,
         placeId: faker.helpers.arrayElement(places).id,
       },

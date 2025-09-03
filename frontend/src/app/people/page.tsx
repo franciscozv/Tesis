@@ -24,6 +24,11 @@ const Page = () => {
 		id: number;
 		name: string;
 	} | null>(null);
+	const [isClient, setIsClient] = useState(false);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	const fetchData = async () => {
 		setLoading(true);
@@ -38,8 +43,10 @@ const Page = () => {
 	};
 
 	useEffect(() => {
-		fetchData();
-	}, []);
+		if (isClient) {
+			fetchData();
+		}
+	}, [isClient]);
 
 	const handleDelete = (id: number, name: string) => {
 		setPersonToDelete({ id, name });
@@ -118,6 +125,10 @@ const Page = () => {
 	};
 
 	const columns = useMemo(() => getColumns(handleDelete), []);
+
+	if (!isClient) {
+		return null;
+	}
 
 	return (
 		<Box sx={{ p: 3 }}>
