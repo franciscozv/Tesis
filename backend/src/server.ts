@@ -1,34 +1,33 @@
-import cors from "cors";
-import express, { type Express } from "express";
-import helmet from "helmet";
-import { pino } from "pino";
+import cors from 'cors';
+import express, { type Express } from 'express';
+import helmet from 'helmet';
+import { pino } from 'pino';
+import { authRouter } from '@/api/auth/authRouter';
+import { eventosRouter } from '@/api/eventos/eventosRouter';
+import { gruposMinisterialesRouter } from '@/api/gruposMinisteriales/grupoMinisterialRouter';
+import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
+import { iglesiasRouter } from '@/api/iglesias/iglesiasRouter';
+import { membresiaGrupoRouter } from '@/api/membresiaGrupo/membresiaGrupoRouter';
+import { miembrosRouter } from '@/api/miembros/miembrosRouter';
+import { rolesGrupoRouter } from '@/api/rolesGrupo/rolesGrupoRouter';
+import { tiposEventoRouter } from '@/api/tiposEvento/tiposEventoRouter';
+import { userRouter } from '@/api/user/userRouter';
+import { openAPIRouter } from '@/api-docs/openAPIRouter';
+import errorHandler from '@/common/middleware/errorHandler';
+// import rateLimiter from "@/common/middleware/rateLimiter";
+import requestLogger from '@/common/middleware/requestLogger';
+import { env } from '@/common/utils/envConfig';
 
-import { openAPIRouter } from "@/api-docs/openAPIRouter";
-import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
-import { userRouter } from "@/api/user/userRouter";
-import { groupRouter } from "@/api/group/groupRouter";
-import { eventRouter } from "./api/event/eventRouter";
-import { responsibilityRouter } from "./api/responsibility/responsibilityRouter";
-import { peopleRouter } from "./api/people/peopleRouter";
-import { eventTypeRouter } from "./api/eventType/eventTypeRouter";
-import { placeRouter } from "@/api/place/placeRouter";
-import { participantRouter } from "@/api/participant/participantRouter";
-import { peopleRoleRouter } from "./api/peopleRole/peopleRoleRouter";
-import errorHandler from "@/common/middleware/errorHandler";
-import rateLimiter from "@/common/middleware/rateLimiter";
-import requestLogger from "@/common/middleware/requestLogger";
-import { env } from "@/common/utils/envConfig";
-
-const logger = pino({ name: "server start", level: env.LOG_LEVEL });
+const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 // Set the application to trust the reverse proxy
-app.set("trust proxy", true);
+app.set('trust proxy', true);
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(helmet());
 // app.use(rateLimiter);
 
@@ -36,16 +35,16 @@ app.use(helmet());
 app.use(requestLogger);
 
 // Routes
-app.use("/health-check", healthCheckRouter);
-app.use("/users", userRouter);
-app.use("/groups", groupRouter);
-app.use("/events", eventRouter);
-app.use("/responsibilities", responsibilityRouter);
-app.use("/people-roles", peopleRoleRouter);
-app.use("/people", peopleRouter);
-app.use("/event-type", eventTypeRouter);
-app.use("/places", placeRouter);
-app.use("/participants", participantRouter);
+app.use('/health-check', healthCheckRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/eventos', eventosRouter);
+app.use('/api/grupos-ministeriales', gruposMinisterialesRouter);
+app.use('/api/iglesias', iglesiasRouter);
+app.use('/api/membresia-grupo', membresiaGrupoRouter);
+app.use('/api/miembros', miembrosRouter);
+app.use('/api/roles-grupo', rolesGrupoRouter);
+app.use('/api/tipos-evento', tiposEventoRouter);
+app.use('/api/users', userRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
