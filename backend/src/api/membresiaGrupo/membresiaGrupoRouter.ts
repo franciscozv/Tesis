@@ -2,9 +2,11 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { membresiaGrupoController } from './membresiaGrupoController';
 import {
+  CambiarRolMembresiaSchema,
   DesvincularMiembroSchema,
   GetMembresiasByGrupoSchema,
   GetMembresiasByMiembroSchema,
@@ -18,8 +20,12 @@ export const membresiaGrupoRouter: Router = express.Router();
 // Registrar schema principal
 membresiaGrupoRegistry.register('MembresiaGrupo', MembresiaGrupoSchema);
 
+// Todas las rutas requieren autenticación
+membresiaGrupoRouter.use(verificarToken);
+
 /**
  * POST /api/membresia-grupo - Vincular miembro a grupo (RF_06)
+ * Permisos: admin, lider
  */
 membresiaGrupoRegistry.registerPath({
   method: 'post',
@@ -38,12 +44,14 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.post(
   '/',
+  verificarRol('administrador', 'lider'),
   validateRequest(VincularMiembroSchema),
   membresiaGrupoController.vincularMiembro,
 );
 
 /**
  * PATCH /api/membresia-grupo/:id/desvincular - Desvincular miembro (RF_07)
+ * Permisos: admin, secretario, lider
  */
 membresiaGrupoRegistry.registerPath({
   method: 'patch',
@@ -63,12 +71,41 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.patch(
   '/:id/desvincular',
+  verificarRol('administrador', 'lider'),
   validateRequest(DesvincularMiembroSchema),
   membresiaGrupoController.desvincularMiembro,
 );
 
 /**
+ * PATCH /api/membresia-grupo/:id/cambiar-rol - Cambiar rol de una membresía activa
+ * Permisos: admin, lider
+ */
+membresiaGrupoRegistry.registerPath({
+  method: 'patch',
+  path: '/api/membresia-grupo/{id}/cambiar-rol',
+  tags: ['Membresía en Grupos'],
+  request: {
+    params: CambiarRolMembresiaSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: CambiarRolMembresiaSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MembresiaGrupoSchema, 'Rol cambiado exitosamente'),
+});
+membresiaGrupoRouter.patch(
+  '/:id/cambiar-rol',
+  verificarRol('administrador', 'lider'),
+  validateRequest(CambiarRolMembresiaSchema),
+  membresiaGrupoController.cambiarRol,
+);
+
+/**
  * GET /api/membresia-grupo/miembro/:miembro_id - Obtener grupos de un miembro
+ * Permisos: admin, lider
  */
 membresiaGrupoRegistry.registerPath({
   method: 'get',
@@ -81,12 +118,14 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.get(
   '/miembro/:miembro_id',
+  verificarRol('administrador', 'lider'),
   validateRequest(GetMembresiasByMiembroSchema),
   membresiaGrupoController.getMembresiasByMiembro,
 );
 
 /**
  * GET /api/membresia-grupo/grupo/:grupo_id - Obtener miembros de un grupo
+ * Permisos: admin, lider
  */
 membresiaGrupoRegistry.registerPath({
   method: 'get',

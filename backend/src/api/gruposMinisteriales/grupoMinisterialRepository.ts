@@ -136,6 +136,22 @@ export class GrupoMinisterialRepository {
       isPlenaComunion: data.estado_membresia === 'plena_comunion',
     };
   }
+
+  /**
+   * Obtiene los grupos que un líder puede gestionar
+   * Retorna grupos donde el miembro es lider_principal_id
+   */
+  async findGruposByLiderAsync(miembro_id: number): Promise<GrupoMinisterial[]> {
+    const { data, error } = await supabase
+      .from('grupo_ministerial')
+      .select('*')
+      .eq('lider_principal_id', miembro_id)
+      .eq('activo', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as GrupoMinisterial[]) || [];
+  }
 }
 
 export const grupoMinisterialRepository = new GrupoMinisterialRepository();

@@ -8,8 +8,10 @@ import {
   GetMiembroSchema,
   MiembroSchema,
   UpdateMiembroSchema,
+  UpdateMiPerfilSchema,
 } from '@/api/miembros/miembrosModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 
 export const miembrosRegistry = new OpenAPIRegistry();
@@ -17,6 +19,33 @@ export const miembrosRouter: Router = express.Router();
 
 // Registrar schema principal
 miembrosRegistry.register('Miembro', MiembroSchema);
+
+// Todas las rutas requieren autenticación
+miembrosRouter.use(verificarToken);
+
+/**
+ * PATCH /api/miembros/mi-perfil - Actualiza datos de contacto del perfil propio
+ */
+miembrosRegistry.registerPath({
+  method: 'patch',
+  path: '/api/miembros/mi-perfil',
+  tags: ['Miembros'],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdateMiPerfilSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MiembroSchema, 'Perfil actualizado exitosamente'),
+});
+miembrosRouter.patch(
+  '/mi-perfil',
+  validateRequest(UpdateMiPerfilSchema),
+  miembrosController.updateMiPerfil,
+);
 
 /**
  * GET /api/miembros - Obtiene todos los miembros activos
@@ -59,7 +88,7 @@ miembrosRegistry.registerPath({
   },
   responses: createApiResponse(MiembroSchema, 'Miembro creado exitosamente', 201),
 });
-miembrosRouter.post('/', validateRequest(CreateMiembroSchema), miembrosController.create);
+miembrosRouter.post('/', verificarRol('administrador'), validateRequest(CreateMiembroSchema), miembrosController.create);
 
 /**
  * PUT /api/miembros/:id - Actualiza un miembro existente (RF_03: Actualizar información)
@@ -80,7 +109,7 @@ miembrosRegistry.registerPath({
   },
   responses: createApiResponse(MiembroSchema, 'Miembro actualizado exitosamente'),
 });
-miembrosRouter.put('/:id', validateRequest(UpdateMiembroSchema), miembrosController.update);
+miembrosRouter.put('/:id', verificarRol('administrador'), validateRequest(UpdateMiembroSchema), miembrosController.update);
 
 /**
  * DELETE /api/miembros/:id - Elimina lógicamente un miembro (soft delete)
@@ -92,7 +121,7 @@ miembrosRegistry.registerPath({
   request: { params: GetMiembroSchema.shape.params },
   responses: createApiResponse(z.null(), 'Miembro eliminado exitosamente'),
 });
-miembrosRouter.delete('/:id', validateRequest(GetMiembroSchema), miembrosController.delete);
+miembrosRouter.delete('/:id', verificarRol('administrador'), validateRequest(GetMiembroSchema), miembrosController.delete);
 
 /**
  * PATCH /api/miembros/:id/estado - Cambia el estado de membresía (RF_05)
@@ -115,6 +144,7 @@ miembrosRegistry.registerPath({
 });
 miembrosRouter.patch(
   '/:id/estado',
+  verificarRol('administrador'),
   validateRequest(ChangeEstadoMembresiaSchema),
   miembrosController.changeEstadoMembresia,
 );

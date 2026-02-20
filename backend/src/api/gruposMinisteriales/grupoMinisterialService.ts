@@ -22,11 +22,18 @@ export class GrupoMinisterialService {
     try {
       const grupos = await this.grupoMinisterialRepository.findAllAsync();
 
-      if (!grupos || grupos.length === 0) {
+      if (!grupos) {
         return ServiceResponse.failure(
-          'No se encontraron grupos ministeriales',
+          'Error al obtener grupos ministeriales',
           null,
-          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      if (grupos.length === 0) {
+        return ServiceResponse.success<GrupoMinisterial[]>(
+          'No se encontraron grupos ministeriales',
+          [],
         );
       }
 
@@ -293,6 +300,52 @@ export class GrupoMinisterialService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Ocurrió un error al eliminar el grupo ministerial',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Obtiene los grupos ministeriales que un usuario puede gestionar según su rol
+   * - Administrador: Retorna todos los grupos activos
+   * - Líder: Retorna solo los grupos donde es líder
+   * - Miembro: Retorna array vacío
+   */
+  async findMisGrupos(
+    rol: 'administrador' | 'lider' | 'miembro',
+    miembro_id: number | null,
+  ): Promise<ServiceResponse<GrupoMinisterial[] | null>> {
+    try {
+      let grupos: GrupoMinisterial[] = [];
+
+      if (rol === 'administrador') {
+        // Administrador: retornar todos los grupos activos
+        grupos = await this.grupoMinisterialRepository.findAllAsync();
+      } else if (rol === 'lider') {
+        // Líder: retornar solo los grupos donde tiene rol de Líder
+        if (!miembro_id) {
+          return ServiceResponse.failure(
+            'El usuario líder no tiene un miembro_id asociado',
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+        grupos = await this.grupoMinisterialRepository.findGruposByLiderAsync(miembro_id);
+      } else {
+        // Miembro: retornar array vacío (no gestiona grupos)
+        grupos = [];
+      }
+
+      return ServiceResponse.success<GrupoMinisterial[]>(
+        'Grupos obtenidos exitosamente',
+        grupos,
+      );
+    } catch (ex) {
+      const errorMessage = `Error al obtener grupos del usuario: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Ocurrió un error al obtener los grupos',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

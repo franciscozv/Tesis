@@ -48,6 +48,16 @@ class GrupoMinisterialController {
     const serviceResponse = await grupoMinisterialService.delete(id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
+
+  /**
+   * GET /grupos-ministeriales/mis-grupos - Obtiene los grupos que el usuario puede gestionar
+   */
+  public getMisGrupos: RequestHandler = async (req: Request, res: Response) => {
+    const rol = req.usuario!.rol;
+    const miembro_id = req.usuario!.miembro_id;
+    const serviceResponse = await grupoMinisterialService.findMisGrupos(rol, miembro_id);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
 }
 
 export const grupoMinisterialController = new GrupoMinisterialController();

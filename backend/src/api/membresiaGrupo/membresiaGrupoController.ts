@@ -35,6 +35,17 @@ class MembresiaGrupoController {
   };
 
   /**
+   * Cambia el rol de una membresía activa
+   * PATCH /api/membresia-grupo/:id/cambiar-rol
+   */
+  public cambiarRol: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id, 10);
+    const { rol_grupo_id } = req.body;
+    const serviceResponse = await membresiaGrupoService.cambiarRol(id, rol_grupo_id);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
    * Obtiene todas las membresías de un miembro
    * GET /api/membresia-grupo/miembro/:miembro_id
    */

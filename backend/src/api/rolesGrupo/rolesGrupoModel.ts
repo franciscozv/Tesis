@@ -66,6 +66,16 @@ export const GetRolGrupoSchema = z.object({
 });
 
 /**
+ * Schema para cambiar estado (activo/inactivo) de un Rol de Grupo
+ * PATCH /api/roles-grupo/:id/toggle-estado
+ */
+export const ToggleEstadoRolGrupoSchema = z.object({
+  params: z.object({
+    id: commonValidations.id,
+  }),
+});
+
+/**
  * Schema para eliminar un rol (soft delete)
  * DELETE /api/roles-grupo/:id
  */

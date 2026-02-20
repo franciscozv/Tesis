@@ -1,5 +1,5 @@
 import { supabase } from '@/common/utils/supabaseClient';
-import type { MembresiaGrupo } from './membresiaGrupoModel';
+import type { MembresiaGrupo, MembresiaGrupoConNombres } from './membresiaGrupoModel';
 
 /**
  * Repository para operaciones de Membresía en Grupos Ministeriales
@@ -154,31 +154,101 @@ export class MembresiaGrupoRepository {
   }
 
   /**
-   * Obtiene todas las membresías de un miembro
+   * Cambia el rol de una membresía activa
    */
-  async findByMiembroIdAsync(miembroId: number): Promise<MembresiaGrupo[]> {
+  async cambiarRolAsync(id: number, rolGrupoId: number): Promise<MembresiaGrupo | null> {
     const { data, error } = await supabase
       .from('membresia_grupo')
-      .select('*')
+      .update({ rol_grupo_id: rolGrupoId })
+      .eq('id_membresia', id)
+      .is('fecha_desvinculacion', null)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data as MembresiaGrupo;
+  }
+
+  /**
+   * Obtiene todas las membresías de un miembro (activas + históricas) con nombres de grupo y rol
+   */
+  async findByMiembroIdAsync(miembroId: number): Promise<MembresiaGrupoConNombres[]> {
+    const { data, error } = await supabase
+      .from('membresia_grupo')
+      .select(`
+        id_membresia,
+        miembro_id,
+        grupo_id,
+        rol_grupo_id,
+        fecha_vinculacion,
+        fecha_desvinculacion,
+        grupo_ministerial!inner(id_grupo, nombre),
+        rol_grupo_ministerial!inner(id_rol_grupo, nombre)
+      `)
       .eq('miembro_id', miembroId)
       .order('fecha_vinculacion', { ascending: false });
 
     if (error) throw error;
-    return data as MembresiaGrupo[];
+
+    return (data as any[]).map((row) => ({
+      id: row.id_membresia,
+      grupo: {
+        id: row.grupo_ministerial.id_grupo,
+        nombre: row.grupo_ministerial.nombre,
+      },
+      rol: {
+        id: row.rol_grupo_ministerial.id_rol_grupo,
+        nombre: row.rol_grupo_ministerial.nombre,
+      },
+      fecha_vinculacion: row.fecha_vinculacion,
+      fecha_desvinculacion: row.fecha_desvinculacion,
+    }));
   }
 
   /**
-   * Obtiene todas las membresías de un grupo
+   * Obtiene todas las membresías activas de un grupo con nombres de rol y miembro
    */
-  async findByGrupoIdAsync(grupoId: number): Promise<MembresiaGrupo[]> {
+  async findByGrupoIdAsync(grupoId: number): Promise<MembresiaGrupoConNombres[]> {
     const { data, error } = await supabase
       .from('membresia_grupo')
-      .select('*')
+      .select(`
+        id_membresia,
+        miembro_id,
+        grupo_id,
+        rol_grupo_id,
+        fecha_vinculacion,
+        fecha_desvinculacion,
+        grupo_ministerial!inner(id_grupo, nombre),
+        rol_grupo_ministerial!inner(id_rol_grupo, nombre),
+        miembro!inner(id, nombre, apellido)
+      `)
       .eq('grupo_id', grupoId)
       .is('fecha_desvinculacion', null)
       .order('fecha_vinculacion', { ascending: false });
 
     if (error) throw error;
-    return data as MembresiaGrupo[];
+
+    return (data as any[]).map((row) => ({
+      id: row.id_membresia,
+      miembro_id: row.miembro_id,
+      miembro: {
+        id: row.miembro.id,
+        nombre: row.miembro.nombre,
+        apellido: row.miembro.apellido,
+      },
+      grupo: {
+        id: row.grupo_ministerial.id_grupo,
+        nombre: row.grupo_ministerial.nombre,
+      },
+      rol: {
+        id: row.rol_grupo_ministerial.id_rol_grupo,
+        nombre: row.rol_grupo_ministerial.nombre,
+      },
+      fecha_vinculacion: row.fecha_vinculacion,
+      fecha_desvinculacion: row.fecha_desvinculacion,
+    }));
   }
 }

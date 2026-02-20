@@ -17,15 +17,22 @@ export class RolesGrupoService {
   /**
    * Obtiene todos los roles activos
    */
-  async findAll(): Promise<ServiceResponse<RolGrupo[] | null>> {
+  async findAll(activo?: boolean): Promise<ServiceResponse<RolGrupo[] | null>> {
     try {
-      const roles = await this.rolesGrupoRepository.findAllAsync();
+      const roles = await this.rolesGrupoRepository.findAllAsync(activo);
 
-      if (!roles || roles.length === 0) {
+      if (!roles) {
         return ServiceResponse.failure(
-          'No se encontraron roles de grupo',
+          'Error al obtener roles de grupo',
           null,
-          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      if (roles.length === 0) {
+        return ServiceResponse.success<RolGrupo[]>(
+          'No se encontraron roles de grupo',
+          [],
         );
       }
 
@@ -155,27 +162,49 @@ export class RolesGrupoService {
   }
 
   /**
-   * Elimina un rol de grupo (soft delete)
-   *
-   * Validaciones:
-   * - Rol debe existir
-   * - No permitir eliminar si está siendo usado en membresías activas
+   * Cambia el estado activo/inactivo de un rol de grupo
+   */
+  async toggleEstado(id: number): Promise<ServiceResponse<RolGrupo | null>> {
+    try {
+      const rol = await this.rolesGrupoRepository.toggleEstadoAsync(id);
+
+      if (!rol) {
+        return ServiceResponse.failure('Rol de grupo no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      const estado = rol.activo ? 'activado' : 'desactivado';
+      return ServiceResponse.success<RolGrupo>(
+        `Rol de grupo ${estado} exitosamente`,
+        rol,
+      );
+    } catch (error) {
+      const errorMessage = `Error al cambiar estado del rol de grupo: ${(error as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Error al cambiar estado del rol de grupo',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Elimina un rol de grupo permanentemente (hard delete)
+   * Solo se permite si no tiene membresías asociadas
    */
   async delete(id: number): Promise<ServiceResponse<null>> {
     try {
-      // Verificar que el rol exista
       const rolExistente = await this.rolesGrupoRepository.findByIdAsync(id);
 
       if (!rolExistente) {
         return ServiceResponse.failure('Rol de grupo no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      // Verificar que el rol no esté siendo usado en membresías activas
       const enUso = await this.rolesGrupoRepository.estaEnUso(id);
 
       if (enUso) {
         return ServiceResponse.failure(
-          'No se puede eliminar el rol porque está siendo usado en membresías activas',
+          'No se puede eliminar porque tiene membresías asociadas. Puede desactivarlo en su lugar.',
           null,
           StatusCodes.CONFLICT,
         );

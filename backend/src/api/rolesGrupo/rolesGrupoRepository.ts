@@ -6,14 +6,18 @@ import type { RolGrupo } from './rolesGrupoModel';
  */
 export class RolesGrupoRepository {
   /**
-   * Obtiene todos los roles activos
+   * Obtiene roles de grupo, opcionalmente filtrados por estado
    */
-  async findAllAsync(): Promise<RolGrupo[]> {
-    const { data, error } = await supabase
+  async findAllAsync(activo?: boolean): Promise<RolGrupo[]> {
+    let query = supabase
       .from('rol_grupo_ministerial')
-      .select('*')
-      .eq('activo', true)
-      .order('nombre', { ascending: true });
+      .select('*');
+
+    if (activo !== undefined) {
+      query = query.eq('activo', activo);
+    }
+
+    const { data, error } = await query.order('nombre', { ascending: true });
 
     if (error) throw error;
     return data as RolGrupo[];
@@ -27,7 +31,6 @@ export class RolesGrupoRepository {
       .from('rol_grupo_ministerial')
       .select('*')
       .eq('id_rol_grupo', id)
-      .eq('activo', true)
       .single();
 
     if (error) {
@@ -102,7 +105,6 @@ export class RolesGrupoRepository {
       .from('rol_grupo_ministerial')
       .update(updates)
       .eq('id_rol_grupo', id)
-      .eq('activo', true)
       .select()
       .single();
 
@@ -114,14 +116,39 @@ export class RolesGrupoRepository {
   }
 
   /**
-   * Elimina un rol (soft delete)
+   * Cambia el estado activo/inactivo de un rol de grupo
+   */
+  async toggleEstadoAsync(id: number): Promise<RolGrupo | null> {
+    const { data: current, error: findError } = await supabase
+      .from('rol_grupo_ministerial')
+      .select('*')
+      .eq('id_rol_grupo', id)
+      .single();
+
+    if (findError) {
+      if (findError.code === 'PGRST116') return null;
+      throw findError;
+    }
+
+    const { data, error } = await supabase
+      .from('rol_grupo_ministerial')
+      .update({ activo: !current.activo })
+      .eq('id_rol_grupo', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as RolGrupo;
+  }
+
+  /**
+   * Elimina un rol permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
     const { error } = await supabase
       .from('rol_grupo_ministerial')
-      .update({ activo: false })
-      .eq('id_rol_grupo', id)
-      .eq('activo', true);
+      .delete()
+      .eq('id_rol_grupo', id);
 
     if (error) throw error;
     return true;

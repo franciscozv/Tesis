@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { rolesGrupoController } from './rolesGrupoController';
 import {
@@ -9,6 +10,7 @@ import {
   DeleteRolGrupoSchema,
   GetRolGrupoSchema,
   RolGrupoSchema,
+  ToggleEstadoRolGrupoSchema,
   UpdateRolGrupoSchema,
 } from './rolesGrupoModel';
 
@@ -18,8 +20,12 @@ export const rolesGrupoRouter: Router = express.Router();
 // Registrar schema principal
 rolesGrupoRegistry.register('RolGrupo', RolGrupoSchema);
 
+// Todas las rutas requieren autenticación
+rolesGrupoRouter.use(verificarToken);
+
 /**
  * GET /api/roles-grupo - Listar todos los roles activos
+ * Permisos: admin, secretario, lider
  */
 rolesGrupoRegistry.registerPath({
   method: 'get',
@@ -61,10 +67,11 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(RolGrupoSchema, 'Rol de grupo creado exitosamente'),
 });
-rolesGrupoRouter.post('/', validateRequest(CreateRolGrupoSchema), rolesGrupoController.create);
+rolesGrupoRouter.post('/', verificarRol('administrador'), validateRequest(CreateRolGrupoSchema), rolesGrupoController.create);
 
 /**
  * PUT /api/roles-grupo/:id - Actualizar un rol
+ * Permisos: admin, secretario
  */
 rolesGrupoRegistry.registerPath({
   method: 'put',
@@ -82,7 +89,25 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(RolGrupoSchema, 'Rol de grupo actualizado exitosamente'),
 });
-rolesGrupoRouter.put('/:id', validateRequest(UpdateRolGrupoSchema), rolesGrupoController.update);
+rolesGrupoRouter.put('/:id', verificarRol('administrador'), validateRequest(UpdateRolGrupoSchema), rolesGrupoController.update);
+
+/**
+ * PATCH /api/roles-grupo/:id/toggle-estado - Cambiar estado activo/inactivo
+ */
+rolesGrupoRegistry.registerPath({
+  method: 'patch',
+  path: '/api/roles-grupo/{id}/toggle-estado',
+  tags: ['Roles de Grupo'],
+  summary: 'Cambiar estado activo/inactivo de un rol de grupo',
+  request: { params: ToggleEstadoRolGrupoSchema.shape.params },
+  responses: createApiResponse(RolGrupoSchema, 'Estado cambiado exitosamente'),
+});
+rolesGrupoRouter.patch(
+  '/:id/toggle-estado',
+  verificarRol('administrador'),
+  validateRequest(ToggleEstadoRolGrupoSchema),
+  rolesGrupoController.toggleEstado
+);
 
 /**
  * DELETE /api/roles-grupo/:id - Eliminar un rol (soft delete)
@@ -96,4 +121,4 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(z.null(), 'Rol de grupo eliminado exitosamente'),
 });
-rolesGrupoRouter.delete('/:id', validateRequest(DeleteRolGrupoSchema), rolesGrupoController.delete);
+rolesGrupoRouter.delete('/:id', verificarRol('administrador'), validateRequest(DeleteRolGrupoSchema), rolesGrupoController.delete);

@@ -1,30 +1,59 @@
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { authRegistry } from '@/api/auth/authRouter';
-import { eventosRegistry } from '@/api/eventos/eventosRouter';
+import { actividadesRegistry } from '@/api/actividades/actividadesRouter';
+import { calendarioRegistry } from '@/api/calendario/calendarioRouter';
+import { candidatosRegistry } from '@/api/candidatos/candidatosRouter';
+import { colaboradoresRegistry } from '@/api/colaboradores/colaboradoresRouter';
 import { gruposMinisterialesRegistry } from '@/api/gruposMinisteriales/grupoMinisterialRouter';
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
-import { iglesiasRegistry } from '@/api/iglesias/iglesiasRouter';
+import { historialEstadoRegistry } from '@/api/historialEstado/historialEstadoRouter';
+import { historialRolGrupoRegistry } from '@/api/historialRolGrupo/historialRolGrupoRouter';
+import { invitadosRegistry } from '@/api/invitados/invitadosRouter';
+import { misResponsabilidadesRegistry } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { membresiaGrupoRegistry } from '@/api/membresiaGrupo/membresiaGrupoRouter';
 import { miembrosRegistry } from '@/api/miembros/miembrosRouter';
+import { necesidadesLogisticasRegistry } from '@/api/necesidadesLogisticas/necesidadesLogisticasRouter';
+import { patronesActividadRegistry } from '@/api/patronesActividad/patronesActividadRouter';
+import { rolesActividadRegistry } from '@/api/rolesActividad/rolesActividadRouter';
 import { rolesGrupoRegistry } from '@/api/rolesGrupo/rolesGrupoRouter';
-import { tiposEventoRegistry } from '@/api/tiposEvento/tiposEventoRouter';
-import { userRegistry } from '@/api/user/userRouter';
+import { tiposActividadRegistry } from '@/api/tiposActividad/tiposActividadRouter';
+import { tiposNecesidadRegistry } from '@/api/tiposNecesidad/tiposNecesidadRouter';
+import { usuariosRegistry } from '@/api/usuarios/usuariosRouter';
 
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3['generateDocument']>;
 
 export function generateOpenAPIDocument(): OpenAPIDocument {
   const registry = new OpenAPIRegistry([
-    healthCheckRegistry,
     authRegistry,
-    eventosRegistry,
+    healthCheckRegistry,
+    actividadesRegistry,
+    calendarioRegistry,
+    candidatosRegistry,
+    colaboradoresRegistry,
     gruposMinisterialesRegistry,
-    iglesiasRegistry,
+    historialEstadoRegistry,
+    historialRolGrupoRegistry,
+    invitadosRegistry,
     membresiaGrupoRegistry,
+    misResponsabilidadesRegistry,
     miembrosRegistry,
+    necesidadesLogisticasRegistry,
+    patronesActividadRegistry,
+    rolesActividadRegistry,
     rolesGrupoRegistry,
-    tiposEventoRegistry,
-    userRegistry,
+    tiposActividadRegistry,
+    tiposNecesidadRegistry,
+    usuariosRegistry,
   ]);
+
+  // Registrar el esquema de seguridad en el registry
+  registry.registerComponent('securitySchemes', 'bearerAuth', {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT',
+    description: 'Ingresa tu token JWT (obtenerlo desde /api/auth/login)',
+  });
+
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({
@@ -37,14 +66,6 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
       description: 'View the raw OpenAPI Specification in JSON format',
       url: '/swagger.json',
     },
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
+    security: [{ bearerAuth: [] }],
   });
 }

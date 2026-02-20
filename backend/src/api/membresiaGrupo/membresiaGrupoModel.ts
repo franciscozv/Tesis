@@ -19,6 +19,25 @@ export const MembresiaGrupoSchema = z.object({
 export type MembresiaGrupo = z.infer<typeof MembresiaGrupoSchema>;
 
 /**
+ * Schema de membresía con nombres de grupo y rol (para consultas con JOIN)
+ */
+export const MembresiaGrupoConNombresSchema = z.object({
+  id: z.number(),
+  grupo: z.object({
+    id: z.number(),
+    nombre: z.string(),
+  }),
+  rol: z.object({
+    id: z.number(),
+    nombre: z.string(),
+  }),
+  fecha_vinculacion: z.string(),
+  fecha_desvinculacion: z.string().nullable(),
+});
+
+export type MembresiaGrupoConNombres = z.infer<typeof MembresiaGrupoConNombresSchema>;
+
+/**
  * Schema para vincular un miembro a un grupo ministerial (RF_06)
  * POST /api/membresia-grupo
  */
@@ -71,5 +90,18 @@ export const GetMembresiasByGrupoSchema = z.object({
 export const GetMembresiaSchema = z.object({
   params: z.object({
     id: commonValidations.id,
+  }),
+});
+
+/**
+ * Schema para cambiar el rol de una membresía activa
+ * PATCH /api/membresia-grupo/:id/cambiar-rol
+ */
+export const CambiarRolMembresiaSchema = z.object({
+  params: z.object({
+    id: commonValidations.id,
+  }),
+  body: z.object({
+    rol_grupo_id: z.number().int().positive('ID de rol debe ser positivo'),
   }),
 });

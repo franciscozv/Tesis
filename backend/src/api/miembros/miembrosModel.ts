@@ -127,11 +127,36 @@ export const UpdateMiembroSchema = z.object({
 });
 
 /**
+ * Schema para actualizar perfil propio (solo datos de contacto)
+ */
+export const UpdateMiPerfilSchema = z.object({
+  body: z.object({
+    direccion: z
+      .string()
+      .max(300)
+      .optional()
+      .transform((val) => val || null),
+    telefono: z
+      .string()
+      .regex(/^\+56\s?9\s?\d{4}\s?\d{4}$/, 'Formato de teléfono inválido. Debe ser: +56 9 XXXX XXXX')
+      .optional()
+      .transform((val) => val || null),
+    email: z
+      .string()
+      .email('Email inválido')
+      .max(150)
+      .optional()
+      .transform((val) => val || null),
+  }),
+});
+
+/**
  * Schema para cambiar el estado de membresía (RF_05)
  */
 export const ChangeEstadoMembresiaSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
-    estado_membresia: EstadoMembresiaEnum,
+    estado_nuevo: EstadoMembresiaEnum,
+    motivo: z.string().min(5, 'El motivo debe tener al menos 5 caracteres').max(500),
   }),
 });

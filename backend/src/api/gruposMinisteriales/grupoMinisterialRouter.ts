@@ -9,6 +9,7 @@ import {
   UpdateGrupoMinisterialSchema,
 } from '@/api/gruposMinisteriales/grupoMinisterialModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 
 export const gruposMinisterialesRegistry = new OpenAPIRegistry();
@@ -16,6 +17,9 @@ export const gruposMinisterialesRouter: Router = express.Router();
 
 // Registrar schema principal
 gruposMinisterialesRegistry.register('GrupoMinisterial', GrupoMinisterialSchema);
+
+// Todas las rutas requieren autenticación
+gruposMinisterialesRouter.use(verificarToken);
 
 /**
  * GET /api/grupos-ministeriales - Obtiene todos los grupos ministeriales activos
@@ -27,6 +31,20 @@ gruposMinisterialesRegistry.registerPath({
   responses: createApiResponse(z.array(GrupoMinisterialSchema), 'Success'),
 });
 gruposMinisterialesRouter.get('/', grupoMinisterialController.getAll);
+
+/**
+ * GET /api/grupos-ministeriales/mis-grupos - Obtiene los grupos que el usuario puede gestionar
+ */
+gruposMinisterialesRegistry.registerPath({
+  method: 'get',
+  path: '/api/grupos-ministeriales/mis-grupos',
+  tags: ['Grupos Ministeriales'],
+  responses: createApiResponse(
+    z.array(GrupoMinisterialSchema),
+    'Grupos que el usuario puede gestionar',
+  ),
+});
+gruposMinisterialesRouter.get('/mis-grupos', grupoMinisterialController.getMisGrupos);
 
 /**
  * GET /api/grupos-ministeriales/:id - Obtiene un grupo ministerial por ID
@@ -68,6 +86,7 @@ gruposMinisterialesRegistry.registerPath({
 });
 gruposMinisterialesRouter.post(
   '/',
+  verificarRol('administrador'),
   validateRequest(CreateGrupoMinisterialSchema),
   grupoMinisterialController.create,
 );
@@ -96,6 +115,7 @@ gruposMinisterialesRegistry.registerPath({
 });
 gruposMinisterialesRouter.put(
   '/:id',
+  verificarRol('administrador'),
   validateRequest(UpdateGrupoMinisterialSchema),
   grupoMinisterialController.update,
 );
@@ -112,6 +132,7 @@ gruposMinisterialesRegistry.registerPath({
 });
 gruposMinisterialesRouter.delete(
   '/:id',
+  verificarRol('administrador'),
   validateRequest(GetGrupoMinisterialSchema),
   grupoMinisterialController.delete,
 );

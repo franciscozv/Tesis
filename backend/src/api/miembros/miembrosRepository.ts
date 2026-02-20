@@ -75,6 +75,28 @@ export class MiembrosRepository {
   }
 
   /**
+   * Actualiza solo datos de contacto de un miembro (perfil propio)
+   */
+  async updatePerfilAsync(
+    id: number,
+    data: { direccion?: string | null; telefono?: string | null; email?: string | null },
+  ): Promise<Miembro | null> {
+    const { data: miembro, error } = await supabase
+      .from('miembro')
+      .update(data)
+      .eq('id', id)
+      .eq('activo', true)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return miembro as Miembro;
+  }
+
+  /**
    * Elimina lógicamente un miembro (soft delete)
    */
   async deleteAsync(id: number): Promise<boolean> {

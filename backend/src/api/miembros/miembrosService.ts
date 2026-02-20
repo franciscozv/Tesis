@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import type { Miembro } from '@/api/miembros/miembrosModel';
 import { MiembrosRepository } from '@/api/miembros/miembrosRepository';
+import { historialEstadoService } from '@/api/historialEstado/historialEstadoService';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
 
@@ -22,8 +23,16 @@ export class MiembrosService {
     try {
       const miembros = await this.miembrosRepository.findAllAsync();
 
-      if (!miembros || miembros.length === 0) {
-        return ServiceResponse.failure('No se encontraron miembros', null, StatusCodes.NOT_FOUND);
+      if (!miembros) {
+        return ServiceResponse.failure(
+          'Error al obtener miembros',
+          null,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      if (miembros.length === 0) {
+        return ServiceResponse.success<Miembro[]>('No se encontraron miembros', []);
       }
 
       return ServiceResponse.success<Miembro[]>('Miembros encontrados', miembros);
@@ -155,25 +164,91 @@ export class MiembrosService {
   }
 
   /**
-   * Cambia el estado de membresía de un miembro (RF_05)
+   * Actualiza datos de contacto del perfil propio
    */
-  async changeEstadoMembresia(
-    id: number,
-    estado_membresia: string,
+  async updateMiPerfil(
+    miembroId: number | null,
+    data: { direccion?: string | null; telefono?: string | null; email?: string | null },
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
-      const miembro = await this.miembrosRepository.changeEstadoMembresiaAsync(
-        id,
-        estado_membresia,
-      );
+      if (!miembroId) {
+        return ServiceResponse.failure(
+          'Tu usuario no tiene un miembro asociado',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      const miembro = await this.miembrosRepository.updatePerfilAsync(miembroId, data);
 
       if (!miembro) {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
+      return ServiceResponse.success<Miembro>('Perfil actualizado exitosamente', miembro);
+    } catch (ex) {
+      const errorMessage = `Error al actualizar perfil: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+
+      if ((ex as any).code === '23505') {
+        return ServiceResponse.failure(
+          'Ya existe un miembro con ese email',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      return ServiceResponse.failure(
+        'Ocurrió un error al actualizar el perfil',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Cambia el estado de membresía de un miembro (RF_05)
+   * Registra automáticamente el cambio en el historial de estado
+   */
+  async changeEstadoMembresia(
+    id: number,
+    estado_nuevo: string,
+    motivo: string,
+    usuario_id: number,
+  ): Promise<ServiceResponse<Miembro | null>> {
+    try {
+      // Obtener el miembro actual para saber el estado anterior
+      const miembroResponse = await this.findById(id);
+
+      if (!miembroResponse.success || !miembroResponse.responseObject) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      const estado_anterior = miembroResponse.responseObject.estado_membresia;
+
+      // Delegar al servicio de historial (registra historial + actualiza miembro)
+      const historialResponse = await historialEstadoService.create({
+        miembro_id: id,
+        estado_anterior,
+        estado_nuevo: estado_nuevo as any, // El servicio ya valida el tipo
+        motivo,
+        usuario_id,
+      });
+
+      if (!historialResponse.success) {
+        return ServiceResponse.failure(
+          historialResponse.message,
+          null,
+          historialResponse.statusCode,
+        );
+      }
+
+      // Obtener el miembro actualizado para devolverlo
+      const miembroActualizadoResponse = await this.findById(id);
+
       return ServiceResponse.success<Miembro>(
         'Estado de membresía actualizado exitosamente',
-        miembro,
+        miembroActualizadoResponse.responseObject,
       );
     } catch (ex) {
       const errorMessage = `Error al cambiar estado de membresía del miembro con id ${id}: ${(ex as Error).message}`;

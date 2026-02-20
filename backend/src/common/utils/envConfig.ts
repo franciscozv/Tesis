@@ -22,7 +22,14 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().min(1),
 
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('8h'),
+
+  EMAIL_HOST: z.string().min(1).default('smtp.gmail.com'),
+  EMAIL_PORT: z.coerce.number().int().positive().default(587),
+  EMAIL_USER: z.string().min(1),
+  EMAIL_PASSWORD: z.string().min(1),
+  EMAIL_FROM: z.string().min(1).default('IEP Santa Juana <noreply@iepsantajuana.cl>'),
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

@@ -1,74 +1,109 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
-import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { validateRequest } from '@/common/utils/httpHandlers';
+import { verificarToken } from '@/common/middleware/authMiddleware';
 import { authController } from './authController';
-import { authenticateToken } from './authMiddleware';
 import {
   CambiarPasswordSchema,
   LoginResponseSchema,
   LoginSchema,
-  RegisterSchema,
-  UsuarioConMiembroSchema,
-  UsuarioPublicoSchema,
+  MensajeResponseSchema,
+  RecuperarPasswordSchema,
+  ResetPasswordSchema,
 } from './authModel';
 
 export const authRegistry = new OpenAPIRegistry();
 export const authRouter: Router = express.Router();
 
-authRegistry.register('UsuarioPublico', UsuarioPublicoSchema);
-authRegistry.register('UsuarioConMiembro', UsuarioConMiembroSchema);
-authRegistry.register('LoginResponse', LoginResponseSchema);
-
-// POST /api/auth/register - Registrar un nuevo usuario
-authRegistry.registerPath({
-  method: 'post',
-  path: '/api/auth/register',
-  tags: ['Autenticación'],
-  request: {
-    body: { content: { 'application/json': { schema: RegisterSchema.shape.body } } },
-  },
-  responses: createApiResponse(UsuarioPublicoSchema, 'Success'),
-});
-authRouter.post('/register', validateRequest(RegisterSchema), authController.register);
-
-// POST /api/auth/login - Login de usuario
+// POST /api/auth/login - Iniciar sesión
 authRegistry.registerPath({
   method: 'post',
   path: '/api/auth/login',
   tags: ['Autenticación'],
+  summary: 'Iniciar sesión con email y contraseña',
+  security: [],
   request: {
-    body: { content: { 'application/json': { schema: LoginSchema.shape.body } } },
+    body: {
+      content: {
+        'application/json': {
+          schema: LoginSchema.shape.body,
+        },
+      },
+    },
   },
   responses: createApiResponse(LoginResponseSchema, 'Success'),
 });
 authRouter.post('/login', validateRequest(LoginSchema), authController.login);
 
-// GET /api/auth/me - Obtener información del usuario autenticado (protegido)
+// POST /api/auth/recuperar-password - Solicitar recuperación de contraseña
 authRegistry.registerPath({
-  method: 'get',
-  path: '/api/auth/me',
+  method: 'post',
+  path: '/api/auth/recuperar-password',
   tags: ['Autenticación'],
-  security: [{ bearerAuth: [] }],
-  responses: createApiResponse(UsuarioConMiembroSchema, 'Success'),
+  summary: 'Solicitar recuperación de contraseña por email',
+  security: [],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: RecuperarPasswordSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MensajeResponseSchema, 'Success'),
 });
-authRouter.get('/me', authenticateToken, authController.getMe);
+authRouter.post(
+  '/recuperar-password',
+  validateRequest(RecuperarPasswordSchema),
+  authController.recuperarPassword
+);
 
-// PATCH /api/auth/cambiar-password - Cambiar contraseña (protegido)
+// POST /api/auth/reset-password - Restablecer contraseña con token de recuperación
+authRegistry.registerPath({
+  method: 'post',
+  path: '/api/auth/reset-password',
+  tags: ['Autenticación'],
+  summary: 'Restablecer contraseña usando token de recuperación enviado por email',
+  security: [],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ResetPasswordSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MensajeResponseSchema, 'Success'),
+});
+authRouter.post(
+  '/reset-password',
+  validateRequest(ResetPasswordSchema),
+  authController.resetPassword
+);
+
+// PATCH /api/auth/cambiar-password - Cambiar contraseña (requiere token)
 authRegistry.registerPath({
   method: 'patch',
   path: '/api/auth/cambiar-password',
   tags: ['Autenticación'],
-  security: [{ bearerAuth: [] }],
+  summary: 'Cambiar contraseña del usuario autenticado',
   request: {
-    body: { content: { 'application/json': { schema: CambiarPasswordSchema.shape.body } } },
+    body: {
+      content: {
+        'application/json': {
+          schema: CambiarPasswordSchema.shape.body,
+        },
+      },
+    },
   },
-  responses: createApiResponse(z.null(), 'Success'),
+  responses: createApiResponse(MensajeResponseSchema, 'Success'),
 });
 authRouter.patch(
   '/cambiar-password',
-  authenticateToken,
+  verificarToken,
   validateRequest(CambiarPasswordSchema),
-  authController.cambiarPassword,
+  authController.cambiarPassword
 );

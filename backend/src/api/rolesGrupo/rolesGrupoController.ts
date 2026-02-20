@@ -9,8 +9,9 @@ class RolesGrupoController {
    * Obtiene todos los roles activos
    * GET /api/roles-grupo
    */
-  public getAll: RequestHandler = async (_req: Request, res: Response) => {
-    const serviceResponse = await rolesGrupoService.findAll();
+  public getAll: RequestHandler = async (req: Request, res: Response) => {
+    const activo = req.query.activo !== undefined ? req.query.activo === 'true' : undefined;
+    const serviceResponse = await rolesGrupoService.findAll(activo);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -41,6 +42,16 @@ class RolesGrupoController {
   public update: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
     const serviceResponse = await rolesGrupoService.update(id, req.body);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
+   * Cambia el estado activo/inactivo de un rol de grupo
+   * PATCH /api/roles-grupo/:id/toggle-estado
+   */
+  public toggleEstado: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id, 10);
+    const serviceResponse = await rolesGrupoService.toggleEstado(id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
