@@ -1,0 +1,592 @@
+'use client';
+
+import {
+  ArrowLeft,
+  CheckCircle,
+  Package,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  UserPlus,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import Link from 'next/link';
+import { use, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ActividadFormModal } from '@/features/actividades/components/actividad-form';
+import { AgregarNecesidadModal } from '@/features/actividades/components/agregar-necesidad-modal';
+import { CambiarEstadoActividadModal } from '@/features/actividades/components/cambiar-estado-actividad-modal';
+import { InvitarParticipanteModal } from '@/features/actividades/components/invitar-participante-modal';
+import { useActividad } from '@/features/actividades/hooks/use-actividades';
+import {
+  useDeleteInvitado,
+  useInvitadosActividad,
+  useMarcarAsistencia,
+} from '@/features/actividades/hooks/use-invitados-actividad';
+import { useNecesidadesActividad } from '@/features/actividades/hooks/use-necesidades-actividad';
+import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
+import type { CreateActividadFormData } from '@/features/actividades/schemas';
+import type { EstadoActividad } from '@/features/actividades/types';
+import type { EstadoInvitado } from '@/features/actividades/types/invitados';
+import type { EstadoNecesidad } from '@/features/actividades/types/necesidades';
+import { useAuth } from '@/features/auth/hooks/use-auth';
+import { SugerirCandidatoModal } from '@/features/candidatos/components/sugerir-candidato-modal';
+import { useSugerirCandidatosRol } from '@/features/candidatos/hooks/use-sugerir-candidatos-rol';
+import type { Candidato } from '@/features/candidatos/types';
+import {
+  rolesActividadHooks,
+  tiposActividadHooks,
+  tiposNecesidadHooks,
+} from '@/features/catalogos/hooks';
+import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { useMiembros } from '@/features/miembros/hooks/use-miembros';
+
+// ---------------------------------------------------------------------------
+// Labels & variants
+// ---------------------------------------------------------------------------
+
+const estadoLabels: Record<EstadoActividad, string> = {
+  programada: 'Programada',
+  realizada: 'Realizada',
+  cancelada: 'Cancelada',
+};
+
+const estadoVariant: Record<EstadoActividad, 'default' | 'secondary' | 'destructive'> = {
+  programada: 'default',
+  realizada: 'secondary',
+  cancelada: 'destructive',
+};
+
+const invitadoEstadoLabels: Record<EstadoInvitado, string> = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  rechazado: 'Rechazado',
+};
+
+const invitadoEstadoVariant: Record<EstadoInvitado, 'default' | 'secondary' | 'destructive'> = {
+  confirmado: 'default',
+  pendiente: 'secondary',
+  rechazado: 'destructive',
+};
+
+const necesidadEstadoLabels: Record<EstadoNecesidad, string> = {
+  abierta: 'Abierta',
+  cubierta: 'Cubierta',
+  cerrada: 'Cerrada',
+};
+
+const necesidadEstadoVariant: Record<EstadoNecesidad, 'default' | 'secondary' | 'outline'> = {
+  abierta: 'default',
+  cubierta: 'secondary',
+  cerrada: 'outline',
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 py-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="col-span-2 text-sm">{value || '—'}</span>
+    </div>
+  );
+}
+
+function formatHora(hora: string) {
+  return hora.slice(0, 5);
+}
+
+function formatFecha(fecha: string) {
+  return new Date(`${fecha}T12:00:00`).toLocaleDateString('es-CL', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function DetalleActividadPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const actividadId = Number(id);
+
+  // Data queries
+  const { data: actividad, isLoading } = useActividad(actividadId);
+  const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
+  const { data: grupos } = useGrupos();
+  const { data: invitados, isLoading: loadingInvitados } = useInvitadosActividad(actividadId);
+  const { data: necesidades, isLoading: loadingNecesidades } = useNecesidadesActividad(actividadId);
+  const { data: miembros } = useMiembros();
+  const { data: rolesActividad } = rolesActividadHooks.useAllActivos();
+  const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
+
+  // Auth
+  const { usuario } = useAuth();
+  const isAdmin = usuario?.rol === 'administrador';
+  const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
+
+  // Mutations
+  const updateMutation = useUpdateActividad();
+  const asistenciaMutation = useMarcarAsistencia();
+  const deleteInvitadoMutation = useDeleteInvitado();
+  const sugerirMutation = useSugerirCandidatosRol();
+
+  // Modal state
+  const [formOpen, setFormOpen] = useState(false);
+  const [estadoOpen, setEstadoOpen] = useState(false);
+  const [invitarOpen, setInvitarOpen] = useState(false);
+  const [necesidadOpen, setNecesidadOpen] = useState(false);
+  const [sugerirOpen, setSugerirOpen] = useState(false);
+  const [deletingInvitadoId, setDeletingInvitadoId] = useState<number | null>(null);
+  const [invitarDefaults, setInvitarDefaults] = useState<
+    { miembro_id?: number; rol_id?: number } | undefined
+  >();
+
+  function handleInvitarFromCandidato(candidato: Candidato, rolId: number) {
+    setSugerirOpen(false);
+    setInvitarDefaults({ miembro_id: candidato.miembro_id, rol_id: rolId });
+    setInvitarOpen(true);
+  }
+
+  // Lookups
+  const tipoNombre = tiposActividad?.find(
+    (t) => t.id_tipo === actividad?.tipo_actividad_id,
+  )?.nombre;
+  const grupoNombre = actividad?.grupo_id
+    ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
+    : null;
+
+  const rolesMap = useMemo(
+    () => new Map(rolesActividad?.map((r) => [r.id_rol, r])),
+    [rolesActividad],
+  );
+  const tiposNecesidadMap = useMemo(
+    () => new Map(tiposNecesidad?.map((t) => [t.id_tipo, t])),
+    [tiposNecesidad],
+  );
+
+  // Handlers
+  function handleUpdate(data: CreateActividadFormData) {
+    if (!actividad) return;
+    updateMutation.mutate(
+      { id: actividad.id, input: data },
+      {
+        onSuccess: () => {
+          toast.success('Actividad actualizada');
+          setFormOpen(false);
+        },
+        onError: () => toast.error('Error al actualizar actividad'),
+      },
+    );
+  }
+
+  function handleMarcarAsistencia(invitadoId: number, asistio: boolean) {
+    asistenciaMutation.mutate(
+      { id: invitadoId, asistio },
+      {
+        onSuccess: () => toast.success(asistio ? 'Asistencia marcada' : 'Asistencia desmarcada'),
+        onError: () => toast.error('Error al marcar asistencia'),
+      },
+    );
+  }
+
+  function handleDeleteInvitado() {
+    if (!deletingInvitadoId) return;
+    deleteInvitadoMutation.mutate(deletingInvitadoId, {
+      onSuccess: () => {
+        toast.success('Invitación eliminada');
+        setDeletingInvitadoId(null);
+      },
+      onError: () => toast.error('Error al eliminar invitación'),
+    });
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="grid gap-6">
+        <Skeleton className="h-8 w-48" />
+        <Card>
+          <CardContent className="pt-6">
+            {['a', 'b', 'c', 'd', 'e', 'f'].map((key) => (
+              <Skeleton key={key} className="mb-3 h-5 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!actividad) {
+    return <p className="py-8 text-center text-muted-foreground">Actividad no encontrada.</p>;
+  }
+
+  const isCancelada = actividad.estado === 'cancelada';
+
+  const editingDefaults = {
+    tipo_actividad_id: actividad.tipo_actividad_id,
+    nombre: actividad.nombre,
+    descripcion: actividad.descripcion ?? '',
+    fecha: actividad.fecha,
+    hora_inicio: formatHora(actividad.hora_inicio),
+    hora_fin: formatHora(actividad.hora_fin),
+    grupo_id: actividad.grupo_id ?? 0,
+    es_publica: actividad.es_publica,
+  };
+
+  return (
+    <div className="grid gap-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/dashboard/actividades">
+              <ArrowLeft className="size-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{actividad.nombre}</h1>
+            <p className="text-sm text-muted-foreground">{formatFecha(actividad.fecha)}</p>
+          </div>
+        </div>
+        {isAdminOrLider && !isCancelada && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setEstadoOpen(true)}>
+              <RefreshCw className="size-4" />
+              Cambiar Estado
+            </Button>
+            <Button variant="outline" onClick={() => setFormOpen(true)}>
+              <Pencil className="size-4" />
+              Editar
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Info cards */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Información General</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InfoRow label="Nombre" value={actividad.nombre} />
+            <Separator />
+            <InfoRow label="Tipo" value={tipoNombre} />
+            <Separator />
+            <InfoRow label="Fecha" value={formatFecha(actividad.fecha)} />
+            <Separator />
+            <InfoRow
+              label="Horario"
+              value={`${formatHora(actividad.hora_inicio)} - ${formatHora(actividad.hora_fin)}`}
+            />
+            <Separator />
+            <InfoRow label="Descripción" value={actividad.descripcion} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Detalles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2 py-2">
+              <span className="text-sm text-muted-foreground">Estado</span>
+              <span className="col-span-2">
+                <Badge variant={estadoVariant[actividad.estado]}>
+                  {estadoLabels[actividad.estado]}
+                </Badge>
+              </span>
+            </div>
+            <Separator />
+            <InfoRow label="Grupo" value={grupoNombre} />
+            <Separator />
+            <InfoRow label="Pública" value={actividad.es_publica ? 'Sí' : 'No'} />
+            <Separator />
+            <InfoRow
+              label="Creada"
+              value={new Date(actividad.fecha_creacion).toLocaleDateString('es-CL')}
+            />
+            {isCancelada && (
+              <>
+                <Separator />
+                <InfoRow label="Motivo cancelación" value={actividad.motivo_cancelacion} />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Invitados section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <Users className="size-4" />
+              Invitados ({invitados?.length ?? 0})
+            </span>
+            {isAdminOrLider && !isCancelada && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setSugerirOpen(true)}>
+                  <Sparkles className="size-4" />
+                  Sugerir
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setInvitarDefaults(undefined);
+                    setInvitarOpen(true);
+                  }}
+                >
+                  <UserPlus className="size-4" />
+                  Invitar
+                </Button>
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingInvitados ? (
+            <div className="grid gap-2">
+              {['a', 'b', 'c'].map((key) => (
+                <Skeleton key={key} className="h-8 w-full" />
+              ))}
+            </div>
+          ) : !invitados?.length ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No hay invitados en esta actividad.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Miembro</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Asistió</TableHead>
+                  {isAdminOrLider && <TableHead className="w-24">Acciones</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitados.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">
+                      {inv.miembro
+                        ? `${inv.miembro.nombre} ${inv.miembro.apellido}`
+                        : `Miembro #${inv.miembro_id}`}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {inv.rol?.nombre ??
+                          rolesMap.get(inv.rol_id)?.nombre ??
+                          `Rol #${inv.rol_id}`}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={invitadoEstadoVariant[inv.estado]}>
+                        {invitadoEstadoLabels[inv.estado]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {isAdminOrLider && inv.estado === 'confirmado' ? (
+                        <Checkbox
+                          checked={inv.asistio}
+                          onCheckedChange={(checked) =>
+                            handleMarcarAsistencia(inv.id, checked === true)
+                          }
+                          disabled={asistenciaMutation.isPending}
+                          aria-label={inv.asistio ? 'Desmarcar asistencia' : 'Marcar asistencia'}
+                        />
+                      ) : inv.asistio ? (
+                        <CheckCircle className="size-4 text-green-600" />
+                      ) : (
+                        <XCircle className="size-4 text-muted-foreground" />
+                      )}
+                    </TableCell>
+                    {isAdminOrLider && (
+                      <TableCell>
+                        {inv.estado === 'pendiente' && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeletingInvitadoId(inv.id)}
+                            title="Eliminar invitación"
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Necesidades section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <Package className="size-4" />
+              Necesidades Logísticas ({necesidades?.length ?? 0})
+            </span>
+            {isAdminOrLider && !isCancelada && (
+              <Button size="sm" onClick={() => setNecesidadOpen(true)}>
+                <Plus className="size-4" />
+                Agregar
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingNecesidades ? (
+            <div className="grid gap-2">
+              {['a', 'b', 'c'].map((key) => (
+                <Skeleton key={key} className="h-8 w-full" />
+              ))}
+            </div>
+          ) : !necesidades?.length ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No hay necesidades logísticas registradas.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Cantidad Req.</TableHead>
+                  <TableHead>Cubierta</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {necesidades.map((nec) => (
+                  <TableRow key={nec.id}>
+                    <TableCell className="font-medium">
+                      {tiposNecesidadMap.get(nec.tipo_necesidad_id)?.nombre ??
+                        `Tipo #${nec.tipo_necesidad_id}`}
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate">{nec.descripcion}</TableCell>
+                    <TableCell>
+                      {nec.cantidad_requerida} {nec.unidad_medida}
+                    </TableCell>
+                    <TableCell>
+                      {nec.cantidad_cubierta} / {nec.cantidad_requerida}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={necesidadEstadoVariant[nec.estado]}>
+                        {necesidadEstadoLabels[nec.estado]}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modals */}
+      <ActividadFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        defaultValues={editingDefaults}
+        onSubmit={handleUpdate}
+        isPending={updateMutation.isPending}
+        tiposActividad={tiposActividad}
+        grupos={grupos}
+        isEditing
+      />
+
+      <CambiarEstadoActividadModal
+        actividad={actividad}
+        open={estadoOpen}
+        onOpenChange={setEstadoOpen}
+      />
+
+      <InvitarParticipanteModal
+        actividadId={actividadId}
+        open={invitarOpen}
+        onOpenChange={setInvitarOpen}
+        miembros={miembros}
+        rolesActividad={rolesActividad}
+        defaultValues={invitarDefaults}
+      />
+
+      <SugerirCandidatoModal
+        open={sugerirOpen}
+        onOpenChange={setSugerirOpen}
+        defaultFecha={actividad?.fecha ?? ''}
+        rolesActividad={rolesActividad}
+        sugerirMutation={sugerirMutation}
+        onInvitar={handleInvitarFromCandidato}
+      />
+
+      <AgregarNecesidadModal
+        actividadId={actividadId}
+        open={necesidadOpen}
+        onOpenChange={setNecesidadOpen}
+        tiposNecesidad={tiposNecesidad}
+      />
+
+      <AlertDialog
+        open={!!deletingInvitadoId}
+        onOpenChange={(open) => !open && setDeletingInvitadoId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar invitación</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará la invitación pendiente. No se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteInvitado}
+              disabled={deleteInvitadoMutation.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx biome:*)",
+      "Bash(npx shadcn@latest add sheet avatar tooltip badge -y)",
+      "Bash(npx shadcn@latest add textarea -y)",
+      "Bash(npx shadcn@latest add tabs:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(if not exist \"C:\\\\Users\\\\pancho\\\\Desktop\\\\Tesis\\\\frontend\\\\src\\\\app\\\\dashboard\\\\configuracion\" mkdir \"C:\\\\Users\\\\pancho\\\\Desktop\\\\Tesis\\\\frontend\\\\src\\\\app\\\\dashboard\\\\configuracion\")",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm check:*)",
+      "Bash(npx @biomejs/biome check:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)"
+    ]
+  }
+}

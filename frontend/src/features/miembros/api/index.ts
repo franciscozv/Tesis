@@ -1,25 +1,42 @@
+import type { ApiResponse } from '@/features/auth/types';
 import apiClient from '@/lib/api-client';
-import type { Miembro, CreateMiembroInput, UpdateMiembroInput } from '../types';
+import type {
+  CambiarEstadoInput,
+  CreateMiembroInput,
+  Miembro,
+  UpdateMiPerfilInput,
+  UpdateMiembroInput,
+} from '../types';
 
 export const miembrosApi = {
   getAll: async () => {
-    const { data } = await apiClient.get<Miembro[]>('/miembros');
-    return data;
+    const { data } = await apiClient.get<ApiResponse<Miembro[]>>('/miembros');
+    return data.responseObject;
   },
 
   getById: async (id: number) => {
-    const { data } = await apiClient.get<Miembro>(`/miembros/${id}`);
-    return data;
+    const { data } = await apiClient.get<ApiResponse<Miembro>>(`/miembros/${id}`);
+    return data.responseObject;
   },
 
   create: async (input: CreateMiembroInput) => {
-    const { data } = await apiClient.post<Miembro>('/miembros', input);
-    return data;
+    const { data } = await apiClient.post<ApiResponse<Miembro>>('/miembros', input);
+    return data.responseObject;
   },
 
   update: async (id: number, input: UpdateMiembroInput) => {
-    const { data } = await apiClient.put<Miembro>(`/miembros/${id}`, input);
-    return data;
+    const { data } = await apiClient.put<ApiResponse<Miembro>>(`/miembros/${id}`, input);
+    return data.responseObject;
+  },
+
+  cambiarEstado: async (id: number, input: CambiarEstadoInput) => {
+    const { data } = await apiClient.patch<ApiResponse<Miembro>>(`/miembros/${id}/estado`, input);
+    return data.responseObject;
+  },
+
+  updateMiPerfil: async (input: UpdateMiPerfilInput) => {
+    const { data } = await apiClient.patch<ApiResponse<Miembro>>('/miembros/mi-perfil', input);
+    return data.responseObject;
   },
 
   delete: async (id: number) => {
