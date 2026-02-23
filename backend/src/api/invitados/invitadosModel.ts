@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -46,11 +46,10 @@ export const CreateInvitadoSchema = z.object({
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
       .openapi({ example: 2 }),
-    confirmado: z
-      .boolean()
-      .optional()
-      .default(false)
-      .openapi({ example: false, description: 'Si es true, se crea con estado "confirmado" directamente' }),
+    confirmado: z.boolean().optional().default(false).openapi({
+      example: false,
+      description: 'Si es true, se crea con estado "confirmado" directamente',
+    }),
   }),
 });
 
@@ -90,7 +89,7 @@ export const PatchResponderInvitadoSchema = z.object({
       {
         message: 'El motivo de rechazo es obligatorio cuando el estado es "rechazado"',
         path: ['motivo_rechazo'],
-      }
+      },
     ),
 });
 

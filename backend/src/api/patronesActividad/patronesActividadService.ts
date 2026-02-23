@@ -1,12 +1,12 @@
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { StatusCodes } from 'http-status-codes';
+import { ActividadesRepository } from '@/api/actividades/actividadesRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import { ActividadesRepository } from '@/api/actividades/actividadesRepository';
+import type { GenerarInstanciasResponse, PatronActividad } from './patronesActividadModel';
 import { PatronesActividadRepository } from './patronesActividadRepository';
-import type { PatronActividad, GenerarInstanciasResponse } from './patronesActividadModel';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -20,7 +20,7 @@ export class PatronesActividadService {
 
   constructor(
     repository: PatronesActividadRepository = new PatronesActividadRepository(),
-    actividadesRepo: ActividadesRepository = new ActividadesRepository()
+    actividadesRepo: ActividadesRepository = new ActividadesRepository(),
   ) {
     this.patronesActividadRepository = repository;
     this.actividadesRepository = actividadesRepo;
@@ -36,13 +36,13 @@ export class PatronesActividadService {
       if (!patrones || patrones.length === 0) {
         return ServiceResponse.success<PatronActividad[]>(
           'No se encontraron patrones de actividad',
-          []
+          [],
         );
       }
 
       return ServiceResponse.success<PatronActividad[]>(
         'Patrones de actividad encontrados',
-        patrones
+        patrones,
       );
     } catch (error) {
       const errorMessage = `Error al obtener patrones de actividad: ${(error as Error).message}`;
@@ -50,7 +50,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al obtener patrones de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -66,7 +66,7 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           'Patrón de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -77,7 +77,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al obtener patrón de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -86,43 +86,43 @@ export class PatronesActividadService {
    * Crea un nuevo patrón de actividad
    */
   async create(
-    patronData: Omit<PatronActividad, 'id' | 'fecha_creacion' | 'activo'>
+    patronData: Omit<PatronActividad, 'id' | 'fecha_creacion' | 'activo'>,
   ): Promise<ServiceResponse<PatronActividad | null>> {
     try {
       // Validar nombre único
       const existeNombre = await this.patronesActividadRepository.existsByNombreAsync(
-        patronData.nombre
+        patronData.nombre,
       );
       if (existeNombre) {
         return ServiceResponse.failure(
           'Ya existe un patrón de actividad con ese nombre',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
       // Validar que el tipo de actividad exista
       const tipoExiste = await this.patronesActividadRepository.tipoActividadExistsAsync(
-        patronData.tipo_actividad_id
+        patronData.tipo_actividad_id,
       );
       if (!tipoExiste) {
         return ServiceResponse.failure(
           'El tipo de actividad especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
       // Validar que el grupo ministerial exista (si se proporcionó)
       if (patronData.grupo_id) {
         const grupoExiste = await this.patronesActividadRepository.grupoExistsAsync(
-          patronData.grupo_id
+          patronData.grupo_id,
         );
         if (!grupoExiste) {
           return ServiceResponse.failure(
             'El grupo ministerial especificado no existe o no está activo',
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
       }
@@ -131,7 +131,7 @@ export class PatronesActividadService {
       return ServiceResponse.success<PatronActividad>(
         'Patrón de actividad creado exitosamente',
         patron,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear patrón de actividad: ${(error as Error).message}`;
@@ -139,7 +139,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al crear patrón de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -149,20 +149,20 @@ export class PatronesActividadService {
    */
   async update(
     id: number,
-    patronData: Partial<PatronActividad>
+    patronData: Partial<PatronActividad>,
   ): Promise<ServiceResponse<PatronActividad | null>> {
     try {
       // Validar nombre único (excluyendo el actual)
       if (patronData.nombre) {
         const existeNombre = await this.patronesActividadRepository.existsByNombreAsync(
           patronData.nombre,
-          id
+          id,
         );
         if (existeNombre) {
           return ServiceResponse.failure(
             'Ya existe un patrón de actividad con ese nombre',
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
       }
@@ -170,13 +170,13 @@ export class PatronesActividadService {
       // Validar que el tipo de actividad exista (si se proporcionó)
       if (patronData.tipo_actividad_id) {
         const tipoExiste = await this.patronesActividadRepository.tipoActividadExistsAsync(
-          patronData.tipo_actividad_id
+          patronData.tipo_actividad_id,
         );
         if (!tipoExiste) {
           return ServiceResponse.failure(
             'El tipo de actividad especificado no existe o no está activo',
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
       }
@@ -184,13 +184,13 @@ export class PatronesActividadService {
       // Validar que el grupo ministerial exista (si se proporcionó)
       if (patronData.grupo_id) {
         const grupoExiste = await this.patronesActividadRepository.grupoExistsAsync(
-          patronData.grupo_id
+          patronData.grupo_id,
         );
         if (!grupoExiste) {
           return ServiceResponse.failure(
             'El grupo ministerial especificado no existe o no está activo',
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
       }
@@ -201,13 +201,13 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           'Patrón de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       return ServiceResponse.success<PatronActividad>(
         'Patrón de actividad actualizado exitosamente',
-        patron
+        patron,
       );
     } catch (error) {
       const errorMessage = `Error al actualizar patrón de actividad: ${(error as Error).message}`;
@@ -215,7 +215,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al actualizar patrón de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -223,7 +223,10 @@ export class PatronesActividadService {
   /**
    * Activa o desactiva un patrón de actividad
    */
-  async updateEstado(id: number, activo: boolean): Promise<ServiceResponse<PatronActividad | null>> {
+  async updateEstado(
+    id: number,
+    activo: boolean,
+  ): Promise<ServiceResponse<PatronActividad | null>> {
     try {
       // Verificar que el patrón exista
       const patron = await this.patronesActividadRepository.findByIdIncludingInactiveAsync(id);
@@ -231,7 +234,7 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           'Patrón de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -240,20 +243,20 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           `El patrón de actividad ya se encuentra ${estado}`,
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
       const patronActualizado = await this.patronesActividadRepository.updateEstadoAsync(
         id,
-        activo
+        activo,
       );
 
       if (!patronActualizado) {
         return ServiceResponse.failure(
           'Error al cambiar el estado del patrón',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
@@ -268,7 +271,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al cambiar el estado del patrón de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -278,7 +281,7 @@ export class PatronesActividadService {
   async generarInstancias(
     mes: number,
     anio: number,
-    creadorId: number
+    creadorId: number,
   ): Promise<ServiceResponse<GenerarInstanciasResponse | null>> {
     try {
       const patrones = await this.patronesActividadRepository.findAllAsync();
@@ -287,7 +290,7 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           'No hay patrones de actividad activos para generar instancias',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -314,6 +317,7 @@ export class PatronesActividadService {
             fecha,
             hora_inicio: horaInicio,
             hora_fin: horaFin,
+            lugar: patron.lugar,
             grupo_id: patron.grupo_id,
             es_publica: patron.es_publica,
             creador_id: creadorId,
@@ -333,7 +337,7 @@ export class PatronesActividadService {
         return ServiceResponse.failure(
           'No se generaron actividades para el período indicado',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -348,7 +352,7 @@ export class PatronesActividadService {
       return ServiceResponse.success<GenerarInstanciasResponse>(
         `Se generaron ${todasLasActividades.length} actividades para ${mes}/${anio}`,
         response,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al generar instancias: ${(error as Error).message}`;
@@ -356,7 +360,7 @@ export class PatronesActividadService {
       return ServiceResponse.failure(
         'Error al generar instancias de actividades',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -368,7 +372,7 @@ export class PatronesActividadService {
     frecuencia: string,
     diaSemana: number,
     mes: number,
-    anio: number
+    anio: number,
   ): string[] {
     const fechas: string[] = [];
 

@@ -9,9 +9,7 @@ export class RolesActividadRepository {
    * Obtiene roles de actividad, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<RolActividad[]> {
-    let query = supabase
-      .from('rol_actividad')
-      .select('*');
+    let query = supabase.from('rol_actividad').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -138,10 +136,7 @@ export class RolesActividadRepository {
    * Elimina un rol permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('rol_actividad')
-      .delete()
-      .eq('id_rol', id);
+    const { error } = await supabase.from('rol_actividad').delete().eq('id_rol', id);
 
     if (error) throw error;
     return true;

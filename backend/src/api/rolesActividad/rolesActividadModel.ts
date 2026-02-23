@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -28,10 +28,7 @@ export const CreateRolActividadSchema = z.object({
       .min(1, 'Nombre es obligatorio')
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .openapi({ example: 'Coordinador' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Coordinador de la actividad' }),
+    descripcion: z.string().optional().openapi({ example: 'Coordinador de la actividad' }),
   }),
 });
 
@@ -62,9 +59,6 @@ export const UpdateRolActividadSchema = z.object({
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .optional()
       .openapi({ example: 'Coordinador' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Coordinador de la actividad' }),
+    descripcion: z.string().optional().openapi({ example: 'Coordinador de la actividad' }),
   }),
 });

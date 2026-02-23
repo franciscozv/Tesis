@@ -114,7 +114,7 @@ export class PatronesActividadRepository {
    * Crea un nuevo patrón de actividad
    */
   async createAsync(
-    patronData: Omit<PatronActividad, 'id' | 'fecha_creacion' | 'activo'>
+    patronData: Omit<PatronActividad, 'id' | 'fecha_creacion' | 'activo'>,
   ): Promise<PatronActividad> {
     const { data, error } = await supabase
       .from('patron_actividad')
@@ -131,7 +131,7 @@ export class PatronesActividadRepository {
    */
   async updateAsync(
     id: number,
-    patronData: Partial<PatronActividad>
+    patronData: Partial<PatronActividad>,
   ): Promise<PatronActividad | null> {
     const { data, error } = await supabase
       .from('patron_actividad')

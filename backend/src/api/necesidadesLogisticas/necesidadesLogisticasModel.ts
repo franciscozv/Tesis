@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -122,6 +122,36 @@ export const PatchEstadoNecesidadSchema = z.object({
       .openapi({ example: 'cubierta' }),
   }),
 });
+
+/**
+ * Schema de resumen de actividad para necesidades abiertas
+ */
+export const ActividadResumenSchema = z.object({
+  id: z.number(),
+  nombre: z.string(),
+  fecha: z.string(),
+  hora_inicio: z.string(),
+  hora_fin: z.string(),
+  lugar: z.string(),
+});
+
+/**
+ * Schema de resumen de tipo de necesidad para necesidades abiertas
+ */
+export const TipoNecesidadResumenSchema = z.object({
+  id_tipo: z.number(),
+  nombre: z.string(),
+});
+
+/**
+ * Schema para necesidades abiertas (incluye datos de actividad y tipo)
+ */
+export const NecesidadAbiertaSchema = NecesidadLogisticaSchema.extend({
+  actividad: ActividadResumenSchema,
+  tipo_necesidad: TipoNecesidadResumenSchema.nullable(),
+});
+
+export type NecesidadAbierta = z.infer<typeof NecesidadAbiertaSchema>;
 
 /**
  * Schema para filtros de listado (query params)

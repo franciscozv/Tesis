@@ -101,7 +101,10 @@ export class MisResponsabilidadesService {
           },
           necesidad: { id: nec.id, descripcion: nec.descripcion },
           tipo_necesidad: nec.tipo_necesidad_logistica
-            ? { id: nec.tipo_necesidad_logistica.id_tipo, nombre: nec.tipo_necesidad_logistica.nombre }
+            ? {
+                id: nec.tipo_necesidad_logistica.id_tipo,
+                nombre: nec.tipo_necesidad_logistica.nombre,
+              }
             : undefined,
           cantidad_ofrecida: col.cantidad_ofrecida,
         });

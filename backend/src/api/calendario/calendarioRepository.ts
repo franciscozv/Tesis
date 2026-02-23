@@ -16,7 +16,7 @@ export class CalendarioRepository {
     const { data, error } = await supabase
       .from('actividad')
       .select(
-        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)'
+        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
       )
       .eq('es_publica', true)
       .eq('estado', 'programada')
@@ -40,7 +40,7 @@ export class CalendarioRepository {
     const { data, error } = await supabase
       .from('actividad')
       .select(
-        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)'
+        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
       )
       .eq('estado', 'programada')
       .gte('fecha', startDate)
@@ -61,7 +61,7 @@ export class CalendarioRepository {
     const { data, error } = await supabase
       .from('invitado')
       .select(
-        'estado, fecha_invitacion, actividad:actividad_id(id, nombre, fecha, hora_inicio, hora_fin, lugar, estado), rol_asignado:rol_id(id_rol, nombre)'
+        'estado, fecha_invitacion, actividad:actividad_id(id, nombre, fecha, hora_inicio, hora_fin, lugar, estado), rol_asignado:rol_id(id_rol, nombre)',
       )
       .eq('miembro_id', miembroId)
       .eq('estado', 'confirmado');

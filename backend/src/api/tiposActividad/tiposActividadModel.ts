@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -29,10 +29,7 @@ export const CreateTipoActividadSchema = z.object({
       .min(1, 'Nombre es obligatorio')
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .openapi({ example: 'Culto dominical' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Servicio principal del domingo' }),
+    descripcion: z.string().optional().openapi({ example: 'Servicio principal del domingo' }),
     color: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/, 'Color debe ser un código hexadecimal válido (ej: #3B82F6)')
@@ -67,10 +64,7 @@ export const UpdateTipoActividadSchema = z.object({
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .optional()
       .openapi({ example: 'Culto dominical' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Servicio principal del domingo' }),
+    descripcion: z.string().optional().openapi({ example: 'Servicio principal del domingo' }),
     color: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/, 'Color debe ser un código hexadecimal válido (ej: #3B82F6)')

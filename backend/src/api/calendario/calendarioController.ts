@@ -33,7 +33,7 @@ class CalendarioController {
     const miembroIdToken = req.usuario?.miembro_id ?? null;
     const serviceResponse = await calendarioService.getMisResponsabilidades(
       miembroId,
-      miembroIdToken
+      miembroIdToken,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };

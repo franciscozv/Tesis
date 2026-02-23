@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import nodemailer from 'nodemailer';
 import { env } from '@/common/utils/envConfig';
 import { logger } from '@/server';
 

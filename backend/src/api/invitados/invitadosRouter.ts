@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { invitadosController } from './invitadosController';
 import {
@@ -34,11 +34,7 @@ invitadosRegistry.registerPath({
   },
   responses: createApiResponse(z.array(InvitadoSchema), 'Success'),
 });
-invitadosRouter.get(
-  '/',
-  validateRequest(ListInvitadosQuerySchema),
-  invitadosController.getAll
-);
+invitadosRouter.get('/', validateRequest(ListInvitadosQuerySchema), invitadosController.getAll);
 
 // GET /api/invitados/:id - Obtener uno por ID
 invitadosRegistry.registerPath({
@@ -49,11 +45,7 @@ invitadosRegistry.registerPath({
   request: { params: GetInvitadoSchema.shape.params },
   responses: createApiResponse(InvitadoSchema, 'Success'),
 });
-invitadosRouter.get(
-  '/:id',
-  validateRequest(GetInvitadoSchema),
-  invitadosController.getById
-);
+invitadosRouter.get('/:id', validateRequest(GetInvitadoSchema), invitadosController.getById);
 
 // POST /api/invitados - Crear invitación
 invitadosRegistry.registerPath({
@@ -76,7 +68,7 @@ invitadosRouter.post(
   '/',
   verificarRol('administrador', 'lider'),
   validateRequest(CreateInvitadoSchema),
-  invitadosController.create
+  invitadosController.create,
 );
 
 // PATCH /api/invitados/:id/responder - Confirmar o rechazar
@@ -100,7 +92,7 @@ invitadosRegistry.registerPath({
 invitadosRouter.patch(
   '/:id/responder',
   validateRequest(PatchResponderInvitadoSchema),
-  invitadosController.responder
+  invitadosController.responder,
 );
 
 // PATCH /api/invitados/:id/asistencia - Marcar asistencia real
@@ -125,7 +117,7 @@ invitadosRouter.patch(
   '/:id/asistencia',
   verificarRol('administrador', 'lider'),
   validateRequest(PatchAsistenciaInvitadoSchema),
-  invitadosController.marcarAsistencia
+  invitadosController.marcarAsistencia,
 );
 
 // DELETE /api/invitados/:id - Eliminar (solo si pendiente)
@@ -141,5 +133,5 @@ invitadosRouter.delete(
   '/:id',
   verificarRol('administrador', 'lider'),
   validateRequest(GetInvitadoSchema),
-  invitadosController.delete
+  invitadosController.delete,
 );

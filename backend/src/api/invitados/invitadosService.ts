@@ -1,8 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { nowEnZona, parseActividadFin } from '@/common/utils/dateTime';
 import { logger } from '@/server';
-import { InvitadosRepository } from './invitadosRepository';
 import type { Invitado } from './invitadosModel';
+import { InvitadosRepository } from './invitadosRepository';
 
 /**
  * Servicio con lógica de negocio para Invitados
@@ -29,15 +31,12 @@ export class InvitadosService {
         return ServiceResponse.failure(
           'Error al obtener invitados',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (invitados.length === 0) {
-        return ServiceResponse.success<Invitado[]>(
-          'No se encontraron invitados',
-          []
-        );
+        return ServiceResponse.success<Invitado[]>('No se encontraron invitados', []);
       }
 
       return ServiceResponse.success<Invitado[]>('Invitados encontrados', invitados);
@@ -47,7 +46,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al obtener invitados',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -60,11 +59,7 @@ export class InvitadosService {
       const invitado = await this.invitadosRepository.findByIdAsync(id);
 
       if (!invitado) {
-        return ServiceResponse.failure(
-          'Invitado no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success<Invitado>('Invitado encontrado', invitado);
@@ -74,7 +69,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al obtener invitado',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -82,46 +77,95 @@ export class InvitadosService {
   /**
    * Crea una nueva invitación
    */
-  async create(invitadoData: {
-    actividad_id: number;
-    miembro_id: number;
-    rol_id: number;
-    confirmado?: boolean;
-  }): Promise<ServiceResponse<Invitado | null>> {
+  async create(
+    invitadoData: {
+      actividad_id: number;
+      miembro_id: number;
+      rol_id: number;
+      confirmado?: boolean;
+    },
+    usuario?: JwtPayload,
+  ): Promise<ServiceResponse<Invitado | null>> {
     try {
-      // Validar que la actividad exista
-      const actividadExiste = await this.invitadosRepository.actividadExistsAsync(
-        invitadoData.actividad_id
+      // Cargar actividad para validar existencia y coherencia temporal
+      const actividad = await this.invitadosRepository.findActividadDatosAsync(
+        invitadoData.actividad_id,
       );
-      if (!actividadExiste) {
+      if (!actividad) {
         return ServiceResponse.failure(
           'La actividad especificada no existe',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
+      }
+
+      if (actividad.estado === 'cancelada') {
+        return ServiceResponse.failure(
+          'No se puede invitar a una actividad cancelada',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
+      if (finActividad.isBefore(nowEnZona())) {
+        return ServiceResponse.failure(
+          'No se puede invitar a una actividad que ya ha finalizado',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      // Evitar auto-invitación
+      if (usuario?.miembro_id && invitadoData.miembro_id === usuario.miembro_id) {
+        return ServiceResponse.failure(
+          'No puede invitarse a sí mismo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // Verificar permisos: un líder solo puede gestionar invitaciones de sus grupos
+      if (usuario?.rol === 'lider') {
+        if (!usuario.miembro_id) {
+          return ServiceResponse.failure(
+            'No tiene un perfil de miembro asociado para realizar esta acción',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+        const esLider = await this.invitadosRepository.isLiderDeActividadAsync(
+          invitadoData.actividad_id,
+          usuario.miembro_id,
+        );
+        if (!esLider) {
+          return ServiceResponse.failure(
+            'Solo puede gestionar invitaciones de actividades de sus grupos',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       // Validar que el miembro exista y esté activo
       const miembroExiste = await this.invitadosRepository.miembroExistsAsync(
-        invitadoData.miembro_id
+        invitadoData.miembro_id,
       );
       if (!miembroExiste) {
         return ServiceResponse.failure(
           'El miembro especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
       // Validar que el rol de actividad exista y esté activo
-      const rolExiste = await this.invitadosRepository.rolActividadExistsAsync(
-        invitadoData.rol_id
-      );
+      const rolExiste = await this.invitadosRepository.rolActividadExistsAsync(invitadoData.rol_id);
       if (!rolExiste) {
         return ServiceResponse.failure(
           'El rol de actividad especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -129,13 +173,13 @@ export class InvitadosService {
       const existeDuplicada = await this.invitadosRepository.existsInvitacionDuplicadaAsync(
         invitadoData.actividad_id,
         invitadoData.miembro_id,
-        invitadoData.rol_id
+        invitadoData.rol_id,
       );
       if (existeDuplicada) {
         return ServiceResponse.failure(
           'El miembro ya tiene una invitación para esta actividad con el mismo rol',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -144,7 +188,7 @@ export class InvitadosService {
       return ServiceResponse.success<Invitado>(
         'Invitación creada exitosamente',
         invitado,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear invitación: ${(error as Error).message}`;
@@ -152,7 +196,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al crear invitación',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -163,16 +207,12 @@ export class InvitadosService {
   async responder(
     id: number,
     estado: 'confirmado' | 'rechazado',
-    motivo_rechazo?: string
+    motivo_rechazo?: string,
   ): Promise<ServiceResponse<Invitado | null>> {
     try {
       const invitado = await this.invitadosRepository.findByIdAsync(id);
       if (!invitado) {
-        return ServiceResponse.failure(
-          'Invitado no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       // Solo se pueden responder invitaciones pendientes
@@ -180,28 +220,26 @@ export class InvitadosService {
         return ServiceResponse.failure(
           `No se puede responder a una invitación en estado "${invitado.estado}"`,
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
       const invitadoActualizado = await this.invitadosRepository.updateRespuestaAsync(
         id,
         estado,
-        motivo_rechazo
+        motivo_rechazo,
       );
 
       if (!invitadoActualizado) {
         return ServiceResponse.failure(
           'Error al registrar la respuesta',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       const mensaje =
-        estado === 'confirmado'
-          ? 'Invitación confirmada exitosamente'
-          : 'Invitación rechazada';
+        estado === 'confirmado' ? 'Invitación confirmada exitosamente' : 'Invitación rechazada';
 
       return ServiceResponse.success<Invitado>(mensaje, invitadoActualizado);
     } catch (error) {
@@ -210,7 +248,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al responder a la invitación',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -218,18 +256,11 @@ export class InvitadosService {
   /**
    * Marca la asistencia real de un invitado
    */
-  async marcarAsistencia(
-    id: number,
-    asistio: boolean
-  ): Promise<ServiceResponse<Invitado | null>> {
+  async marcarAsistencia(id: number, asistio: boolean): Promise<ServiceResponse<Invitado | null>> {
     try {
       const invitado = await this.invitadosRepository.findByIdAsync(id);
       if (!invitado) {
-        return ServiceResponse.failure(
-          'Invitado no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       // Solo se puede marcar asistencia de invitados confirmados
@@ -237,20 +268,38 @@ export class InvitadosService {
         return ServiceResponse.failure(
           'Solo se puede marcar asistencia de invitados con estado "confirmado"',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
-      const invitadoActualizado = await this.invitadosRepository.updateAsistenciaAsync(
-        id,
-        asistio
+      // Validar coherencia temporal: actividad debe haber finalizado y no estar cancelada
+      const actividad = await this.invitadosRepository.findActividadDatosAsync(
+        invitado.actividad_id,
       );
+      if (!actividad || actividad.estado === 'cancelada') {
+        return ServiceResponse.failure(
+          'No se puede registrar asistencia en una actividad cancelada',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
+      if (!finActividad.isBefore(nowEnZona())) {
+        return ServiceResponse.failure(
+          'Solo se puede registrar asistencia una vez que la actividad haya finalizado',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      const invitadoActualizado = await this.invitadosRepository.updateAsistenciaAsync(id, asistio);
 
       if (!invitadoActualizado) {
         return ServiceResponse.failure(
           'Error al marcar asistencia',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
@@ -265,7 +314,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al marcar asistencia',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -273,22 +322,40 @@ export class InvitadosService {
   /**
    * Elimina una invitación (solo si está pendiente)
    */
-  async delete(id: number): Promise<ServiceResponse<null>> {
+  async delete(id: number, usuario?: JwtPayload): Promise<ServiceResponse<null>> {
     try {
       const invitado = await this.invitadosRepository.findByIdAsync(id);
       if (!invitado) {
-        return ServiceResponse.failure(
-          'Invitado no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
+        return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      // Verificar permisos: un líder solo puede gestionar invitaciones de sus grupos
+      if (usuario?.rol === 'lider') {
+        if (!usuario.miembro_id) {
+          return ServiceResponse.failure(
+            'No tiene un perfil de miembro asociado para realizar esta acción',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+        const esLider = await this.invitadosRepository.isLiderDeActividadAsync(
+          invitado.actividad_id,
+          usuario.miembro_id,
         );
+        if (!esLider) {
+          return ServiceResponse.failure(
+            'Solo puede gestionar invitaciones de actividades de sus grupos',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       if (invitado.estado !== 'pendiente') {
         return ServiceResponse.failure(
           'Solo se pueden eliminar invitaciones en estado "pendiente"',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -300,7 +367,7 @@ export class InvitadosService {
       return ServiceResponse.failure(
         'Error al eliminar invitación',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

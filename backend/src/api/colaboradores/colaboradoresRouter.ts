@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { colaboradoresController } from './colaboradoresController';
 import {
@@ -36,7 +36,7 @@ colaboradoresRegistry.registerPath({
 colaboradoresRouter.get(
   '/',
   validateRequest(ListColaboradoresQuerySchema),
-  colaboradoresController.getAll
+  colaboradoresController.getAll,
 );
 
 // GET /api/colaboradores/:id - Obtener uno por ID
@@ -51,7 +51,7 @@ colaboradoresRegistry.registerPath({
 colaboradoresRouter.get(
   '/:id',
   validateRequest(GetColaboradorSchema),
-  colaboradoresController.getById
+  colaboradoresController.getById,
 );
 
 // POST /api/colaboradores - Crear oferta voluntaria
@@ -74,7 +74,7 @@ colaboradoresRegistry.registerPath({
 colaboradoresRouter.post(
   '/',
   validateRequest(CreateColaboradorSchema),
-  colaboradoresController.create
+  colaboradoresController.create,
 );
 
 // PATCH /api/colaboradores/:id/decision - Aceptar o rechazar oferta
@@ -99,7 +99,7 @@ colaboradoresRouter.patch(
   '/:id/decision',
   verificarRol('administrador', 'lider'),
   validateRequest(PatchDecisionColaboradorSchema),
-  colaboradoresController.updateDecision
+  colaboradoresController.updateDecision,
 );
 
 // DELETE /api/colaboradores/:id - Eliminar (solo si pendiente)
@@ -114,5 +114,5 @@ colaboradoresRegistry.registerPath({
 colaboradoresRouter.delete(
   '/:id',
   validateRequest(GetColaboradorSchema),
-  colaboradoresController.delete
+  colaboradoresController.delete,
 );

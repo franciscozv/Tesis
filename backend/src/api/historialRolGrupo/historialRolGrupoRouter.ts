@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { historialRolGrupoController } from './historialRolGrupoController';
 import {
@@ -35,7 +35,7 @@ historialRolGrupoRegistry.registerPath({
 historialRolGrupoRouter.get(
   '/',
   validateRequest(ListHistorialRolGrupoQuerySchema),
-  historialRolGrupoController.getAll
+  historialRolGrupoController.getAll,
 );
 
 // GET /api/historial-rol-grupo/:id - Obtener uno por ID
@@ -50,7 +50,7 @@ historialRolGrupoRegistry.registerPath({
 historialRolGrupoRouter.get(
   '/:id',
   validateRequest(GetHistorialRolGrupoSchema),
-  historialRolGrupoController.getById
+  historialRolGrupoController.getById,
 );
 
 // POST /api/historial-rol-grupo - Registrar cambio de rol
@@ -73,5 +73,5 @@ historialRolGrupoRegistry.registerPath({
 historialRolGrupoRouter.post(
   '/',
   validateRequest(CreateHistorialRolGrupoSchema),
-  historialRolGrupoController.create
+  historialRolGrupoController.create,
 );

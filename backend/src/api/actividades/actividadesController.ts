@@ -53,7 +53,11 @@ class ActividadesController {
    */
   public update: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await actividadesService.update(id, req.body);
+    const usuario = {
+      rol: req.usuario!.rol,
+      miembro_id: req.usuario!.miembro_id,
+    };
+    const serviceResponse = await actividadesService.update(id, req.body, usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -62,10 +66,15 @@ class ActividadesController {
    */
   public updateEstado: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
+    const usuario = {
+      rol: req.usuario!.rol,
+      miembro_id: req.usuario!.miembro_id,
+    };
     const serviceResponse = await actividadesService.updateEstado(
       id,
       req.body.estado,
-      req.body.motivo_cancelacion
+      req.body.motivo_cancelacion,
+      usuario,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };

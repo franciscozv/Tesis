@@ -30,10 +30,7 @@ export class RolesActividadService {
       }
 
       if (roles.length === 0) {
-        return ServiceResponse.success<RolActividad[]>(
-          'No se encontraron roles de actividad',
-          [],
-        );
+        return ServiceResponse.success<RolActividad[]>('No se encontraron roles de actividad', []);
       }
 
       return ServiceResponse.success<RolActividad[]>('Roles de actividad encontrados', roles);
@@ -173,10 +170,7 @@ export class RolesActividadService {
       }
 
       const estado = rol.activo ? 'activado' : 'desactivado';
-      return ServiceResponse.success<RolActividad>(
-        `Rol de actividad ${estado} exitosamente`,
-        rol,
-      );
+      return ServiceResponse.success<RolActividad>(`Rol de actividad ${estado} exitosamente`, rol);
     } catch (error) {
       const errorMessage = `Error al cambiar estado del rol de actividad: ${(error as Error).message}`;
       logger.error(errorMessage);

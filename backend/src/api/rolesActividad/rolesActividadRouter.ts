@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { rolesActividadController } from './rolesActividadController';
 import {
@@ -41,7 +41,11 @@ rolesActividadRegistry.registerPath({
   request: { params: GetRolActividadSchema.shape.params },
   responses: createApiResponse(RolActividadSchema, 'Success'),
 });
-rolesActividadRouter.get('/:id', validateRequest(GetRolActividadSchema), rolesActividadController.getById);
+rolesActividadRouter.get(
+  '/:id',
+  validateRequest(GetRolActividadSchema),
+  rolesActividadController.getById,
+);
 
 // POST /api/roles-actividad - Crear un nuevo rol
 rolesActividadRegistry.registerPath({
@@ -64,7 +68,7 @@ rolesActividadRouter.post(
   '/',
   verificarRol('administrador'),
   validateRequest(CreateRolActividadSchema),
-  rolesActividadController.create
+  rolesActividadController.create,
 );
 
 // PUT /api/roles-actividad/:id - Actualizar un rol
@@ -89,7 +93,7 @@ rolesActividadRouter.put(
   '/:id',
   verificarRol('administrador'),
   validateRequest(UpdateRolActividadSchema),
-  rolesActividadController.update
+  rolesActividadController.update,
 );
 
 // PATCH /api/roles-actividad/:id/toggle-estado - Cambiar estado activo/inactivo
@@ -105,7 +109,7 @@ rolesActividadRouter.patch(
   '/:id/toggle-estado',
   verificarRol('administrador'),
   validateRequest(ToggleEstadoRolActividadSchema),
-  rolesActividadController.toggleEstado
+  rolesActividadController.toggleEstado,
 );
 
 // DELETE /api/roles-actividad/:id - Eliminar un rol (soft delete)
@@ -121,5 +125,5 @@ rolesActividadRouter.delete(
   '/:id',
   verificarRol('administrador'),
   validateRequest(GetRolActividadSchema),
-  rolesActividadController.delete
+  rolesActividadController.delete,
 );

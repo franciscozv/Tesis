@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -191,7 +191,7 @@ export const GenerarInstanciasResponseSchema = z.object({
       patron_id: z.number().openapi({ example: 1 }),
       patron_nombre: z.string().openapi({ example: 'Culto dominical' }),
       actividades_creadas: z.number().openapi({ example: 4 }),
-    })
+    }),
   ),
 });
 
@@ -200,6 +200,8 @@ export type GenerarInstanciasResponse = z.infer<typeof GenerarInstanciasResponse
 export const PatchEstadoPatronSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
-    activo: z.boolean({ required_error: 'El campo activo es obligatorio' }).openapi({ example: true }),
+    activo: z
+      .boolean({ required_error: 'El campo activo es obligatorio' })
+      .openapi({ example: true }),
   }),
 });

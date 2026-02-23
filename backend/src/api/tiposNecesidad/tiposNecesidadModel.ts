@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -11,7 +11,6 @@ export const TipoNecesidadSchema = z.object({
   id_tipo: z.number().openapi({ example: 1 }),
   nombre: z.string().openapi({ example: 'Alimentos' }),
   descripcion: z.string().nullable().openapi({ example: 'Necesidades de alimentos y bebidas' }),
-  requiere_asignacion_beneficiarios: z.boolean().openapi({ example: false }),
   activo: z.boolean().openapi({ example: true }),
   created_at: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
   updated_at: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
@@ -29,14 +28,7 @@ export const CreateTipoNecesidadSchema = z.object({
       .min(1, 'Nombre es obligatorio')
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .openapi({ example: 'Alimentos' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Necesidades de alimentos y bebidas' }),
-    requiere_asignacion_beneficiarios: z
-      .boolean()
-      .default(false)
-      .openapi({ example: false }),
+    descripcion: z.string().optional().openapi({ example: 'Necesidades de alimentos y bebidas' }),
   }),
 });
 
@@ -67,13 +59,6 @@ export const UpdateTipoNecesidadSchema = z.object({
       .max(100, 'Nombre no puede exceder 100 caracteres')
       .optional()
       .openapi({ example: 'Alimentos' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Necesidades de alimentos y bebidas' }),
-    requiere_asignacion_beneficiarios: z
-      .boolean()
-      .optional()
-      .openapi({ example: false }),
+    descripcion: z.string().optional().openapi({ example: 'Necesidades de alimentos y bebidas' }),
   }),
 });

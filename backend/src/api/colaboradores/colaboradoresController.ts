@@ -14,7 +14,7 @@ class ColaboradoresController {
       miembro_id: req.query.miembro_id ? Number(req.query.miembro_id) : undefined,
       estado: req.query.estado as string | undefined,
     };
-    const serviceResponse = await colaboradoresService.findAll(filters);
+    const serviceResponse = await colaboradoresService.findAll(filters, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -40,7 +40,11 @@ class ColaboradoresController {
    */
   public updateDecision: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await colaboradoresService.updateDecision(id, req.body.estado);
+    const serviceResponse = await colaboradoresService.updateDecision(
+      id,
+      req.body.estado,
+      req.usuario,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

@@ -1,7 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import type { ESTADOS_MEMBRESIA, HistorialEstado, HistorialEstadoConUsuario } from './historialEstadoModel';
+import type {
+  ESTADOS_MEMBRESIA,
+  HistorialEstado,
+  HistorialEstadoConUsuario,
+} from './historialEstadoModel';
 import { HistorialEstadoRepository } from './historialEstadoRepository';
 
 /**

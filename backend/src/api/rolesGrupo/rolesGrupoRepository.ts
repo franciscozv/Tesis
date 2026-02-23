@@ -9,9 +9,7 @@ export class RolesGrupoRepository {
    * Obtiene roles de grupo, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<RolGrupo[]> {
-    let query = supabase
-      .from('rol_grupo_ministerial')
-      .select('*');
+    let query = supabase.from('rol_grupo_ministerial').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -145,10 +143,7 @@ export class RolesGrupoRepository {
    * Elimina un rol permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('rol_grupo_ministerial')
-      .delete()
-      .eq('id_rol_grupo', id);
+    const { error } = await supabase.from('rol_grupo_ministerial').delete().eq('id_rol_grupo', id);
 
     if (error) throw error;
     return true;

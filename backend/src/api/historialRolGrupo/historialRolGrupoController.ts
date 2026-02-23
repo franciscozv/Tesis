@@ -10,9 +10,7 @@ class HistorialRolGrupoController {
    */
   public getAll: RequestHandler = async (req: Request, res: Response) => {
     const filters = {
-      miembro_grupo_id: req.query.miembro_grupo_id
-        ? Number(req.query.miembro_grupo_id)
-        : undefined,
+      miembro_grupo_id: req.query.miembro_grupo_id ? Number(req.query.miembro_grupo_id) : undefined,
     };
     const serviceResponse = await historialRolGrupoService.findAll(filters);
     res.status(serviceResponse.statusCode).send(serviceResponse);

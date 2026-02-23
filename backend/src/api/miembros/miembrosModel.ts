@@ -118,7 +118,6 @@ export const UpdateMiembroSchema = z.object({
       .transform((val) => val || null),
     genero: GeneroEnum.optional().transform((val) => val || null),
     bautizado: z.boolean().optional(),
-    estado_membresia: EstadoMembresiaEnum.optional(),
     fecha_ingreso: z
       .string()
       .date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)')
@@ -138,7 +137,10 @@ export const UpdateMiPerfilSchema = z.object({
       .transform((val) => val || null),
     telefono: z
       .string()
-      .regex(/^\+56\s?9\s?\d{4}\s?\d{4}$/, 'Formato de teléfono inválido. Debe ser: +56 9 XXXX XXXX')
+      .regex(
+        /^\+56\s?9\s?\d{4}\s?\d{4}$/,
+        'Formato de teléfono inválido. Debe ser: +56 9 XXXX XXXX',
+      )
       .optional()
       .transform((val) => val || null),
     email: z

@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -17,7 +17,9 @@ export const HistorialEstadoSchema = z.object({
   miembro_id: z.number().openapi({ example: 5 }),
   estado_anterior: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'sin_membresia' }),
   estado_nuevo: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'probando' }),
-  motivo: z.string().openapi({ example: 'El miembro ha completado el periodo de prueba satisfactoriamente' }),
+  motivo: z
+    .string()
+    .openapi({ example: 'El miembro ha completado el periodo de prueba satisfactoriamente' }),
   usuario_id: z.number().openapi({ example: 1 }),
   fecha_cambio: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
 });
@@ -81,9 +83,7 @@ export const HistorialEstadoConUsuarioSchema = z.object({
   miembro_id: z.number().openapi({ example: 5 }),
   estado_anterior: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'probando' }),
   estado_nuevo: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'plena_comunion' }),
-  motivo: z
-    .string()
-    .openapi({ example: 'Cumplió satisfactoriamente promesas de fidelidad' }),
+  motivo: z.string().openapi({ example: 'Cumplió satisfactoriamente promesas de fidelidad' }),
   usuario: z
     .object({
       id: z.number().openapi({ example: 1 }),

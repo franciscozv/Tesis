@@ -1,8 +1,8 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { validateRequest } from '@/common/utils/httpHandlers';
 import { verificarToken } from '@/common/middleware/authMiddleware';
+import { validateRequest } from '@/common/utils/httpHandlers';
 import { authController } from './authController';
 import {
   CambiarPasswordSchema,
@@ -57,7 +57,7 @@ authRegistry.registerPath({
 authRouter.post(
   '/recuperar-password',
   validateRequest(RecuperarPasswordSchema),
-  authController.recuperarPassword
+  authController.recuperarPassword,
 );
 
 // POST /api/auth/reset-password - Restablecer contraseña con token de recuperación
@@ -81,7 +81,7 @@ authRegistry.registerPath({
 authRouter.post(
   '/reset-password',
   validateRequest(ResetPasswordSchema),
-  authController.resetPassword
+  authController.resetPassword,
 );
 
 // PATCH /api/auth/cambiar-password - Cambiar contraseña (requiere token)
@@ -105,5 +105,5 @@ authRouter.patch(
   '/cambiar-password',
   verificarToken,
   validateRequest(CambiarPasswordSchema),
-  authController.cambiarPassword
+  authController.cambiarPassword,
 );

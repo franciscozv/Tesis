@@ -46,7 +46,13 @@ export const VincularMiembroSchema = z.object({
     miembro_id: z.number().int().positive('ID de miembro debe ser positivo'),
     grupo_id: z.number().int().positive('ID de grupo debe ser positivo'),
     rol_grupo_id: z.number().int().positive('ID de rol debe ser positivo'),
-    fecha_vinculacion: z.string().datetime('Fecha de vinculación debe ser válida').optional(),
+    fecha_vinculacion: z
+      .string()
+      .datetime('Fecha de vinculación debe ser válida')
+      .optional()
+      .refine((val) => !val || new Date(val) <= new Date(), {
+        message: 'La fecha de vinculación no puede ser una fecha futura.',
+      }),
   }),
 });
 

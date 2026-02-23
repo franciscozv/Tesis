@@ -9,9 +9,7 @@ export class TiposNecesidadRepository {
    * Obtiene tipos de necesidad, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<TipoNecesidad[]> {
-    let query = supabase
-      .from('tipo_necesidad_logistica')
-      .select('*');
+    let query = supabase.from('tipo_necesidad_logistica').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -139,10 +137,7 @@ export class TiposNecesidadRepository {
    * Elimina un tipo de necesidad permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('tipo_necesidad_logistica')
-      .delete()
-      .eq('id_tipo', id);
+    const { error } = await supabase.from('tipo_necesidad_logistica').delete().eq('id_tipo', id);
 
     if (error) throw error;
     return true;

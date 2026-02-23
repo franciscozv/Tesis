@@ -33,7 +33,7 @@ calendarioRegistry.registerPath({
 calendarioRouter.get(
   '/publico',
   validateRequest(CalendarioQuerySchema),
-  calendarioController.getPublico
+  calendarioController.getPublico,
 );
 
 // GET /api/calendario/consolidado - Calendario consolidado (requiere autenticación)
@@ -51,7 +51,7 @@ calendarioRouter.get(
   '/consolidado',
   verificarToken,
   validateRequest(CalendarioQuerySchema),
-  calendarioController.getConsolidado
+  calendarioController.getConsolidado,
 );
 
 // GET /api/calendario/mis-responsabilidades/:miembro_id - Responsabilidades del miembro
@@ -70,5 +70,5 @@ calendarioRouter.get(
   '/mis-responsabilidades/:miembro_id',
   verificarToken,
   validateRequest(MisResponsabilidadesSchema),
-  calendarioController.getMisResponsabilidades
+  calendarioController.getMisResponsabilidades,
 );

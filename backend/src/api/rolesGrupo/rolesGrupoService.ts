@@ -30,10 +30,7 @@ export class RolesGrupoService {
       }
 
       if (roles.length === 0) {
-        return ServiceResponse.success<RolGrupo[]>(
-          'No se encontraron roles de grupo',
-          [],
-        );
+        return ServiceResponse.success<RolGrupo[]>('No se encontraron roles de grupo', []);
       }
 
       return ServiceResponse.success<RolGrupo[]>('Roles de grupo encontrados', roles);
@@ -173,10 +170,7 @@ export class RolesGrupoService {
       }
 
       const estado = rol.activo ? 'activado' : 'desactivado';
-      return ServiceResponse.success<RolGrupo>(
-        `Rol de grupo ${estado} exitosamente`,
-        rol,
-      );
+      return ServiceResponse.success<RolGrupo>(`Rol de grupo ${estado} exitosamente`, rol);
     } catch (error) {
       const errorMessage = `Error al cambiar estado del rol de grupo: ${(error as Error).message}`;
       logger.error(errorMessage);

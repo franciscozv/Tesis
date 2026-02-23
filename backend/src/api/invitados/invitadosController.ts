@@ -31,7 +31,7 @@ class InvitadosController {
    * Crea una nueva invitación
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
-    const serviceResponse = await invitadosService.create(req.body);
+    const serviceResponse = await invitadosService.create(req.body, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -43,7 +43,7 @@ class InvitadosController {
     const serviceResponse = await invitadosService.responder(
       id,
       req.body.estado,
-      req.body.motivo_rechazo
+      req.body.motivo_rechazo,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -62,7 +62,7 @@ class InvitadosController {
    */
   public delete: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await invitadosService.delete(id);
+    const serviceResponse = await invitadosService.delete(id, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }

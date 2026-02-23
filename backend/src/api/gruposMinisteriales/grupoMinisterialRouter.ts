@@ -9,7 +9,7 @@ import {
   UpdateGrupoMinisterialSchema,
 } from '@/api/gruposMinisteriales/grupoMinisterialModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 
 export const gruposMinisterialesRegistry = new OpenAPIRegistry();

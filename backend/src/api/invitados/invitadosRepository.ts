@@ -45,11 +45,7 @@ export class InvitadosRepository {
    * Obtiene un invitado por ID
    */
   async findByIdAsync(id: number): Promise<Invitado | null> {
-    const { data, error } = await supabase
-      .from('invitado')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.from('invitado').select('*').eq('id', id).single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
@@ -76,6 +72,25 @@ export class InvitadosRepository {
   }
 
   /**
+   * Carga estado, fecha y hora_fin de una actividad para validaciones temporales
+   */
+  async findActividadDatosAsync(
+    actividadId: number,
+  ): Promise<{ estado: string; fecha: string; hora_fin: string } | null> {
+    const { data, error } = await supabase
+      .from('actividad')
+      .select('estado, fecha, hora_fin')
+      .eq('id', actividadId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data as { estado: string; fecha: string; hora_fin: string };
+  }
+
+  /**
    * Verifica si un miembro existe y está activo
    */
   async miembroExistsAsync(miembroId: number): Promise<boolean> {
@@ -91,6 +106,37 @@ export class InvitadosRepository {
       throw error;
     }
     return data !== null;
+  }
+
+  /**
+   * Verifica si un miembro es el líder principal del grupo al que pertenece una actividad
+   */
+  async isLiderDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
+    const { data: actividad, error: actError } = await supabase
+      .from('actividad')
+      .select('grupo_id')
+      .eq('id', actividadId)
+      .single();
+
+    if (actError) {
+      if (actError.code === 'PGRST116') return false;
+      throw actError;
+    }
+    if (!actividad || actividad.grupo_id === null) return false;
+
+    const { data: grupo, error: grupoError } = await supabase
+      .from('grupo_ministerial')
+      .select('id_grupo')
+      .eq('id_grupo', actividad.grupo_id)
+      .eq('lider_principal_id', miembroId)
+      .eq('activo', true)
+      .single();
+
+    if (grupoError) {
+      if (grupoError.code === 'PGRST116') return false;
+      throw grupoError;
+    }
+    return grupo !== null;
   }
 
   /**
@@ -117,7 +163,7 @@ export class InvitadosRepository {
   async existsInvitacionDuplicadaAsync(
     actividadId: number,
     miembroId: number,
-    rolId: number
+    rolId: number,
   ): Promise<boolean> {
     const { data, error } = await supabase
       .from('invitado')
@@ -151,11 +197,7 @@ export class InvitadosRepository {
       insertData.fecha_respuesta = new Date().toISOString();
     }
 
-    const { data, error } = await supabase
-      .from('invitado')
-      .insert(insertData)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('invitado').insert(insertData).select().single();
 
     if (error) throw error;
     return data as Invitado;
@@ -167,7 +209,7 @@ export class InvitadosRepository {
   async updateRespuestaAsync(
     id: number,
     estado: string,
-    motivo_rechazo?: string
+    motivo_rechazo?: string,
   ): Promise<Invitado | null> {
     const updateData: Record<string, unknown> = {
       estado,
@@ -218,10 +260,7 @@ export class InvitadosRepository {
    * Elimina un invitado
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('invitado')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('invitado').delete().eq('id', id);
 
     if (error) throw error;
     return true;

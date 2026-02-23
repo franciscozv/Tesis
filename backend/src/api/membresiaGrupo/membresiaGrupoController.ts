@@ -51,7 +51,11 @@ class MembresiaGrupoController {
    */
   public getMembresiasByMiembro: RequestHandler = async (req: Request, res: Response) => {
     const miembroId = Number.parseInt(req.params.miembro_id, 10);
-    const serviceResponse = await membresiaGrupoService.getMembresiasByMiembro(miembroId);
+    const serviceResponse = await membresiaGrupoService.getMembresiasByMiembro(
+      miembroId,
+      req.usuario?.rol,
+      req.usuario?.miembro_id ?? null,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

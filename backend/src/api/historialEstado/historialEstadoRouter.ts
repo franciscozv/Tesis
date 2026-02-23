@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { historialEstadoController } from './historialEstadoController';
 import {
@@ -36,7 +36,7 @@ historialEstadoRegistry.registerPath({
 historialEstadoRouter.get(
   '/',
   validateRequest(ListHistorialEstadoQuerySchema),
-  historialEstadoController.getByMiembro
+  historialEstadoController.getByMiembro,
 );
 
 // GET /api/historial-estado/:id - Obtener uno por ID
@@ -51,7 +51,7 @@ historialEstadoRegistry.registerPath({
 historialEstadoRouter.get(
   '/:id',
   validateRequest(GetHistorialEstadoSchema),
-  historialEstadoController.getById
+  historialEstadoController.getById,
 );
 
 // POST /api/historial-estado - Registrar cambio de estado
@@ -74,5 +74,5 @@ historialEstadoRegistry.registerPath({
 historialEstadoRouter.post(
   '/',
   validateRequest(CreateHistorialEstadoSchema),
-  historialEstadoController.create
+  historialEstadoController.create,
 );

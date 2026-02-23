@@ -258,10 +258,7 @@ export class MembresiaGrupoService {
         );
       }
 
-      return ServiceResponse.success<MembresiaGrupo>(
-        'Rol cambiado exitosamente',
-        membresia,
-      );
+      return ServiceResponse.success<MembresiaGrupo>('Rol cambiado exitosamente', membresia);
     } catch (error) {
       const errorMessage = `Error al cambiar rol de membresía: ${(error as Error).message}`;
       logger.error(errorMessage);
@@ -278,8 +275,19 @@ export class MembresiaGrupoService {
    */
   async getMembresiasByMiembro(
     miembroId: number,
+    rol?: 'administrador' | 'lider' | 'miembro',
+    miembroIdToken?: number | null,
   ): Promise<ServiceResponse<MembresiaGrupoConNombres[] | null>> {
     try {
+      // Un miembro solo puede consultar sus propias membresías
+      if (rol === 'miembro' && miembroIdToken !== miembroId) {
+        return ServiceResponse.failure(
+          'No tiene permisos para consultar las membresías de otro miembro',
+          null,
+          StatusCodes.FORBIDDEN,
+        );
+      }
+
       const membresias = await this.membresiaGrupoRepository.findByMiembroIdAsync(miembroId);
 
       if (!membresias) {
@@ -297,7 +305,10 @@ export class MembresiaGrupoService {
         );
       }
 
-      return ServiceResponse.success<MembresiaGrupoConNombres[]>('Membresías encontradas', membresias);
+      return ServiceResponse.success<MembresiaGrupoConNombres[]>(
+        'Membresías encontradas',
+        membresias,
+      );
     } catch (error) {
       const errorMessage = `Error al obtener membresías por miembro: ${(error as Error).message}`;
       logger.error(errorMessage);
@@ -312,7 +323,9 @@ export class MembresiaGrupoService {
   /**
    * Obtiene todas las membresías activas de un grupo
    */
-  async getMembresiasByGrupo(grupoId: number): Promise<ServiceResponse<MembresiaGrupoConNombres[] | null>> {
+  async getMembresiasByGrupo(
+    grupoId: number,
+  ): Promise<ServiceResponse<MembresiaGrupoConNombres[] | null>> {
     try {
       const membresias = await this.membresiaGrupoRepository.findByGrupoIdAsync(grupoId);
 

@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { rolesGrupoController } from './rolesGrupoController';
 import {
@@ -67,7 +67,12 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(RolGrupoSchema, 'Rol de grupo creado exitosamente'),
 });
-rolesGrupoRouter.post('/', verificarRol('administrador'), validateRequest(CreateRolGrupoSchema), rolesGrupoController.create);
+rolesGrupoRouter.post(
+  '/',
+  verificarRol('administrador'),
+  validateRequest(CreateRolGrupoSchema),
+  rolesGrupoController.create,
+);
 
 /**
  * PUT /api/roles-grupo/:id - Actualizar un rol
@@ -89,7 +94,12 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(RolGrupoSchema, 'Rol de grupo actualizado exitosamente'),
 });
-rolesGrupoRouter.put('/:id', verificarRol('administrador'), validateRequest(UpdateRolGrupoSchema), rolesGrupoController.update);
+rolesGrupoRouter.put(
+  '/:id',
+  verificarRol('administrador'),
+  validateRequest(UpdateRolGrupoSchema),
+  rolesGrupoController.update,
+);
 
 /**
  * PATCH /api/roles-grupo/:id/toggle-estado - Cambiar estado activo/inactivo
@@ -106,7 +116,7 @@ rolesGrupoRouter.patch(
   '/:id/toggle-estado',
   verificarRol('administrador'),
   validateRequest(ToggleEstadoRolGrupoSchema),
-  rolesGrupoController.toggleEstado
+  rolesGrupoController.toggleEstado,
 );
 
 /**
@@ -121,4 +131,9 @@ rolesGrupoRegistry.registerPath({
   },
   responses: createApiResponse(z.null(), 'Rol de grupo eliminado exitosamente'),
 });
-rolesGrupoRouter.delete('/:id', verificarRol('administrador'), validateRequest(DeleteRolGrupoSchema), rolesGrupoController.delete);
+rolesGrupoRouter.delete(
+  '/:id',
+  verificarRol('administrador'),
+  validateRequest(DeleteRolGrupoSchema),
+  rolesGrupoController.delete,
+);

@@ -23,7 +23,7 @@ class AuthController {
     const serviceResponse = await authService.cambiarPassword(
       usuarioId,
       password_actual,
-      password_nueva
+      password_nueva,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };

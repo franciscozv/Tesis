@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
@@ -16,12 +16,21 @@ export const ActividadSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   patron_id: z.number().nullable().openapi({ example: null }),
   tipo_actividad_id: z.number().openapi({ example: 1 }),
+  tipo_actividad: z
+    .object({
+      nombre: z.string(),
+      color: z.string(),
+    })
+    .nullable()
+    .optional()
+    .openapi({ example: { nombre: 'Culto Dominical', color: '#3B82F6' } }),
   nombre: z.string().openapi({ example: 'Culto dominical 12 enero' }),
   descripcion: z.string().nullable().openapi({ example: 'Servicio regular del domingo' }),
   fecha: z.string().openapi({ example: '2024-01-12' }),
   hora_inicio: z.string().openapi({ example: '10:00:00' }),
   hora_fin: z.string().openapi({ example: '11:30:00' }),
   grupo_id: z.number().nullable().openapi({ example: null }),
+  lugar: z.string().openapi({ example: 'Templo principal' }),
   es_publica: z.boolean().openapi({ example: false }),
   estado: z.enum(ESTADOS_ACTIVIDAD).openapi({ example: 'programada' }),
   motivo_cancelacion: z.string().nullable().openapi({ example: null }),
@@ -52,10 +61,7 @@ export const CreateActividadSchema = z.object({
       .min(1, 'Nombre es obligatorio')
       .max(150, 'Nombre no puede exceder 150 caracteres')
       .openapi({ example: 'Culto dominical 12 enero' }),
-    descripcion: z
-      .string()
-      .optional()
-      .openapi({ example: 'Servicio regular del domingo' }),
+    descripcion: z.string().optional().openapi({ example: 'Servicio regular del domingo' }),
     fecha: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)')
@@ -74,6 +80,11 @@ export const CreateActividadSchema = z.object({
       .positive('Debe ser un ID válido')
       .optional()
       .openapi({ example: 1 }),
+    lugar: z
+      .string()
+      .min(1, 'Lugar es obligatorio')
+      .max(200, 'Lugar no puede exceder 200 caracteres')
+      .openapi({ example: 'Templo principal' }),
     es_publica: z.boolean().default(false).openapi({ example: false }),
     creador_id: z
       .number()
@@ -135,6 +146,12 @@ export const UpdateActividadSchema = z.object({
       .nullable()
       .optional()
       .openapi({ example: 1 }),
+    lugar: z
+      .string()
+      .min(1, 'Lugar es obligatorio')
+      .max(200, 'Lugar no puede exceder 200 caracteres')
+      .optional()
+      .openapi({ example: 'Templo principal' }),
     es_publica: z.boolean().optional().openapi({ example: false }),
   }),
 });
@@ -168,7 +185,7 @@ export const PatchEstadoActividadSchema = z.object({
       {
         message: 'El motivo de cancelación es obligatorio cuando el estado es "cancelada"',
         path: ['motivo_cancelacion'],
-      }
+      },
     ),
 });
 

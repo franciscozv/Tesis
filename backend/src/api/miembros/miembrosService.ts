@@ -1,8 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
-
+import { historialEstadoService } from '@/api/historialEstado/historialEstadoService';
 import type { Miembro } from '@/api/miembros/miembrosModel';
 import { MiembrosRepository } from '@/api/miembros/miembrosRepository';
-import { historialEstadoService } from '@/api/historialEstado/historialEstadoService';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
 
@@ -112,7 +111,9 @@ export class MiembrosService {
     miembroData: Partial<Miembro>,
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
-      const miembro = await this.miembrosRepository.updateAsync(id, miembroData);
+      // estado_membresia solo se modifica vía PATCH /:id/estado
+      const { estado_membresia: _, ...safeData } = miembroData as any;
+      const miembro = await this.miembrosRepository.updateAsync(id, safeData);
 
       if (!miembro) {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);

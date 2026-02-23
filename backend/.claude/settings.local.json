@@ -5,7 +5,13 @@
       "Bash(npx tsup:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm seeds:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(cd /c/Users/pancho/Desktop/Tesis/backend && ./node_modules/.bin/tsc --noEmit 2>&1)",
+      "Bash(cd /c/Users/pancho/Desktop/Tesis/backend && node --import=tsx --input-type=module <<'EOF' 2>&1\nimport { parseActividadFin, nowEnZona, hoyCL } from './src/common/utils/dateTime.ts';\n\nconst fin = parseActividadFin\\('2026-02-22', '17:00'\\);\nconst now = nowEnZona\\(\\);\nconst hoy = hoyCL\\(\\);\n\nconsole.log\\('fin Chile:', fin.format\\('YYYY-MM-DD HH:mm:ss Z'\\)\\);\nconsole.log\\('now Chile:', now.format\\('YYYY-MM-DD HH:mm:ss Z'\\)\\);\nconsole.log\\('hoy CL:', hoy\\);\nconsole.log\\('finActividad < now:', fin.isBefore\\(now\\)\\);\nEOF)",
+      "Bash(cd /c/Users/pancho/Desktop/Tesis/backend && ./node_modules/.bin/tsx -e \"\nimport { parseActividadFin, nowEnZona, hoyCL } from './src/common/utils/dateTime';\nconst fin = parseActividadFin\\('2026-02-22', '17:00'\\);\nconst now = nowEnZona\\(\\);\nconst hoy = hoyCL\\(\\);\nconsole.log\\('fin Chile:', fin.format\\('YYYY-MM-DD HH:mm:ss Z'\\)\\);\nconsole.log\\('now Chile:', now.format\\('YYYY-MM-DD HH:mm:ss Z'\\)\\);\nconsole.log\\('hoy CL:', hoy\\);\nconsole.log\\('fin < now:', fin.isBefore\\(now\\)\\);\n\" 2>&1)"
     ]
   },
   "enableAllProjectMcpServers": true,

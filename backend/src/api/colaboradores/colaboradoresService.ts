@@ -1,8 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { nowEnZona, parseActividadFin } from '@/common/utils/dateTime';
 import { logger } from '@/server';
-import { ColaboradoresRepository } from './colaboradoresRepository';
 import type { Colaborador } from './colaboradoresModel';
+import { ColaboradoresRepository } from './colaboradoresRepository';
 
 /**
  * Servicio con lógica de negocio para Colaboradores
@@ -15,29 +17,40 @@ export class ColaboradoresService {
   }
 
   /**
-   * Obtiene todos los colaboradores con filtros opcionales
+   * Obtiene todos los colaboradores con filtros opcionales, scoped según rol del usuario
    */
-  async findAll(filters: {
-    necesidad_id?: number;
-    miembro_id?: number;
-    estado?: string;
-  }): Promise<ServiceResponse<Colaborador[] | null>> {
+  async findAll(
+    filters: { necesidad_id?: number; miembro_id?: number; estado?: string },
+    usuario?: JwtPayload,
+  ): Promise<ServiceResponse<Colaborador[] | null>> {
     try {
-      const colaboradores = await this.colaboradoresRepository.findAllAsync(filters);
+      let colaboradores: Colaborador[];
 
-      if (!colaboradores) {
-        return ServiceResponse.failure(
-          'Error al obtener colaboradores',
-          null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+      if (usuario?.rol === 'lider') {
+        if (!usuario.miembro_id) {
+          return ServiceResponse.failure(
+            'El líder no tiene un miembro asociado',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+        colaboradores = await this.colaboradoresRepository.findAllForLiderAsync(
+          filters,
+          usuario.miembro_id,
         );
+      } else if (usuario?.rol === 'miembro') {
+        const scopedFilters = {
+          ...filters,
+          miembro_id: usuario.miembro_id ?? undefined,
+        };
+        colaboradores = await this.colaboradoresRepository.findAllAsync(scopedFilters);
+      } else {
+        // administrador: acceso global
+        colaboradores = await this.colaboradoresRepository.findAllAsync(filters);
       }
 
       if (colaboradores.length === 0) {
-        return ServiceResponse.success<Colaborador[]>(
-          'No se encontraron colaboradores',
-          []
-        );
+        return ServiceResponse.success<Colaborador[]>('No se encontraron colaboradores', []);
       }
 
       return ServiceResponse.success<Colaborador[]>('Colaboradores encontrados', colaboradores);
@@ -47,7 +60,7 @@ export class ColaboradoresService {
       return ServiceResponse.failure(
         'Error al obtener colaboradores',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -60,11 +73,7 @@ export class ColaboradoresService {
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
 
       if (!colaborador) {
-        return ServiceResponse.failure(
-          'Colaborador no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success<Colaborador>('Colaborador encontrado', colaborador);
@@ -74,7 +83,7 @@ export class ColaboradoresService {
       return ServiceResponse.failure(
         'Error al obtener colaborador',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -83,18 +92,18 @@ export class ColaboradoresService {
    * Crea una nueva oferta de colaboración
    */
   async create(
-    colaboradorData: Omit<Colaborador, 'id' | 'fecha_oferta' | 'fecha_decision' | 'estado'>
+    colaboradorData: Omit<Colaborador, 'id' | 'fecha_oferta' | 'fecha_decision' | 'estado'>,
   ): Promise<ServiceResponse<Colaborador | null>> {
     try {
-      // Validar que la necesidad exista y obtener sus datos
-      const necesidad = await this.colaboradoresRepository.getNecesidadInfoAsync(
-        colaboradorData.necesidad_id
+      // Cargar necesidad + actividad en una sola consulta
+      const necesidad = await this.colaboradoresRepository.getNecesidadConActividadAsync(
+        colaboradorData.necesidad_id,
       );
       if (!necesidad) {
         return ServiceResponse.failure(
           'La necesidad logística especificada no existe',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -103,32 +112,51 @@ export class ColaboradoresService {
         return ServiceResponse.failure(
           'Solo se pueden ofrecer colaboraciones para necesidades en estado "abierta"',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      // Validaciones temporales sobre la actividad asociada
+      const { actividad } = necesidad;
+      if (actividad.estado === 'cancelada') {
+        return ServiceResponse.failure(
+          'No se puede registrar colaboración en una actividad cancelada',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
+      if (finActividad.isBefore(nowEnZona())) {
+        return ServiceResponse.failure(
+          'No se puede registrar colaboración en una actividad que ya finalizó',
+          null,
+          StatusCodes.CONFLICT,
         );
       }
 
       // Validar que el miembro exista y esté activo
       const miembroExiste = await this.colaboradoresRepository.miembroExistsAsync(
-        colaboradorData.miembro_id
+        colaboradorData.miembro_id,
       );
       if (!miembroExiste) {
         return ServiceResponse.failure(
           'El miembro especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
-      // Validar que el miembro no tenga una oferta pendiente para la misma necesidad
-      const existeOferta = await this.colaboradoresRepository.existsOfertaPendienteAsync(
+      // Validar que el miembro no tenga ya una oferta para la misma necesidad
+      const ofertaExistente = await this.colaboradoresRepository.findByMiembroAndNecesidad(
+        colaboradorData.miembro_id,
         colaboradorData.necesidad_id,
-        colaboradorData.miembro_id
       );
-      if (existeOferta) {
+      if (ofertaExistente) {
         return ServiceResponse.failure(
-          'El miembro ya tiene una oferta pendiente para esta necesidad',
+          'Ya existe una oferta de este miembro para esta necesidad',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -138,7 +166,7 @@ export class ColaboradoresService {
         return ServiceResponse.failure(
           `La cantidad ofrecida (${colaboradorData.cantidad_ofrecida}) supera la cantidad faltante (${cantidadFaltante})`,
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -146,7 +174,7 @@ export class ColaboradoresService {
       return ServiceResponse.success<Colaborador>(
         'Oferta de colaboración registrada exitosamente',
         colaborador,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear colaborador: ${(error as Error).message}`;
@@ -154,7 +182,7 @@ export class ColaboradoresService {
       return ServiceResponse.failure(
         'Error al registrar oferta de colaboración',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -164,17 +192,36 @@ export class ColaboradoresService {
    */
   async updateDecision(
     id: number,
-    estado: 'aceptada' | 'rechazada'
+    estado: 'aceptada' | 'rechazada',
+    usuario?: JwtPayload,
   ): Promise<ServiceResponse<Colaborador | null>> {
     try {
       // Verificar que el colaborador exista
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
       if (!colaborador) {
-        return ServiceResponse.failure(
-          'Colaborador no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
+        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      // Lider: validar que la oferta pertenece a una necesidad de sus grupos
+      if (usuario?.rol === 'lider') {
+        if (!usuario.miembro_id) {
+          return ServiceResponse.failure(
+            'El líder no tiene un miembro asociado',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+        const perteneceALider = await this.colaboradoresRepository.perteneceLiderAsync(
+          colaborador.necesidad_id,
+          usuario.miembro_id,
         );
+        if (!perteneceALider) {
+          return ServiceResponse.failure(
+            'No tiene permisos para decidir esta oferta',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       // Solo se pueden decidir ofertas pendientes
@@ -182,20 +229,20 @@ export class ColaboradoresService {
         return ServiceResponse.failure(
           `No se puede cambiar la decisión de una oferta en estado "${colaborador.estado}"`,
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
       // Si se acepta, validar y actualizar cantidad_cubierta en la necesidad
       if (estado === 'aceptada') {
         const necesidad = await this.colaboradoresRepository.getNecesidadInfoAsync(
-          colaborador.necesidad_id
+          colaborador.necesidad_id,
         );
         if (!necesidad) {
           return ServiceResponse.failure(
             'La necesidad logística asociada no existe',
             null,
-            StatusCodes.INTERNAL_SERVER_ERROR
+            StatusCodes.INTERNAL_SERVER_ERROR,
           );
         }
 
@@ -206,7 +253,7 @@ export class ColaboradoresService {
           return ServiceResponse.failure(
             `Aceptar esta oferta superaría la cantidad requerida. Faltante: ${necesidad.cantidad_requerida - necesidad.cantidad_cubierta}, ofrecido: ${colaborador.cantidad_ofrecida}`,
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
 
@@ -215,20 +262,20 @@ export class ColaboradoresService {
         await this.colaboradoresRepository.updateCantidadCubiertaAsync(
           colaborador.necesidad_id,
           nuevaCantidadCubierta,
-          necesidad.cantidad_requerida
+          necesidad.cantidad_requerida,
         );
       }
 
       const colaboradorActualizado = await this.colaboradoresRepository.updateDecisionAsync(
         id,
-        estado
+        estado,
       );
 
       if (!colaboradorActualizado) {
         return ServiceResponse.failure(
           'Error al registrar la decisión',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
@@ -244,7 +291,7 @@ export class ColaboradoresService {
       return ServiceResponse.failure(
         'Error al procesar la decisión sobre la oferta',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -256,18 +303,14 @@ export class ColaboradoresService {
     try {
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
       if (!colaborador) {
-        return ServiceResponse.failure(
-          'Colaborador no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       if (colaborador.estado !== 'pendiente') {
         return ServiceResponse.failure(
           'Solo se pueden eliminar ofertas en estado "pendiente"',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -279,7 +322,7 @@ export class ColaboradoresService {
       return ServiceResponse.failure(
         'Error al eliminar oferta de colaboración',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

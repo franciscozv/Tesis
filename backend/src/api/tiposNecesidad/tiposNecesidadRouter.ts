@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { tiposNecesidadController } from './tiposNecesidadController';
 import {
@@ -44,7 +44,7 @@ tiposNecesidadRegistry.registerPath({
 tiposNecesidadRouter.get(
   '/:id',
   validateRequest(GetTipoNecesidadSchema),
-  tiposNecesidadController.getById
+  tiposNecesidadController.getById,
 );
 
 // POST /api/tipos-necesidad - Crear un nuevo tipo
@@ -68,7 +68,7 @@ tiposNecesidadRouter.post(
   '/',
   verificarRol('administrador'),
   validateRequest(CreateTipoNecesidadSchema),
-  tiposNecesidadController.create
+  tiposNecesidadController.create,
 );
 
 // PUT /api/tipos-necesidad/:id - Actualizar un tipo
@@ -93,7 +93,7 @@ tiposNecesidadRouter.put(
   '/:id',
   verificarRol('administrador'),
   validateRequest(UpdateTipoNecesidadSchema),
-  tiposNecesidadController.update
+  tiposNecesidadController.update,
 );
 
 // PATCH /api/tipos-necesidad/:id/toggle-estado - Cambiar estado activo/inactivo
@@ -109,7 +109,7 @@ tiposNecesidadRouter.patch(
   '/:id/toggle-estado',
   verificarRol('administrador'),
   validateRequest(ToggleEstadoTipoNecesidadSchema),
-  tiposNecesidadController.toggleEstado
+  tiposNecesidadController.toggleEstado,
 );
 
 // DELETE /api/tipos-necesidad/:id - Eliminar un tipo (soft delete)
@@ -125,5 +125,5 @@ tiposNecesidadRouter.delete(
   '/:id',
   verificarRol('administrador'),
   validateRequest(GetTipoNecesidadSchema),
-  tiposNecesidadController.delete
+  tiposNecesidadController.delete,
 );

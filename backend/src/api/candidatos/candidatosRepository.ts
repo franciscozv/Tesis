@@ -106,9 +106,11 @@ export class CandidatosRepository {
   async countExperienciaRolAsync(miembroId: number, rolId: number): Promise<number> {
     const { count, error } = await supabase
       .from('invitado')
-      .select('*', { count: 'exact', head: true })
+      .select('*, actividad!inner(estado)', { count: 'exact', head: true })
       .eq('miembro_id', miembroId)
-      .eq('rol_id', rolId);
+      .eq('rol_id', rolId)
+      .eq('asistio', true)
+      .eq('actividad.estado', 'realizada');
 
     if (error) throw error;
     return count ?? 0;
@@ -160,7 +162,7 @@ export class CandidatosRepository {
    */
   async getAsistenciaUltimoAnioAsync(
     miembroId: number,
-    fechaReferencia: string
+    fechaReferencia: string,
   ): Promise<{ totalConfirmadas: number; asistioReal: number }> {
     // Calcular fecha de hace 12 meses
     const fechaRef = new Date(fechaReferencia);
@@ -168,24 +170,26 @@ export class CandidatosRepository {
     fechaInicio.setFullYear(fechaInicio.getFullYear() - 1);
     const fechaInicioStr = fechaInicio.toISOString().split('T')[0];
 
-    // Total confirmadas en el último año
+    // Total confirmadas en el último año (solo actividades realizadas)
     const { count: totalConfirmadas, error: error1 } = await supabase
       .from('invitado')
-      .select('*, actividad!inner(fecha)', { count: 'exact', head: true })
+      .select('*, actividad!inner(fecha, estado)', { count: 'exact', head: true })
       .eq('miembro_id', miembroId)
       .eq('estado', 'confirmado')
+      .eq('actividad.estado', 'realizada')
       .gte('actividad.fecha', fechaInicioStr)
       .lte('actividad.fecha', fechaReferencia);
 
     if (error1) throw error1;
 
-    // Confirmadas Y asistió
+    // Confirmadas Y asistió (solo actividades realizadas)
     const { count: asistioReal, error: error2 } = await supabase
       .from('invitado')
-      .select('*, actividad!inner(fecha)', { count: 'exact', head: true })
+      .select('*, actividad!inner(fecha, estado)', { count: 'exact', head: true })
       .eq('miembro_id', miembroId)
       .eq('estado', 'confirmado')
       .eq('asistio', true)
+      .eq('actividad.estado', 'realizada')
       .gte('actividad.fecha', fechaInicioStr)
       .lte('actividad.fecha', fechaReferencia);
 

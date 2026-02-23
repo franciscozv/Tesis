@@ -2,8 +2,8 @@ import dayjs from 'dayjs';
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import { CandidatosRepository } from './candidatosRepository';
 import type { Candidato } from './candidatosModel';
+import { CandidatosRepository } from './candidatosRepository';
 
 const TOP_CANDIDATOS = 20;
 
@@ -20,10 +20,7 @@ export class CandidatosService {
   /**
    * Sugiere candidatos idóneos para un rol en actividad
    */
-  async sugerirParaRol(
-    rolId: number,
-    fecha: string
-  ): Promise<ServiceResponse<Candidato[] | null>> {
+  async sugerirParaRol(rolId: number, fecha: string): Promise<ServiceResponse<Candidato[] | null>> {
     try {
       // Validar que el rol exista
       const rolExiste = await this.candidatosRepository.rolActividadExistsAsync(rolId);
@@ -31,7 +28,7 @@ export class CandidatosService {
         return ServiceResponse.failure(
           'El rol de actividad especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -39,10 +36,7 @@ export class CandidatosService {
       const miembros = await this.candidatosRepository.findMiembrosActivosAsync();
 
       if (!miembros || miembros.length === 0) {
-        return ServiceResponse.success<Candidato[]>(
-          'No se encontraron miembros activos',
-          []
-        );
+        return ServiceResponse.success<Candidato[]>('No se encontraron miembros activos', []);
       }
 
       const scoredMembers = await Promise.all(
@@ -81,12 +75,12 @@ export class CandidatosService {
               aniosAntiguedad,
               miembro.estado_membresia,
               porcentajeAsistencia,
-              tieneConflicto
+              tieneConflicto,
             ),
             telefono: miembro.telefono,
             email: miembro.email,
           } as Candidato;
-        })
+        }),
       );
 
       const candidatos = scoredMembers.filter((c): c is Candidato => c !== null);
@@ -107,7 +101,7 @@ export class CandidatosService {
       return ServiceResponse.failure(
         'Error al buscar candidatos idóneos',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -115,9 +109,7 @@ export class CandidatosService {
   /**
    * Sugiere candidatos idóneos para un cargo en grupo
    */
-  async sugerirParaCargo(
-    cargoId: number,
-  ): Promise<ServiceResponse<Candidato[] | null>> {
+  async sugerirParaCargo(cargoId: number): Promise<ServiceResponse<Candidato[] | null>> {
     try {
       // Validar que el cargo exista
       const cargoExiste = await this.candidatosRepository.rolGrupoExistsAsync(cargoId);
@@ -125,7 +117,7 @@ export class CandidatosService {
         return ServiceResponse.failure(
           'El cargo de grupo especificado no existe o no está activo',
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -134,10 +126,7 @@ export class CandidatosService {
       const miembros = await this.candidatosRepository.findMiembrosActivosAsync();
 
       if (!miembros || miembros.length === 0) {
-        return ServiceResponse.success<Candidato[]>(
-          'No se encontraron miembros activos',
-          []
-        );
+        return ServiceResponse.success<Candidato[]>('No se encontraron miembros activos', []);
       }
 
       const scoredMembers = await Promise.all(
@@ -176,12 +165,12 @@ export class CandidatosService {
               aniosAntiguedad,
               miembro.estado_membresia,
               porcentajeAsistencia,
-              gruposActivos
+              gruposActivos,
             ),
             telefono: miembro.telefono,
             email: miembro.email,
           } as Candidato;
-        })
+        }),
       );
 
       const candidatos = scoredMembers.filter((c): c is Candidato => c !== null);
@@ -202,7 +191,7 @@ export class CandidatosService {
       return ServiceResponse.failure(
         'Error al buscar candidatos idóneos',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -223,7 +212,7 @@ export class CandidatosService {
   private calcularPuntosAntiguedad(
     estadoMembresia: string,
     fechaIngreso: string,
-    fechaReferencia: string
+    fechaReferencia: string,
   ): { puntos: number; anios: number } {
     if (estadoMembresia !== 'plena_comunion') {
       return { puntos: 0, anios: 0 };
@@ -245,7 +234,7 @@ export class CandidatosService {
    */
   private calcularPuntosAsistencia(
     totalConfirmadas: number,
-    asistioReal: number
+    asistioReal: number,
   ): { puntos: number; porcentaje: number } {
     if (totalConfirmadas === 0) {
       return { puntos: 0, porcentaje: 0 };
@@ -280,7 +269,7 @@ export class CandidatosService {
     aniosAntiguedad: number,
     estadoMembresia: string,
     porcentajeAsistencia: number,
-    gruposActivos: number
+    gruposActivos: number,
   ): string {
     const partes: string[] = [];
 
@@ -314,7 +303,7 @@ export class CandidatosService {
     aniosAntiguedad: number,
     estadoMembresia: string,
     porcentajeAsistencia: number,
-    tieneConflicto: boolean
+    tieneConflicto: boolean,
   ): string {
     const partes: string[] = [];
 

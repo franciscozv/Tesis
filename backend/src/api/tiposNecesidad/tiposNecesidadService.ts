@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import { TiposNecesidadRepository } from './tiposNecesidadRepository';
 import type { TipoNecesidad } from './tiposNecesidadModel';
+import { TiposNecesidadRepository } from './tiposNecesidadRepository';
 
 /**
  * Servicio con lógica de negocio para Tipos de Necesidad Logística
@@ -25,15 +25,12 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'Error al obtener tipos de necesidad',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (tipos.length === 0) {
-        return ServiceResponse.success<TipoNecesidad[]>(
-          'No se encontraron tipos de necesidad',
-          []
-        );
+        return ServiceResponse.success<TipoNecesidad[]>('No se encontraron tipos de necesidad', []);
       }
 
       return ServiceResponse.success<TipoNecesidad[]>('Tipos de necesidad encontrados', tipos);
@@ -43,7 +40,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al obtener tipos de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -59,7 +56,7 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'Tipo de necesidad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -70,7 +67,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al obtener tipo de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -79,18 +76,16 @@ export class TiposNecesidadService {
    * Crea un nuevo tipo de necesidad
    */
   async create(
-    tipoData: Omit<TipoNecesidad, 'id_tipo' | 'created_at' | 'updated_at' | 'activo'>
+    tipoData: Omit<TipoNecesidad, 'id_tipo' | 'created_at' | 'updated_at' | 'activo'>,
   ): Promise<ServiceResponse<TipoNecesidad | null>> {
     try {
       // Validar que el nombre no exista
-      const existeNombre = await this.tiposNecesidadRepository.existsByNombreAsync(
-        tipoData.nombre
-      );
+      const existeNombre = await this.tiposNecesidadRepository.existsByNombreAsync(tipoData.nombre);
       if (existeNombre) {
         return ServiceResponse.failure(
           'Ya existe un tipo de necesidad con ese nombre',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -98,7 +93,7 @@ export class TiposNecesidadService {
       return ServiceResponse.success<TipoNecesidad>(
         'Tipo de necesidad creado exitosamente',
         tipo,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear tipo de necesidad: ${(error as Error).message}`;
@@ -106,7 +101,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al crear tipo de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -116,20 +111,20 @@ export class TiposNecesidadService {
    */
   async update(
     id: number,
-    tipoData: Partial<TipoNecesidad>
+    tipoData: Partial<TipoNecesidad>,
   ): Promise<ServiceResponse<TipoNecesidad | null>> {
     try {
       // Validar que el nombre no exista (excluyendo el tipo actual)
       if (tipoData.nombre) {
         const existeNombre = await this.tiposNecesidadRepository.existsByNombreAsync(
           tipoData.nombre,
-          id
+          id,
         );
         if (existeNombre) {
           return ServiceResponse.failure(
             'Ya existe un tipo de necesidad con ese nombre',
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
       }
@@ -140,13 +135,13 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'Tipo de necesidad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       return ServiceResponse.success<TipoNecesidad>(
         'Tipo de necesidad actualizado exitosamente',
-        tipo
+        tipo,
       );
     } catch (error) {
       const errorMessage = `Error al actualizar tipo de necesidad: ${(error as Error).message}`;
@@ -154,7 +149,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al actualizar tipo de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -170,14 +165,14 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'Tipo de necesidad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       const estado = tipo.activo ? 'activado' : 'desactivado';
       return ServiceResponse.success<TipoNecesidad>(
         `Tipo de necesidad ${estado} exitosamente`,
-        tipo
+        tipo,
       );
     } catch (error) {
       const errorMessage = `Error al cambiar estado del tipo de necesidad: ${(error as Error).message}`;
@@ -185,7 +180,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al cambiar estado del tipo de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -201,7 +196,7 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'Tipo de necesidad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -210,7 +205,7 @@ export class TiposNecesidadService {
         return ServiceResponse.failure(
           'No se puede eliminar porque tiene necesidades logísticas asociadas. Puede desactivarlo en su lugar.',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -222,7 +217,7 @@ export class TiposNecesidadService {
       return ServiceResponse.failure(
         'Error al eliminar tipo de necesidad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

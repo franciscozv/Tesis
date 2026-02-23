@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import { TiposActividadRepository } from './tiposActividadRepository';
 import type { TipoActividad } from './tiposActividadModel';
+import { TiposActividadRepository } from './tiposActividadRepository';
 
 /**
  * Servicio con lógica de negocio para Tipos de Actividad
@@ -25,15 +25,12 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'Error al obtener tipos de actividad',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (tipos.length === 0) {
-        return ServiceResponse.success<TipoActividad[]>(
-          'No se encontraron tipos de actividad',
-          []
-        );
+        return ServiceResponse.success<TipoActividad[]>('No se encontraron tipos de actividad', []);
       }
 
       return ServiceResponse.success<TipoActividad[]>('Tipos de actividad encontrados', tipos);
@@ -43,7 +40,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al obtener tipos de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -59,7 +56,7 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'Tipo de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -70,7 +67,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al obtener tipo de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -79,18 +76,16 @@ export class TiposActividadService {
    * Crea un nuevo tipo de actividad
    */
   async create(
-    tipoData: Omit<TipoActividad, 'id_tipo' | 'created_at' | 'updated_at' | 'activo'>
+    tipoData: Omit<TipoActividad, 'id_tipo' | 'created_at' | 'updated_at' | 'activo'>,
   ): Promise<ServiceResponse<TipoActividad | null>> {
     try {
       // Validar que el nombre no exista
-      const existeNombre = await this.tiposActividadRepository.existsByNombreAsync(
-        tipoData.nombre
-      );
+      const existeNombre = await this.tiposActividadRepository.existsByNombreAsync(tipoData.nombre);
       if (existeNombre) {
         return ServiceResponse.failure(
           'Ya existe un tipo de actividad con ese nombre',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -98,7 +93,7 @@ export class TiposActividadService {
       return ServiceResponse.success<TipoActividad>(
         'Tipo de actividad creado exitosamente',
         tipo,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear tipo de actividad: ${(error as Error).message}`;
@@ -106,7 +101,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al crear tipo de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -116,20 +111,20 @@ export class TiposActividadService {
    */
   async update(
     id: number,
-    tipoData: Partial<TipoActividad>
+    tipoData: Partial<TipoActividad>,
   ): Promise<ServiceResponse<TipoActividad | null>> {
     try {
       // Validar que el nombre no exista (excluyendo el tipo actual)
       if (tipoData.nombre) {
         const existeNombre = await this.tiposActividadRepository.existsByNombreAsync(
           tipoData.nombre,
-          id
+          id,
         );
         if (existeNombre) {
           return ServiceResponse.failure(
             'Ya existe un tipo de actividad con ese nombre',
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
       }
@@ -140,13 +135,13 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'Tipo de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       return ServiceResponse.success<TipoActividad>(
         'Tipo de actividad actualizado exitosamente',
-        tipo
+        tipo,
       );
     } catch (error) {
       const errorMessage = `Error al actualizar tipo de actividad: ${(error as Error).message}`;
@@ -154,7 +149,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al actualizar tipo de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -170,14 +165,14 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'Tipo de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       const estado = tipo.activo ? 'activado' : 'desactivado';
       return ServiceResponse.success<TipoActividad>(
         `Tipo de actividad ${estado} exitosamente`,
-        tipo
+        tipo,
       );
     } catch (error) {
       const errorMessage = `Error al cambiar estado del tipo de actividad: ${(error as Error).message}`;
@@ -185,7 +180,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al cambiar estado del tipo de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -201,7 +196,7 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'Tipo de actividad no encontrado',
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -210,7 +205,7 @@ export class TiposActividadService {
         return ServiceResponse.failure(
           'No se puede eliminar porque tiene actividades asociadas. Puede desactivarlo en su lugar.',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -222,7 +217,7 @@ export class TiposActividadService {
       return ServiceResponse.failure(
         'Error al eliminar tipo de actividad',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

@@ -20,9 +20,7 @@ const ResponsabilidadSchema = z.object({
     hora_fin: z.string(),
     estado: z.string(),
   }),
-  grupo: z
-    .object({ id: z.number(), nombre: z.string() })
-    .nullable(),
+  grupo: z.object({ id: z.number(), nombre: z.string() }).nullable(),
   tipo_actividad: z.object({ id: z.number(), nombre: z.string() }),
   rol: z.object({ id: z.number(), nombre: z.string() }).optional(),
   estado_invitacion: z.string().optional(),

@@ -16,11 +16,9 @@ const resumen: Record<string, number> = {};
 async function seedIfEmpty<T extends Record<string, unknown>>(
   tableName: string,
   records: T[],
-  idColumn = 'id'
+  idColumn = 'id',
 ): Promise<number[]> {
-  const { data: existing, error: checkError } = await supabase
-    .from(tableName)
-    .select(idColumn);
+  const { data: existing, error: checkError } = await supabase.from(tableName).select(idColumn);
 
   if (checkError) throw new Error(`Error al verificar ${tableName}: ${checkError.message}`);
 
@@ -47,7 +45,7 @@ async function seedIfEmpty<T extends Record<string, unknown>>(
 async function insertRecords<T extends Record<string, unknown>>(
   tableName: string,
   records: T[],
-  idColumn = 'id'
+  idColumn = 'id',
 ): Promise<number[]> {
   const { data, error } = await supabase.from(tableName).insert(records).select(idColumn);
 
@@ -85,17 +83,57 @@ async function seedTiposActividad(): Promise<number[]> {
     'tipo_actividad',
     [
       { nombre: 'Culto', descripcion: 'Servicio de culto regular', color: '#3B82F6', activo: true },
-      { nombre: 'Escuela Dominical', descripcion: 'Enseñanza bíblica dominical', color: '#10B981', activo: true },
-      { nombre: 'Reunión de Oración', descripcion: 'Reunión de oración comunitaria', color: '#8B5CF6', activo: true },
-      { nombre: 'Ensayo de Coro', descripcion: 'Práctica del coro de la iglesia', color: '#F59E0B', activo: true },
-      { nombre: 'Reunión General Mensual', descripcion: 'Reunión administrativa mensual', color: '#EF4444', activo: true },
-      { nombre: 'Predicación en Locales', descripcion: 'Evangelización en locales', color: '#06B6D4', activo: true },
-      { nombre: 'Confraternidad', descripcion: 'Actividad de confraternización', color: '#EC4899', activo: true },
-      { nombre: 'Retiro Espiritual', descripcion: 'Retiro espiritual de la iglesia', color: '#14B8A6', activo: true },
-      { nombre: 'Santa Cena', descripcion: 'Celebración de la Santa Cena', color: '#A855F7', activo: true },
+      {
+        nombre: 'Escuela Dominical',
+        descripcion: 'Enseñanza bíblica dominical',
+        color: '#10B981',
+        activo: true,
+      },
+      {
+        nombre: 'Reunión de Oración',
+        descripcion: 'Reunión de oración comunitaria',
+        color: '#8B5CF6',
+        activo: true,
+      },
+      {
+        nombre: 'Ensayo de Coro',
+        descripcion: 'Práctica del coro de la iglesia',
+        color: '#F59E0B',
+        activo: true,
+      },
+      {
+        nombre: 'Reunión General Mensual',
+        descripcion: 'Reunión administrativa mensual',
+        color: '#EF4444',
+        activo: true,
+      },
+      {
+        nombre: 'Predicación en Locales',
+        descripcion: 'Evangelización en locales',
+        color: '#06B6D4',
+        activo: true,
+      },
+      {
+        nombre: 'Confraternidad',
+        descripcion: 'Actividad de confraternización',
+        color: '#EC4899',
+        activo: true,
+      },
+      {
+        nombre: 'Retiro Espiritual',
+        descripcion: 'Retiro espiritual de la iglesia',
+        color: '#14B8A6',
+        activo: true,
+      },
+      {
+        nombre: 'Santa Cena',
+        descripcion: 'Celebración de la Santa Cena',
+        color: '#A855F7',
+        activo: true,
+      },
       { nombre: 'Pedestre', descripcion: 'Actividad pedestre', color: '#F97316', activo: true },
     ],
-    'id_tipo'
+    'id_tipo',
   );
 }
 
@@ -107,13 +145,17 @@ async function seedRolesActividad(): Promise<number[]> {
       { nombre: 'Líder de Alabanza', descripcion: 'Dirige la alabanza y adoración', activo: true },
       { nombre: 'Músico', descripcion: 'Ejecuta instrumento musical', activo: true },
       { nombre: 'Corista', descripcion: 'Integrante del coro', activo: true },
-      { nombre: 'Profesor Escuela Dominical', descripcion: 'Enseñanza en escuela dominical', activo: true },
+      {
+        nombre: 'Profesor Escuela Dominical',
+        descripcion: 'Enseñanza en escuela dominical',
+        activo: true,
+      },
       { nombre: 'Portero', descripcion: 'Recepción y bienvenida', activo: true },
       { nombre: 'Vigilante', descripcion: 'Vigilancia y seguridad', activo: true },
       { nombre: 'Ofrendero', descripcion: 'Recolección de ofrendas', activo: true },
       { nombre: 'Coordinador', descripcion: 'Coordinación general de la actividad', activo: true },
     ],
-    'id_rol'
+    'id_rol',
   );
 }
 
@@ -127,7 +169,7 @@ async function seedRolesGrupo(): Promise<number[]> {
       { nombre: 'Vocal', requiere_plena_comunion: false, activo: true },
       { nombre: 'Miembro', requiere_plena_comunion: false, activo: true },
     ],
-    'id_rol_grupo'
+    'id_rol_grupo',
   );
 }
 
@@ -135,15 +177,50 @@ async function seedTiposNecesidad(): Promise<number[]> {
   return seedIfEmpty(
     'tipo_necesidad_logistica',
     [
-      { nombre: 'Transporte', descripcion: 'Necesidad de transporte o vehículos', requiere_asignacion_beneficiarios: false, activo: true },
-      { nombre: 'Alimentación', descripcion: 'Provisión de alimentos y bebidas', requiere_asignacion_beneficiarios: false, activo: true },
-      { nombre: 'Hospedaje', descripcion: 'Alojamiento para participantes', requiere_asignacion_beneficiarios: true, activo: true },
-      { nombre: 'Materiales', descripcion: 'Materiales de apoyo y suministros', requiere_asignacion_beneficiarios: false, activo: true },
-      { nombre: 'Equipos', descripcion: 'Equipos técnicos o audiovisuales', requiere_asignacion_beneficiarios: false, activo: true },
-      { nombre: 'Decoración', descripcion: 'Decoración del lugar', requiere_asignacion_beneficiarios: false, activo: true },
-      { nombre: 'Aseo y Ornato', descripcion: 'Limpieza y ornamentación', requiere_asignacion_beneficiarios: false, activo: true },
+      {
+        nombre: 'Transporte',
+        descripcion: 'Necesidad de transporte o vehículos',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
+      {
+        nombre: 'Alimentación',
+        descripcion: 'Provisión de alimentos y bebidas',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
+      {
+        nombre: 'Hospedaje',
+        descripcion: 'Alojamiento para participantes',
+        requiere_asignacion_beneficiarios: true,
+        activo: true,
+      },
+      {
+        nombre: 'Materiales',
+        descripcion: 'Materiales de apoyo y suministros',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
+      {
+        nombre: 'Equipos',
+        descripcion: 'Equipos técnicos o audiovisuales',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
+      {
+        nombre: 'Decoración',
+        descripcion: 'Decoración del lugar',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
+      {
+        nombre: 'Aseo y Ornato',
+        descripcion: 'Limpieza y ornamentación',
+        requiere_asignacion_beneficiarios: false,
+        activo: true,
+      },
     ],
-    'id_tipo'
+    'id_tipo',
   );
 }
 
@@ -384,7 +461,7 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
         activo: true,
       },
     ],
-    'id_grupo'
+    'id_grupo',
   );
 }
 
@@ -393,7 +470,7 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
 async function seedMembresiaGrupo(
   miembroIds: number[],
   grupoIds: number[],
-  rolesGrupoIds: number[]
+  rolesGrupoIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('membresia_grupo')) {
     console.log('  ⏭  membresia_grupo: ya tiene registros, omitiendo');
@@ -408,30 +485,110 @@ async function seedMembresiaGrupo(
     'membresia_grupo',
     [
       // Coro Oficial
-      { miembro_id: miembroIds[1], grupo_id: grupoIds[0], rol_grupo_id: rolesGrupoIds[0], fecha_vinculacion: '2019-06-15T00:00:00Z' },
-      { miembro_id: miembroIds[3], grupo_id: grupoIds[0], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2021-09-01T00:00:00Z' },
-      { miembro_id: miembroIds[8], grupo_id: grupoIds[0], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2022-05-10T00:00:00Z' },
-      { miembro_id: miembroIds[5], grupo_id: grupoIds[0], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2024-08-01T00:00:00Z' },
+      {
+        miembro_id: miembroIds[1],
+        grupo_id: grupoIds[0],
+        rol_grupo_id: rolesGrupoIds[0],
+        fecha_vinculacion: '2019-06-15T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[3],
+        grupo_id: grupoIds[0],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2021-09-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[8],
+        grupo_id: grupoIds[0],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2022-05-10T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[5],
+        grupo_id: grupoIds[0],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2024-08-01T00:00:00Z',
+      },
 
       // Grupo de Jóvenes
-      { miembro_id: miembroIds[3], grupo_id: grupoIds[1], rol_grupo_id: rolesGrupoIds[0], fecha_vinculacion: '2021-03-10T00:00:00Z' },
-      { miembro_id: miembroIds[4], grupo_id: grupoIds[1], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2024-03-01T00:00:00Z' },
-      { miembro_id: miembroIds[5], grupo_id: grupoIds[1], rol_grupo_id: rolesGrupoIds[1], fecha_vinculacion: '2024-07-15T00:00:00Z' },
-      { miembro_id: miembroIds[8], grupo_id: grupoIds[1], rol_grupo_id: rolesGrupoIds[3], fecha_vinculacion: '2022-06-01T00:00:00Z' },
-      { miembro_id: miembroIds[9], grupo_id: grupoIds[1], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2025-11-15T00:00:00Z' },
+      {
+        miembro_id: miembroIds[3],
+        grupo_id: grupoIds[1],
+        rol_grupo_id: rolesGrupoIds[0],
+        fecha_vinculacion: '2021-03-10T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[4],
+        grupo_id: grupoIds[1],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2024-03-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[5],
+        grupo_id: grupoIds[1],
+        rol_grupo_id: rolesGrupoIds[1],
+        fecha_vinculacion: '2024-07-15T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[8],
+        grupo_id: grupoIds[1],
+        rol_grupo_id: rolesGrupoIds[3],
+        fecha_vinculacion: '2022-06-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[9],
+        grupo_id: grupoIds[1],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2025-11-15T00:00:00Z',
+      },
 
       // Grupo de Señoritas
-      { miembro_id: miembroIds[3], grupo_id: grupoIds[2], rol_grupo_id: rolesGrupoIds[0], fecha_vinculacion: '2022-01-20T00:00:00Z' },
-      { miembro_id: miembroIds[5], grupo_id: grupoIds[2], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2024-08-20T00:00:00Z' },
-      { miembro_id: miembroIds[9], grupo_id: grupoIds[2], rol_grupo_id: rolesGrupoIds[4], fecha_vinculacion: '2025-11-20T00:00:00Z' },
+      {
+        miembro_id: miembroIds[3],
+        grupo_id: grupoIds[2],
+        rol_grupo_id: rolesGrupoIds[0],
+        fecha_vinculacion: '2022-01-20T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[5],
+        grupo_id: grupoIds[2],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2024-08-20T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[9],
+        grupo_id: grupoIds[2],
+        rol_grupo_id: rolesGrupoIds[4],
+        fecha_vinculacion: '2025-11-20T00:00:00Z',
+      },
 
       // Junta de Oficiales
-      { miembro_id: miembroIds[0], grupo_id: grupoIds[3], rol_grupo_id: rolesGrupoIds[0], fecha_vinculacion: '2018-01-01T00:00:00Z' },
-      { miembro_id: miembroIds[2], grupo_id: grupoIds[3], rol_grupo_id: rolesGrupoIds[1], fecha_vinculacion: '2018-01-01T00:00:00Z' },
-      { miembro_id: miembroIds[7], grupo_id: grupoIds[3], rol_grupo_id: rolesGrupoIds[2], fecha_vinculacion: '2018-01-01T00:00:00Z' },
-      { miembro_id: miembroIds[1], grupo_id: grupoIds[3], rol_grupo_id: rolesGrupoIds[3], fecha_vinculacion: '2019-07-01T00:00:00Z' },
+      {
+        miembro_id: miembroIds[0],
+        grupo_id: grupoIds[3],
+        rol_grupo_id: rolesGrupoIds[0],
+        fecha_vinculacion: '2018-01-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[2],
+        grupo_id: grupoIds[3],
+        rol_grupo_id: rolesGrupoIds[1],
+        fecha_vinculacion: '2018-01-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[7],
+        grupo_id: grupoIds[3],
+        rol_grupo_id: rolesGrupoIds[2],
+        fecha_vinculacion: '2018-01-01T00:00:00Z',
+      },
+      {
+        miembro_id: miembroIds[1],
+        grupo_id: grupoIds[3],
+        rol_grupo_id: rolesGrupoIds[3],
+        fecha_vinculacion: '2019-07-01T00:00:00Z',
+      },
     ],
-    'id_membresia'
+    'id_membresia',
   );
 }
 
@@ -440,7 +597,7 @@ async function seedMembresiaGrupo(
 async function seedHistorialRolGrupo(
   membresiaIds: number[],
   rolesGrupoIds: number[],
-  usuarioIds: number[]
+  usuarioIds: number[],
 ): Promise<void> {
   if (await tableHasData('historial_rol_grupo')) {
     console.log('  ⏭  historial_rol_grupo: ya tiene registros, omitiendo');
@@ -455,21 +612,24 @@ async function seedHistorialRolGrupo(
       miembro_grupo_id: membresiaIds[6], // Daniela en Jóvenes (era Miembro -> Secretario)
       rol_grupo_anterior: rolesGrupoIds[4], // Miembro
       rol_grupo_nuevo: rolesGrupoIds[1], // Secretario
-      motivo: 'La hermana Daniela ha demostrado compromiso y organización, se le asigna el cargo de secretaria del grupo de jóvenes',
+      motivo:
+        'La hermana Daniela ha demostrado compromiso y organización, se le asigna el cargo de secretaria del grupo de jóvenes',
       usuario_id: usuarioIds[0], // admin
     },
     {
       miembro_grupo_id: membresiaIds[7], // Javier en Jóvenes (era Miembro -> Vocal)
       rol_grupo_anterior: rolesGrupoIds[4], // Miembro
       rol_grupo_nuevo: rolesGrupoIds[3], // Vocal
-      motivo: 'El hermano Javier asume el cargo de vocal por elección del grupo de jóvenes en reunión ordinaria',
+      motivo:
+        'El hermano Javier asume el cargo de vocal por elección del grupo de jóvenes en reunión ordinaria',
       usuario_id: usuarioIds[0], // admin
     },
     {
       miembro_grupo_id: membresiaIds[15], // María en Junta (era Miembro -> Vocal)
       rol_grupo_anterior: rolesGrupoIds[4], // Miembro
       rol_grupo_nuevo: rolesGrupoIds[3], // Vocal
-      motivo: 'La hermana María es designada como vocal de la junta de oficiales por su experiencia y trayectoria',
+      motivo:
+        'La hermana María es designada como vocal de la junta de oficiales por su experiencia y trayectoria',
       usuario_id: usuarioIds[0], // admin
     },
   ]);
@@ -477,10 +637,7 @@ async function seedHistorialRolGrupo(
 
 // ─── 7. HISTORIAL ESTADO ─────────────────────────────────────────────────────
 
-async function seedHistorialEstado(
-  miembroIds: number[],
-  usuarioIds: number[]
-): Promise<void> {
+async function seedHistorialEstado(miembroIds: number[], usuarioIds: number[]): Promise<void> {
   if (await tableHasData('historial_estado')) {
     console.log('  ⏭  historial_estado: ya tiene registros, omitiendo');
     resumen.historial_estado = 0;
@@ -492,21 +649,24 @@ async function seedHistorialEstado(
       miembro_id: miembroIds[4], // Luis Hernández
       estado_anterior: 'sin_membresia',
       estado_nuevo: 'probando',
-      motivo: 'El hermano Luis ha asistido regularmente durante 6 meses y desea iniciar su período de prueba',
+      motivo:
+        'El hermano Luis ha asistido regularmente durante 6 meses y desea iniciar su período de prueba',
       usuario_id: usuarioIds[0], // admin
     },
     {
       miembro_id: miembroIds[5], // Daniela Fuentes
       estado_anterior: 'sin_membresia',
       estado_nuevo: 'probando',
-      motivo: 'La hermana Daniela ha participado activamente en el grupo de jóvenes y solicita iniciar período de prueba',
+      motivo:
+        'La hermana Daniela ha participado activamente en el grupo de jóvenes y solicita iniciar período de prueba',
       usuario_id: usuarioIds[0], // admin
     },
     {
       miembro_id: miembroIds[3], // Ana Riquelme
       estado_anterior: 'probando',
       estado_nuevo: 'plena_comunion',
-      motivo: 'La hermana Ana completó satisfactoriamente su período de prueba y fue aprobada por la junta de oficiales',
+      motivo:
+        'La hermana Ana completó satisfactoriamente su período de prueba y fue aprobada por la junta de oficiales',
       usuario_id: usuarioIds[0], // admin
     },
   ]);
@@ -516,75 +676,72 @@ async function seedHistorialEstado(
 
 async function seedPatronesActividad(
   tiposActividadIds: number[],
-  grupoIds: number[]
+  grupoIds: number[],
 ): Promise<number[]> {
   // tiposActividadIds: [0]=Culto, [1]=Esc.Dom., [2]=R.Oración, [3]=Ensayo Coro, [4]=R.General
   // grupoIds: [0]=Coro, [1]=Jóvenes, [2]=Señoritas, [3]=Junta
-  return seedIfEmpty(
-    'patron_actividad',
-    [
-      {
-        nombre: 'Culto Martes',
-        tipo_actividad_id: tiposActividadIds[0],
-        frecuencia: 'semanal',
-        dia_semana: 2, // martes
-        hora_inicio: '19:00:00',
-        duracion_minutos: 120,
-        lugar: 'Templo Central',
-        grupo_id: null,
-        es_publica: true,
-        activo: true,
-      },
-      {
-        nombre: 'Culto Domingo',
-        tipo_actividad_id: tiposActividadIds[0],
-        frecuencia: 'semanal',
-        dia_semana: 7, // domingo
-        hora_inicio: '10:00:00',
-        duracion_minutos: 120,
-        lugar: 'Templo Central',
-        grupo_id: null,
-        es_publica: true,
-        activo: true,
-      },
-      {
-        nombre: 'Escuela Dominical',
-        tipo_actividad_id: tiposActividadIds[1],
-        frecuencia: 'semanal',
-        dia_semana: 7, // domingo
-        hora_inicio: '09:00:00',
-        duracion_minutos: 50,
-        lugar: 'Salón Educacional',
-        grupo_id: null,
-        es_publica: false,
-        activo: true,
-      },
-      {
-        nombre: 'Reunión General Mensual',
-        tipo_actividad_id: tiposActividadIds[4],
-        frecuencia: 'primera_semana',
-        dia_semana: 5, // viernes
-        hora_inicio: '19:00:00',
-        duracion_minutos: 90,
-        lugar: 'Templo Central',
-        grupo_id: grupoIds[3], // Junta de Oficiales
-        es_publica: false,
-        activo: true,
-      },
-      {
-        nombre: 'Ensayo de Coro Semanal',
-        tipo_actividad_id: tiposActividadIds[3],
-        frecuencia: 'semanal',
-        dia_semana: 6, // sábado
-        hora_inicio: '16:00:00',
-        duracion_minutos: 90,
-        lugar: 'Salón Coro',
-        grupo_id: grupoIds[0], // Coro Oficial
-        es_publica: false,
-        activo: true,
-      },
-    ]
-  );
+  return seedIfEmpty('patron_actividad', [
+    {
+      nombre: 'Culto Martes',
+      tipo_actividad_id: tiposActividadIds[0],
+      frecuencia: 'semanal',
+      dia_semana: 2, // martes
+      hora_inicio: '19:00:00',
+      duracion_minutos: 120,
+      lugar: 'Templo Central',
+      grupo_id: null,
+      es_publica: true,
+      activo: true,
+    },
+    {
+      nombre: 'Culto Domingo',
+      tipo_actividad_id: tiposActividadIds[0],
+      frecuencia: 'semanal',
+      dia_semana: 7, // domingo
+      hora_inicio: '10:00:00',
+      duracion_minutos: 120,
+      lugar: 'Templo Central',
+      grupo_id: null,
+      es_publica: true,
+      activo: true,
+    },
+    {
+      nombre: 'Escuela Dominical',
+      tipo_actividad_id: tiposActividadIds[1],
+      frecuencia: 'semanal',
+      dia_semana: 7, // domingo
+      hora_inicio: '09:00:00',
+      duracion_minutos: 50,
+      lugar: 'Salón Educacional',
+      grupo_id: null,
+      es_publica: false,
+      activo: true,
+    },
+    {
+      nombre: 'Reunión General Mensual',
+      tipo_actividad_id: tiposActividadIds[4],
+      frecuencia: 'primera_semana',
+      dia_semana: 5, // viernes
+      hora_inicio: '19:00:00',
+      duracion_minutos: 90,
+      lugar: 'Templo Central',
+      grupo_id: grupoIds[3], // Junta de Oficiales
+      es_publica: false,
+      activo: true,
+    },
+    {
+      nombre: 'Ensayo de Coro Semanal',
+      tipo_actividad_id: tiposActividadIds[3],
+      frecuencia: 'semanal',
+      dia_semana: 6, // sábado
+      hora_inicio: '16:00:00',
+      duracion_minutos: 90,
+      lugar: 'Salón Coro',
+      grupo_id: grupoIds[0], // Coro Oficial
+      es_publica: false,
+      activo: true,
+    },
+  ]);
 }
 
 // ─── 8. ACTIVIDADES ──────────────────────────────────────────────────────────
@@ -593,7 +750,7 @@ async function seedActividades(
   tiposActividadIds: number[],
   patronIds: number[],
   grupoIds: number[],
-  usuarioIds: number[]
+  usuarioIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('actividad')) {
     console.log('  ⏭  actividad: ya tiene registros, omitiendo');
@@ -716,7 +873,7 @@ async function seedActividades(
       es_publica: false,
       estado: 'programada',
       creador_id: creadorId,
-    }
+    },
   );
 
   return insertRecords('actividad', actividades);
@@ -727,7 +884,7 @@ async function seedActividades(
 async function seedInvitados(
   actividadIds: number[],
   miembroIds: number[],
-  rolesActividadIds: number[]
+  rolesActividadIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('invitado')) {
     console.log('  ⏭  invitado: ya tiene registros, omitiendo');
@@ -744,36 +901,197 @@ async function seedInvitados(
 
   return insertRecords('invitado', [
     // Actividad 0 (primer culto martes) - confirmados
-    { actividad_id: actividadIds[0], miembro_id: miembroIds[2], rol_id: rolesActividadIds[0], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[0], miembro_id: miembroIds[1], rol_id: rolesActividadIds[1], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[0], miembro_id: miembroIds[8], rol_id: rolesActividadIds[2], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[0], miembro_id: miembroIds[0], rol_id: rolesActividadIds[7], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
+    {
+      actividad_id: actividadIds[0],
+      miembro_id: miembroIds[2],
+      rol_id: rolesActividadIds[0],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[0],
+      miembro_id: miembroIds[1],
+      rol_id: rolesActividadIds[1],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[0],
+      miembro_id: miembroIds[8],
+      rol_id: rolesActividadIds[2],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[0],
+      miembro_id: miembroIds[0],
+      rol_id: rolesActividadIds[7],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
 
     // Actividad 1 (primer culto domingo) - mix de estados
-    { actividad_id: actividadIds[1], miembro_id: miembroIds[2], rol_id: rolesActividadIds[0], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[1], miembro_id: miembroIds[1], rol_id: rolesActividadIds[1], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[1], miembro_id: miembroIds[3], rol_id: rolesActividadIds[5], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
-    { actividad_id: actividadIds[1], miembro_id: miembroIds[4], rol_id: rolesActividadIds[6], estado: 'rechazado', motivo_rechazo: 'Tengo turno de trabajo ese día', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
+    {
+      actividad_id: actividadIds[1],
+      miembro_id: miembroIds[2],
+      rol_id: rolesActividadIds[0],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[1],
+      miembro_id: miembroIds[1],
+      rol_id: rolesActividadIds[1],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[1],
+      miembro_id: miembroIds[3],
+      rol_id: rolesActividadIds[5],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
+    {
+      actividad_id: actividadIds[1],
+      miembro_id: miembroIds[4],
+      rol_id: rolesActividadIds[6],
+      estado: 'rechazado',
+      motivo_rechazo: 'Tengo turno de trabajo ese día',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
 
     // Actividad 2 (primera escuela dominical)
-    { actividad_id: actividadIds[2], miembro_id: miembroIds[7], rol_id: rolesActividadIds[4], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[2], miembro_id: miembroIds[3], rol_id: rolesActividadIds[4], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
+    {
+      actividad_id: actividadIds[2],
+      miembro_id: miembroIds[7],
+      rol_id: rolesActividadIds[4],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[2],
+      miembro_id: miembroIds[3],
+      rol_id: rolesActividadIds[4],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
 
     // Actividad 3 (segundo culto martes) - pendientes
-    { actividad_id: actividadIds[3], miembro_id: miembroIds[2], rol_id: rolesActividadIds[0], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
-    { actividad_id: actividadIds[3], miembro_id: miembroIds[1], rol_id: rolesActividadIds[1], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
-    { actividad_id: actividadIds[3], miembro_id: miembroIds[5], rol_id: rolesActividadIds[3], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
+    {
+      actividad_id: actividadIds[3],
+      miembro_id: miembroIds[2],
+      rol_id: rolesActividadIds[0],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
+    {
+      actividad_id: actividadIds[3],
+      miembro_id: miembroIds[1],
+      rol_id: rolesActividadIds[1],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
+    {
+      actividad_id: actividadIds[3],
+      miembro_id: miembroIds[5],
+      rol_id: rolesActividadIds[3],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
 
     // Confraternidad de Jóvenes (actividad extraordinaria, penúltima)
-    { actividad_id: actividadIds[actividadIds.length - 3], miembro_id: miembroIds[3], rol_id: rolesActividadIds[8], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[actividadIds.length - 3], miembro_id: miembroIds[4], rol_id: rolesActividadIds[2], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[actividadIds.length - 3], miembro_id: miembroIds[5], rol_id: rolesActividadIds[3], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
-    { actividad_id: actividadIds[actividadIds.length - 3], miembro_id: miembroIds[8], rol_id: rolesActividadIds[2], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
+    {
+      actividad_id: actividadIds[actividadIds.length - 3],
+      miembro_id: miembroIds[3],
+      rol_id: rolesActividadIds[8],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[actividadIds.length - 3],
+      miembro_id: miembroIds[4],
+      rol_id: rolesActividadIds[2],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[actividadIds.length - 3],
+      miembro_id: miembroIds[5],
+      rol_id: rolesActividadIds[3],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
+    {
+      actividad_id: actividadIds[actividadIds.length - 3],
+      miembro_id: miembroIds[8],
+      rol_id: rolesActividadIds[2],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
 
     // Santa Cena (penúltima extraordinaria)
-    { actividad_id: actividadIds[actividadIds.length - 2], miembro_id: miembroIds[0], rol_id: rolesActividadIds[8], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[actividadIds.length - 2], miembro_id: miembroIds[2], rol_id: rolesActividadIds[0], estado: 'confirmado', asistio: false, fecha_invitacion: haceUnaSemana, fecha_respuesta: ayer },
-    { actividad_id: actividadIds[actividadIds.length - 2], miembro_id: miembroIds[7], rol_id: rolesActividadIds[7], estado: 'pendiente', asistio: false, fecha_invitacion: ahora, fecha_respuesta: null },
+    {
+      actividad_id: actividadIds[actividadIds.length - 2],
+      miembro_id: miembroIds[0],
+      rol_id: rolesActividadIds[8],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[actividadIds.length - 2],
+      miembro_id: miembroIds[2],
+      rol_id: rolesActividadIds[0],
+      estado: 'confirmado',
+      asistio: false,
+      fecha_invitacion: haceUnaSemana,
+      fecha_respuesta: ayer,
+    },
+    {
+      actividad_id: actividadIds[actividadIds.length - 2],
+      miembro_id: miembroIds[7],
+      rol_id: rolesActividadIds[7],
+      estado: 'pendiente',
+      asistio: false,
+      fecha_invitacion: ahora,
+      fecha_respuesta: null,
+    },
   ]);
 }
 
@@ -781,7 +1099,7 @@ async function seedInvitados(
 
 async function seedNecesidadesLogisticas(
   actividadIds: number[],
-  tiposNecesidadIds: number[]
+  tiposNecesidadIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('necesidad_logistica')) {
     console.log('  ⏭  necesidad_logistica: ya tiene registros, omitiendo');
@@ -864,10 +1182,7 @@ async function seedNecesidadesLogisticas(
 
 // ─── 11. COLABORADORES ───────────────────────────────────────────────────────
 
-async function seedColaboradores(
-  necesidadIds: number[],
-  miembroIds: number[]
-): Promise<void> {
+async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): Promise<void> {
   if (await tableHasData('colaborador')) {
     console.log('  ⏭  colaborador: ya tiene registros, omitiendo');
     resumen.colaborador = 0;
@@ -880,30 +1195,126 @@ async function seedColaboradores(
 
   await insertRecords('colaborador', [
     // Confraternidad - Transporte (necesidadIds[0])
-    { necesidad_id: necesidadIds[0], miembro_id: miembroIds[2], cantidad_ofrecida: 1, observaciones: 'Tengo una van de 15 pasajeros disponible', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
+    {
+      necesidad_id: necesidadIds[0],
+      miembro_id: miembroIds[2],
+      cantidad_ofrecida: 1,
+      observaciones: 'Tengo una van de 15 pasajeros disponible',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
 
     // Confraternidad - Alimentación (necesidadIds[1])
-    { necesidad_id: necesidadIds[1], miembro_id: miembroIds[7], cantidad_ofrecida: 10, observaciones: 'Puedo preparar 10 sándwiches', estado: 'aceptada', fecha_oferta: haceDosDias, fecha_decision: ayer },
-    { necesidad_id: necesidadIds[1], miembro_id: miembroIds[3], cantidad_ofrecida: 5, observaciones: 'Llevo 5 porciones de queque', estado: 'aceptada', fecha_oferta: haceDosDias, fecha_decision: ayer },
-    { necesidad_id: necesidadIds[1], miembro_id: miembroIds[1], cantidad_ofrecida: 10, observaciones: 'Puedo llevar bebidas y jugos', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
+    {
+      necesidad_id: necesidadIds[1],
+      miembro_id: miembroIds[7],
+      cantidad_ofrecida: 10,
+      observaciones: 'Puedo preparar 10 sándwiches',
+      estado: 'aceptada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
+    {
+      necesidad_id: necesidadIds[1],
+      miembro_id: miembroIds[3],
+      cantidad_ofrecida: 5,
+      observaciones: 'Llevo 5 porciones de queque',
+      estado: 'aceptada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
+    {
+      necesidad_id: necesidadIds[1],
+      miembro_id: miembroIds[1],
+      cantidad_ofrecida: 10,
+      observaciones: 'Puedo llevar bebidas y jugos',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
 
     // Santa Cena - Pan (necesidadIds[3])
-    { necesidad_id: necesidadIds[3], miembro_id: miembroIds[7], cantidad_ofrecida: 5, observaciones: 'Yo preparo el pan sin levadura', estado: 'aceptada', fecha_oferta: haceDosDias, fecha_decision: ayer },
+    {
+      necesidad_id: necesidadIds[3],
+      miembro_id: miembroIds[7],
+      cantidad_ofrecida: 5,
+      observaciones: 'Yo preparo el pan sin levadura',
+      estado: 'aceptada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
 
     // Santa Cena - Jugo (necesidadIds[4])
-    { necesidad_id: necesidadIds[4], miembro_id: miembroIds[0], cantidad_ofrecida: 3, observaciones: 'Compro el jugo de uva', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
+    {
+      necesidad_id: necesidadIds[4],
+      miembro_id: miembroIds[0],
+      cantidad_ofrecida: 3,
+      observaciones: 'Compro el jugo de uva',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
 
     // Predicación - Transporte (necesidadIds[6])
-    { necesidad_id: necesidadIds[6], miembro_id: miembroIds[2], cantidad_ofrecida: 1, observaciones: 'Puedo llevar 4 personas en mi auto', estado: 'aceptada', fecha_oferta: haceDosDias, fecha_decision: ayer },
-    { necesidad_id: necesidadIds[6], miembro_id: miembroIds[0], cantidad_ofrecida: 1, observaciones: 'Disponible con mi camioneta', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
+    {
+      necesidad_id: necesidadIds[6],
+      miembro_id: miembroIds[2],
+      cantidad_ofrecida: 1,
+      observaciones: 'Puedo llevar 4 personas en mi auto',
+      estado: 'aceptada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
+    {
+      necesidad_id: necesidadIds[6],
+      miembro_id: miembroIds[0],
+      cantidad_ofrecida: 1,
+      observaciones: 'Disponible con mi camioneta',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
 
     // Ofertas rechazadas
-    { necesidad_id: necesidadIds[1], miembro_id: miembroIds[6], cantidad_ofrecida: 5, observaciones: 'Puedo llevar galletas', estado: 'rechazada', fecha_oferta: haceDosDias, fecha_decision: ayer },
-    { necesidad_id: necesidadIds[0], miembro_id: miembroIds[4], cantidad_ofrecida: 1, observaciones: 'Tengo un auto pero solo para 4 personas', estado: 'rechazada', fecha_oferta: haceDosDias, fecha_decision: ayer },
+    {
+      necesidad_id: necesidadIds[1],
+      miembro_id: miembroIds[6],
+      cantidad_ofrecida: 5,
+      observaciones: 'Puedo llevar galletas',
+      estado: 'rechazada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
+    {
+      necesidad_id: necesidadIds[0],
+      miembro_id: miembroIds[4],
+      cantidad_ofrecida: 1,
+      observaciones: 'Tengo un auto pero solo para 4 personas',
+      estado: 'rechazada',
+      fecha_oferta: haceDosDias,
+      fecha_decision: ayer,
+    },
 
     // Más pendientes
-    { necesidad_id: necesidadIds[3], miembro_id: miembroIds[3], cantidad_ofrecida: 2, observaciones: 'Puedo preparar pan adicional', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
-    { necesidad_id: necesidadIds[1], miembro_id: miembroIds[5], cantidad_ofrecida: 8, observaciones: 'Puedo llevar empanadas', estado: 'pendiente', fecha_oferta: ahora, fecha_decision: null },
+    {
+      necesidad_id: necesidadIds[3],
+      miembro_id: miembroIds[3],
+      cantidad_ofrecida: 2,
+      observaciones: 'Puedo preparar pan adicional',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
+    {
+      necesidad_id: necesidadIds[1],
+      miembro_id: miembroIds[5],
+      cantidad_ofrecida: 8,
+      observaciones: 'Puedo llevar empanadas',
+      estado: 'pendiente',
+      fecha_oferta: ahora,
+      fecha_decision: null,
+    },
   ]);
 }
 

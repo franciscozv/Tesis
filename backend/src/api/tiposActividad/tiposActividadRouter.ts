@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { tiposActividadController } from './tiposActividadController';
 import {
@@ -44,7 +44,7 @@ tiposActividadRegistry.registerPath({
 tiposActividadRouter.get(
   '/:id',
   validateRequest(GetTipoActividadSchema),
-  tiposActividadController.getById
+  tiposActividadController.getById,
 );
 
 // POST /api/tipos-actividad - Crear un nuevo tipo
@@ -68,7 +68,7 @@ tiposActividadRouter.post(
   '/',
   verificarRol('administrador'),
   validateRequest(CreateTipoActividadSchema),
-  tiposActividadController.create
+  tiposActividadController.create,
 );
 
 // PUT /api/tipos-actividad/:id - Actualizar un tipo
@@ -93,7 +93,7 @@ tiposActividadRouter.put(
   '/:id',
   verificarRol('administrador'),
   validateRequest(UpdateTipoActividadSchema),
-  tiposActividadController.update
+  tiposActividadController.update,
 );
 
 // PATCH /api/tipos-actividad/:id/toggle-estado - Cambiar estado activo/inactivo
@@ -109,7 +109,7 @@ tiposActividadRouter.patch(
   '/:id/toggle-estado',
   verificarRol('administrador'),
   validateRequest(ToggleEstadoTipoActividadSchema),
-  tiposActividadController.toggleEstado
+  tiposActividadController.toggleEstado,
 );
 
 // DELETE /api/tipos-actividad/:id - Eliminar un tipo (soft delete)
@@ -125,5 +125,5 @@ tiposActividadRouter.delete(
   '/:id',
   verificarRol('administrador'),
   validateRequest(GetTipoActividadSchema),
-  tiposActividadController.delete
+  tiposActividadController.delete,
 );

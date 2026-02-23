@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { necesidadesLogisticasController } from './necesidadesLogisticasController';
 import {
@@ -47,7 +47,7 @@ necesidadesLogisticasRegistry.registerPath({
 necesidadesLogisticasRouter.get(
   '/',
   validateRequest(ListNecesidadesQuerySchema),
-  necesidadesLogisticasController.getAll
+  necesidadesLogisticasController.getAll,
 );
 
 // GET /api/necesidades/:id - Obtener una por ID
@@ -62,7 +62,7 @@ necesidadesLogisticasRegistry.registerPath({
 necesidadesLogisticasRouter.get(
   '/:id',
   validateRequest(GetNecesidadLogisticaSchema),
-  necesidadesLogisticasController.getById
+  necesidadesLogisticasController.getById,
 );
 
 // POST /api/necesidades - Crear
@@ -86,7 +86,7 @@ necesidadesLogisticasRouter.post(
   '/',
   verificarRol('administrador', 'lider'),
   validateRequest(CreateNecesidadLogisticaSchema),
-  necesidadesLogisticasController.create
+  necesidadesLogisticasController.create,
 );
 
 // PUT /api/necesidades/:id - Actualizar
@@ -111,7 +111,7 @@ necesidadesLogisticasRouter.put(
   '/:id',
   verificarRol('administrador', 'lider'),
   validateRequest(UpdateNecesidadLogisticaSchema),
-  necesidadesLogisticasController.update
+  necesidadesLogisticasController.update,
 );
 
 // PATCH /api/necesidades/:id/estado - Cambiar estado
@@ -136,7 +136,7 @@ necesidadesLogisticasRouter.patch(
   '/:id/estado',
   verificarRol('administrador', 'lider'),
   validateRequest(PatchEstadoNecesidadSchema),
-  necesidadesLogisticasController.updateEstado
+  necesidadesLogisticasController.updateEstado,
 );
 
 // DELETE /api/necesidades/:id - Eliminar (solo si abierta)
@@ -152,5 +152,5 @@ necesidadesLogisticasRouter.delete(
   '/:id',
   verificarRol('administrador', 'lider'),
   validateRequest(GetNecesidadLogisticaSchema),
-  necesidadesLogisticasController.delete
+  necesidadesLogisticasController.delete,
 );

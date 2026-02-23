@@ -9,9 +9,7 @@ export class TiposActividadRepository {
    * Obtiene tipos de actividad, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<TipoActividad[]> {
-    let query = supabase
-      .from('tipo_actividad')
-      .select('*');
+    let query = supabase.from('tipo_actividad').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -138,10 +136,7 @@ export class TiposActividadRepository {
    * Elimina un tipo de actividad permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('tipo_actividad')
-      .delete()
-      .eq('id_tipo', id);
+    const { error } = await supabase.from('tipo_actividad').delete().eq('id_tipo', id);
 
     if (error) throw error;
     return true;

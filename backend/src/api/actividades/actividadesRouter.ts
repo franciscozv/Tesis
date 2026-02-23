@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { actividadesController } from './actividadesController';
 import {
@@ -41,7 +41,13 @@ actividadesRegistry.registerPath({
   },
   responses: createApiResponse(z.array(ActividadSchema), 'Success'),
 });
-actividadesRouter.get('/', verificarToken, validateRequest(ListActividadesQuerySchema), actividadesController.getAll);
+actividadesRouter.get(
+  '/',
+  verificarToken,
+  verificarRol('administrador', 'lider'),
+  validateRequest(ListActividadesQuerySchema),
+  actividadesController.getAll,
+);
 
 // GET /api/actividades/:id - Obtener una actividad por ID
 actividadesRegistry.registerPath({
@@ -56,7 +62,7 @@ actividadesRouter.get(
   '/:id',
   verificarToken,
   validateRequest(GetActividadSchema),
-  actividadesController.getById
+  actividadesController.getById,
 );
 
 // POST /api/actividades - Crear una nueva actividad
@@ -81,7 +87,7 @@ actividadesRouter.post(
   verificarToken,
   verificarRol('administrador', 'lider'),
   validateRequest(CreateActividadSchema),
-  actividadesController.create
+  actividadesController.create,
 );
 
 // PUT /api/actividades/:id - Actualizar una actividad
@@ -107,7 +113,7 @@ actividadesRouter.put(
   verificarToken,
   verificarRol('administrador', 'lider'),
   validateRequest(UpdateActividadSchema),
-  actividadesController.update
+  actividadesController.update,
 );
 
 // PATCH /api/actividades/:id/estado - Cambiar estado de una actividad
@@ -133,5 +139,5 @@ actividadesRouter.patch(
   verificarToken,
   verificarRol('administrador', 'lider'),
   validateRequest(PatchEstadoActividadSchema),
-  actividadesController.updateEstado
+  actividadesController.updateEstado,
 );

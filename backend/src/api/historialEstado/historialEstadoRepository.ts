@@ -37,7 +37,9 @@ export class HistorialEstadoRepository {
   async findByMiembroAsync(miembroId: number): Promise<HistorialEstadoConUsuario[]> {
     const { data, error } = await supabase
       .from('historial_estado')
-      .select('id, miembro_id, estado_anterior, estado_nuevo, motivo, fecha_cambio, usuario:usuario_id(id, email)')
+      .select(
+        'id, miembro_id, estado_anterior, estado_nuevo, motivo, fecha_cambio, usuario:usuario_id(id, email)',
+      )
       .eq('miembro_id', miembroId)
       .order('fecha_cambio', { ascending: false });
 
@@ -66,7 +68,7 @@ export class HistorialEstadoRepository {
    * Verifica si un miembro existe, está activo, y retorna su estado actual
    */
   async getMiembroInfoAsync(
-    miembroId: number
+    miembroId: number,
   ): Promise<{ exists: boolean; estado_membresia: string | null }> {
     const { data, error } = await supabase
       .from('miembro')
@@ -104,7 +106,7 @@ export class HistorialEstadoRepository {
    * Crea un nuevo registro de historial
    */
   async createAsync(
-    historialData: Omit<HistorialEstado, 'id' | 'fecha_cambio'>
+    historialData: Omit<HistorialEstado, 'id' | 'fecha_cambio'>,
   ): Promise<HistorialEstado> {
     const { data, error } = await supabase
       .from('historial_estado')

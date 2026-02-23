@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
-import { ServiceResponse } from '@/common/models/serviceResponse';
-import { env } from '@/common/utils/envConfig';
-import { emailService } from '@/common/utils/emailService';
-import { logger } from '@/server';
-import { AuthRepository } from './authRepository';
-import type { LoginResponse } from './authModel';
+import jwt from 'jsonwebtoken';
 import type { JwtPayload } from '@/common/middleware/authMiddleware';
+import { ServiceResponse } from '@/common/models/serviceResponse';
+import { emailService } from '@/common/utils/emailService';
+import { env } from '@/common/utils/envConfig';
+import { logger } from '@/server';
+import type { LoginResponse } from './authModel';
+import { AuthRepository } from './authRepository';
 
 const SALT_ROUNDS = 10;
 
@@ -30,28 +30,16 @@ export class AuthService {
 
       // Mensaje genérico para no revelar si el email existe
       if (!usuario) {
-        return ServiceResponse.failure(
-          'Credenciales incorrectas',
-          null,
-          StatusCodes.UNAUTHORIZED
-        );
+        return ServiceResponse.failure('Credenciales incorrectas', null, StatusCodes.UNAUTHORIZED);
       }
 
       if (!usuario.activo) {
-        return ServiceResponse.failure(
-          'Credenciales incorrectas',
-          null,
-          StatusCodes.UNAUTHORIZED
-        );
+        return ServiceResponse.failure('Credenciales incorrectas', null, StatusCodes.UNAUTHORIZED);
       }
 
       const passwordValido = await bcrypt.compare(password, usuario.password_hash);
       if (!passwordValido) {
-        return ServiceResponse.failure(
-          'Credenciales incorrectas',
-          null,
-          StatusCodes.UNAUTHORIZED
-        );
+        return ServiceResponse.failure('Credenciales incorrectas', null, StatusCodes.UNAUTHORIZED);
       }
 
       // Generar JWT
@@ -86,7 +74,7 @@ export class AuthService {
       return ServiceResponse.failure(
         'Error al iniciar sesión',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -97,17 +85,13 @@ export class AuthService {
   async cambiarPassword(
     usuarioId: number,
     passwordActual: string,
-    passwordNueva: string
+    passwordNueva: string,
   ): Promise<ServiceResponse<null>> {
     try {
       const usuario = await this.authRepository.findByIdWithPasswordAsync(usuarioId);
 
       if (!usuario) {
-        return ServiceResponse.failure(
-          'Usuario no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Usuario no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       const passwordValido = await bcrypt.compare(passwordActual, usuario.password_hash);
@@ -115,7 +99,7 @@ export class AuthService {
         return ServiceResponse.failure(
           'La contraseña actual es incorrecta',
           null,
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -129,7 +113,7 @@ export class AuthService {
       return ServiceResponse.failure(
         'Error al cambiar la contraseña',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -146,7 +130,7 @@ export class AuthService {
         const resetToken = jwt.sign(
           { usuario_id: usuario.id, tipo: 'password_reset' },
           env.JWT_SECRET,
-          { expiresIn: '1h' } as jwt.SignOptions
+          { expiresIn: '1h' } as jwt.SignOptions,
         );
 
         await emailService.enviarRecuperacionPassword(email, resetToken);
@@ -154,7 +138,7 @@ export class AuthService {
 
       return ServiceResponse.success<null>(
         'Si el email está registrado, recibirás instrucciones para recuperar tu contraseña',
-        null
+        null,
       );
     } catch (error) {
       const errorMessage = `Error en recuperación de contraseña: ${(error as Error).message}`;
@@ -162,7 +146,7 @@ export class AuthService {
       // Retornar éxito incluso si falla el envío para no revelar información
       return ServiceResponse.success<null>(
         'Si el email está registrado, recibirás instrucciones para recuperar tu contraseña',
-        null
+        null,
       );
     }
   }
@@ -189,7 +173,7 @@ export class AuthService {
         return ServiceResponse.failure(
           'Token de recuperación inválido',
           null,
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -210,7 +194,7 @@ export class AuthService {
       return ServiceResponse.failure(
         'Error al restablecer la contraseña',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

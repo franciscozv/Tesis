@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { patronesActividadController } from './patronesActividadController';
 import {
@@ -39,7 +39,8 @@ patronesActividadRegistry.registerPath({
   method: 'post',
   path: '/api/patrones/generar-instancias',
   tags: ['Patrones de Actividad'],
-  summary: 'Generar instancias de actividades a partir de todos los patrones activos para un mes/año',
+  summary:
+    'Generar instancias de actividades a partir de todos los patrones activos para un mes/año',
   request: {
     body: {
       content: {
@@ -55,7 +56,7 @@ patronesActividadRouter.post(
   '/generar-instancias',
   verificarRol('administrador'),
   validateRequest(GenerarInstanciasSchema),
-  patronesActividadController.generarInstancias
+  patronesActividadController.generarInstancias,
 );
 
 // GET /api/patrones/:id - Obtener un patrón por ID
@@ -70,7 +71,7 @@ patronesActividadRegistry.registerPath({
 patronesActividadRouter.get(
   '/:id',
   validateRequest(GetPatronActividadSchema),
-  patronesActividadController.getById
+  patronesActividadController.getById,
 );
 
 // POST /api/patrones - Crear un nuevo patrón
@@ -94,7 +95,7 @@ patronesActividadRouter.post(
   '/',
   verificarRol('administrador'),
   validateRequest(CreatePatronActividadSchema),
-  patronesActividadController.create
+  patronesActividadController.create,
 );
 
 // PUT /api/patrones/:id - Actualizar un patrón
@@ -119,7 +120,7 @@ patronesActividadRouter.put(
   '/:id',
   verificarRol('administrador'),
   validateRequest(UpdatePatronActividadSchema),
-  patronesActividadController.update
+  patronesActividadController.update,
 );
 
 // PATCH /api/patrones/:id/estado - Activar/desactivar un patrón
@@ -144,5 +145,5 @@ patronesActividadRouter.patch(
   '/:id/estado',
   verificarRol('administrador'),
   validateRequest(PatchEstadoPatronSchema),
-  patronesActividadController.updateEstado
+  patronesActividadController.updateEstado,
 );

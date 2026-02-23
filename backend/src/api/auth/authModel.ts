@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
@@ -23,14 +23,8 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>;
  */
 export const LoginSchema = z.object({
   body: z.object({
-    email: z
-      .string()
-      .email('Email inválido')
-      .openapi({ example: 'admin@iglesia.cl' }),
-    password: z
-      .string()
-      .min(1, 'La contraseña es obligatoria')
-      .openapi({ example: 'Password123' }),
+    email: z.string().email('Email inválido').openapi({ example: 'admin@iglesia.cl' }),
+    password: z.string().min(1, 'La contraseña es obligatoria').openapi({ example: 'Password123' }),
   }),
 });
 
@@ -59,10 +53,7 @@ export const CambiarPasswordSchema = z.object({
  */
 export const RecuperarPasswordSchema = z.object({
   body: z.object({
-    email: z
-      .string()
-      .email('Email inválido')
-      .openapi({ example: 'admin@iglesia.cl' }),
+    email: z.string().email('Email inválido').openapi({ example: 'admin@iglesia.cl' }),
   }),
 });
 

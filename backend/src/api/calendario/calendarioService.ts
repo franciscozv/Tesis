@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import { CalendarioRepository } from './calendarioRepository';
 import type { CalendarioEvento, Responsabilidad } from './calendarioModel';
+import { CalendarioRepository } from './calendarioRepository';
 
 /**
  * Servicio para lógica de negocio del Calendario
@@ -19,7 +19,7 @@ export class CalendarioService {
    */
   async getCalendarioPublico(
     mes: number,
-    anio: number
+    anio: number,
   ): Promise<ServiceResponse<CalendarioEvento[] | null>> {
     try {
       const eventos = await this.calendarioRepository.findPublicasAsync(mes, anio);
@@ -28,20 +28,20 @@ export class CalendarioService {
         return ServiceResponse.failure(
           'Error al obtener calendario público',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (eventos.length === 0) {
         return ServiceResponse.success<CalendarioEvento[]>(
           'No se encontraron actividades públicas para el período solicitado',
-          []
+          [],
         );
       }
 
       return ServiceResponse.success<CalendarioEvento[]>(
         'Calendario público obtenido exitosamente',
-        eventos
+        eventos,
       );
     } catch (error) {
       const errorMessage = `Error al obtener calendario público: ${(error as Error).message}`;
@@ -49,7 +49,7 @@ export class CalendarioService {
       return ServiceResponse.failure(
         'Error al obtener calendario público',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -59,7 +59,7 @@ export class CalendarioService {
    */
   async getCalendarioConsolidado(
     mes: number,
-    anio: number
+    anio: number,
   ): Promise<ServiceResponse<CalendarioEvento[] | null>> {
     try {
       const eventos = await this.calendarioRepository.findConsolidadoAsync(mes, anio);
@@ -68,20 +68,20 @@ export class CalendarioService {
         return ServiceResponse.failure(
           'Error al obtener calendario consolidado',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (eventos.length === 0) {
         return ServiceResponse.success<CalendarioEvento[]>(
           'No se encontraron actividades para el período solicitado',
-          []
+          [],
         );
       }
 
       return ServiceResponse.success<CalendarioEvento[]>(
         'Calendario consolidado obtenido exitosamente',
-        eventos
+        eventos,
       );
     } catch (error) {
       const errorMessage = `Error al obtener calendario consolidado: ${(error as Error).message}`;
@@ -89,7 +89,7 @@ export class CalendarioService {
       return ServiceResponse.failure(
         'Error al obtener calendario consolidado',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -99,7 +99,7 @@ export class CalendarioService {
    */
   async getMisResponsabilidades(
     miembroId: number,
-    miembroIdToken: number | null
+    miembroIdToken: number | null,
   ): Promise<ServiceResponse<Responsabilidad[] | null>> {
     try {
       // Validar que el miembro_id del token coincida con el solicitado
@@ -107,7 +107,7 @@ export class CalendarioService {
         return ServiceResponse.failure(
           'No tiene permisos para ver las responsabilidades de otro miembro',
           null,
-          StatusCodes.FORBIDDEN
+          StatusCodes.FORBIDDEN,
         );
       }
 
@@ -118,20 +118,20 @@ export class CalendarioService {
         return ServiceResponse.failure(
           'Error al obtener responsabilidades',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (responsabilidades.length === 0) {
         return ServiceResponse.success<Responsabilidad[]>(
           'No se encontraron responsabilidades para este miembro',
-          []
+          [],
         );
       }
 
       return ServiceResponse.success<Responsabilidad[]>(
         'Responsabilidades obtenidas exitosamente',
-        responsabilidades
+        responsabilidades,
       );
     } catch (error) {
       const errorMessage = `Error al obtener responsabilidades: ${(error as Error).message}`;
@@ -139,7 +139,7 @@ export class CalendarioService {
       return ServiceResponse.failure(
         'Error al obtener responsabilidades',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

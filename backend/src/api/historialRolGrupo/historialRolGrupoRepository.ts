@@ -52,7 +52,7 @@ export class HistorialRolGrupoRepository {
    * Verifica si una membresía de grupo existe y está activa (sin fecha_desvinculacion)
    */
   async miembroGrupoExistsAsync(
-    miembroGrupoId: number
+    miembroGrupoId: number,
   ): Promise<{ exists: boolean; rol_grupo_id: number | null }> {
     const { data, error } = await supabase
       .from('membresia_grupo')
@@ -108,7 +108,7 @@ export class HistorialRolGrupoRepository {
    * Crea un nuevo registro de historial
    */
   async createAsync(
-    historialData: Omit<HistorialRolGrupo, 'id' | 'fecha_cambio'>
+    historialData: Omit<HistorialRolGrupo, 'id' | 'fecha_cambio'>,
   ): Promise<HistorialRolGrupo> {
     const { data, error } = await supabase
       .from('historial_rol_grupo')

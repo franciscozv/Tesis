@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { usuariosController } from './usuariosController';
 import {
@@ -41,11 +41,7 @@ usuariosRegistry.registerPath({
   request: { params: GetUsuarioSchema.shape.params },
   responses: createApiResponse(UsuarioSchema, 'Success'),
 });
-usuariosRouter.get(
-  '/:id',
-  validateRequest(GetUsuarioSchema),
-  usuariosController.getById
-);
+usuariosRouter.get('/:id', validateRequest(GetUsuarioSchema), usuariosController.getById);
 
 // POST /api/usuarios - Crear un nuevo usuario
 usuariosRegistry.registerPath({
@@ -64,11 +60,7 @@ usuariosRegistry.registerPath({
   },
   responses: createApiResponse(UsuarioSchema, 'Success'),
 });
-usuariosRouter.post(
-  '/',
-  validateRequest(CreateUsuarioSchema),
-  usuariosController.create
-);
+usuariosRouter.post('/', validateRequest(CreateUsuarioSchema), usuariosController.create);
 
 // PUT /api/usuarios/:id - Actualizar un usuario (email y/o rol)
 usuariosRegistry.registerPath({
@@ -88,11 +80,7 @@ usuariosRegistry.registerPath({
   },
   responses: createApiResponse(UsuarioSchema, 'Success'),
 });
-usuariosRouter.put(
-  '/:id',
-  validateRequest(UpdateUsuarioSchema),
-  usuariosController.update
-);
+usuariosRouter.put('/:id', validateRequest(UpdateUsuarioSchema), usuariosController.update);
 
 // PATCH /api/usuarios/:id/estado - Activar/desactivar un usuario
 usuariosRegistry.registerPath({
@@ -115,5 +103,5 @@ usuariosRegistry.registerPath({
 usuariosRouter.patch(
   '/:id/estado',
   validateRequest(PatchEstadoUsuarioSchema),
-  usuariosController.updateEstado
+  usuariosController.updateEstado,
 );

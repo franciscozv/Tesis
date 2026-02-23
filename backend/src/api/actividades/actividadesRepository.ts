@@ -1,3 +1,4 @@
+import { hoyCL } from '@/common/utils/dateTime';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { Actividad } from './actividadesModel';
 
@@ -21,7 +22,7 @@ export class ActividadesRepository {
   async findAllAsync(filters: ActividadFilters = {}): Promise<Actividad[]> {
     let query = supabase
       .from('actividad')
-      .select('*')
+      .select('*, tipo_actividad(nombre, color)')
       .order('fecha', { ascending: false });
 
     if (filters.estado) {
@@ -54,15 +55,41 @@ export class ActividadesRepository {
   }
 
   /**
+   * Obtiene id, fecha y hora_fin de todas las actividades en estado 'programada'
+   */
+  async findProgramadasAsync(): Promise<Pick<Actividad, 'id' | 'fecha' | 'hora_fin'>[]> {
+    const { data, error } = await supabase
+      .from('actividad')
+      .select('id, fecha, hora_fin')
+      .eq('estado', 'programada');
+
+    if (error) throw error;
+    return data as Pick<Actividad, 'id' | 'fecha' | 'hora_fin'>[];
+  }
+
+  /**
+   * Actualiza en bloque el estado a 'realizada' para los IDs indicados
+   */
+  async markManyAsRealizadaAsync(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from('actividad')
+      .update({ estado: 'realizada' })
+      .in('id', ids);
+
+    if (error) throw error;
+  }
+
+  /**
    * Obtiene solo actividades públicas
    */
   async findPublicasAsync(): Promise<Actividad[]> {
     const { data, error } = await supabase
       .from('actividad')
-      .select('*')
+      .select('*, tipo_actividad(nombre, color)')
       .eq('es_publica', true)
       .eq('estado', 'programada')
-      .gte('fecha', new Date().toISOString().split('T')[0])
+      .gte('fecha', hoyCL())
       .order('fecha', { ascending: true });
 
     if (error) throw error;
@@ -75,7 +102,7 @@ export class ActividadesRepository {
   async findByIdAsync(id: number): Promise<Actividad | null> {
     const { data, error } = await supabase
       .from('actividad')
-      .select('*')
+      .select('*, tipo_actividad(nombre, color)')
       .eq('id', id)
       .single();
 
@@ -181,7 +208,7 @@ export class ActividadesRepository {
    * Crea una nueva actividad
    */
   async createAsync(
-    actividadData: Omit<Actividad, 'id' | 'fecha_creacion' | 'estado' | 'motivo_cancelacion'>
+    actividadData: Omit<Actividad, 'id' | 'fecha_creacion' | 'estado' | 'motivo_cancelacion'>,
   ): Promise<Actividad> {
     const { data, error } = await supabase
       .from('actividad')
@@ -197,14 +224,11 @@ export class ActividadesRepository {
    * Crea múltiples actividades en una sola operación (bulk insert)
    */
   async createManyAsync(
-    actividadesData: Omit<Actividad, 'id' | 'fecha_creacion' | 'estado' | 'motivo_cancelacion'>[]
+    actividadesData: Omit<Actividad, 'id' | 'fecha_creacion' | 'estado' | 'motivo_cancelacion'>[],
   ): Promise<Actividad[]> {
     const inserts = actividadesData.map((a) => ({ ...a, estado: 'programada' as const }));
 
-    const { data, error } = await supabase
-      .from('actividad')
-      .insert(inserts)
-      .select();
+    const { data, error } = await supabase.from('actividad').insert(inserts).select();
 
     if (error) throw error;
     return data as Actividad[];
@@ -234,7 +258,7 @@ export class ActividadesRepository {
   async updateEstadoAsync(
     id: number,
     estado: string,
-    motivo_cancelacion?: string
+    motivo_cancelacion?: string,
   ): Promise<Actividad | null> {
     const updateData: Partial<Actividad> = { estado: estado as Actividad['estado'] };
 

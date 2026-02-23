@@ -13,7 +13,7 @@ class NecesidadesLogisticasController {
       estado: req.query.estado as string | undefined,
       actividad_id: req.query.actividad_id ? Number(req.query.actividad_id) : undefined,
     };
-    const serviceResponse = await necesidadesLogisticasService.findAll(filters);
+    const serviceResponse = await necesidadesLogisticasService.findAll(filters, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -38,7 +38,7 @@ class NecesidadesLogisticasController {
    * Crea una nueva necesidad logística
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
-    const serviceResponse = await necesidadesLogisticasService.create(req.body);
+    const serviceResponse = await necesidadesLogisticasService.create(req.body, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -47,7 +47,7 @@ class NecesidadesLogisticasController {
    */
   public update: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await necesidadesLogisticasService.update(id, req.body);
+    const serviceResponse = await necesidadesLogisticasService.update(id, req.body, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -56,7 +56,11 @@ class NecesidadesLogisticasController {
    */
   public updateEstado: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await necesidadesLogisticasService.updateEstado(id, req.body.estado);
+    const serviceResponse = await necesidadesLogisticasService.updateEstado(
+      id,
+      req.body.estado,
+      req.usuario,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -65,7 +69,7 @@ class NecesidadesLogisticasController {
    */
   public delete: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await necesidadesLogisticasService.delete(id);
+    const serviceResponse = await necesidadesLogisticasService.delete(id, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }

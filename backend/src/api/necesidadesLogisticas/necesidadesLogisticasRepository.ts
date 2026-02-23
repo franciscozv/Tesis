@@ -1,5 +1,5 @@
 import { supabase } from '@/common/utils/supabaseClient';
-import type { NecesidadLogistica } from './necesidadesLogisticasModel';
+import type { NecesidadAbierta, NecesidadLogistica } from './necesidadesLogisticasModel';
 
 /**
  * Filtros para listar necesidades logísticas
@@ -37,13 +37,62 @@ export class NecesidadesLogisticasRepository {
   }
 
   /**
-   * Obtiene necesidades abiertas de actividades en los próximos 60 días
+   * Obtiene necesidades logísticas que pertenecen a actividades de grupos
+   * donde el miembro es lider_principal_id.
    */
-  async findAbiertasProximasAsync(): Promise<NecesidadLogistica[]> {
+  async findAllForLiderAsync(
+    filters: NecesidadFilters = {},
+    liderMiembroId: number,
+  ): Promise<NecesidadLogistica[]> {
+    const { data: grupos, error: gruposError } = await supabase
+      .from('grupo_ministerial')
+      .select('id_grupo')
+      .eq('lider_principal_id', liderMiembroId)
+      .eq('activo', true);
+
+    if (gruposError) throw gruposError;
+    if (!grupos || grupos.length === 0) return [];
+
+    const grupoIds = grupos.map((g: { id_grupo: number }) => g.id_grupo);
+
+    const { data: actividades, error: actividadesError } = await supabase
+      .from('actividad')
+      .select('id')
+      .in('grupo_id', grupoIds);
+
+    if (actividadesError) throw actividadesError;
+    if (!actividades || actividades.length === 0) return [];
+
+    const actividadIds = actividades.map((a: { id: number }) => a.id);
+
+    let query = supabase
+      .from('necesidad_logistica')
+      .select('*')
+      .in('actividad_id', actividadIds)
+      .order('fecha_registro', { ascending: false });
+
+    if (filters.estado) {
+      query = query.eq('estado', filters.estado);
+    }
+
+    if (filters.actividad_id) {
+      query = query.eq('actividad_id', filters.actividad_id);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as NecesidadLogistica[];
+  }
+
+  /**
+   * Obtiene necesidades abiertas de actividades en los próximos 60 días,
+   * incluyendo datos de actividad y tipo de necesidad.
+   */
+  async findAbiertasProximasAsync(): Promise<NecesidadAbierta[]> {
     const hoy = new Date().toISOString().split('T')[0];
     const en60Dias = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Obtener IDs de actividades programadas en los próximos 60 días
+    // Paso 1: obtener IDs de actividades programadas en los próximos 60 días
     const { data: actividades, error: actError } = await supabase
       .from('actividad')
       .select('id')
@@ -56,15 +105,21 @@ export class NecesidadesLogisticasRepository {
 
     const actividadIds = actividades.map((a) => a.id);
 
+    // Paso 2: obtener necesidades con datos de actividad y tipo embebidos
     const { data, error } = await supabase
       .from('necesidad_logistica')
-      .select('*')
+      .select(
+        `id, actividad_id, tipo_necesidad_id, descripcion,
+         cantidad_requerida, unidad_medida, cantidad_cubierta, estado, fecha_registro,
+         actividad:actividad(id, nombre, fecha, hora_inicio, hora_fin, lugar),
+         tipo_necesidad:tipo_necesidad_logistica(id_tipo, nombre)`,
+      )
       .eq('estado', 'abierta')
       .in('actividad_id', actividadIds)
       .order('fecha_registro', { ascending: false });
 
     if (error) throw error;
-    return data as NecesidadLogistica[];
+    return data as unknown as NecesidadAbierta[];
   }
 
   /**
@@ -85,20 +140,53 @@ export class NecesidadesLogisticasRepository {
   }
 
   /**
-   * Verifica si una actividad existe
+   * Carga estado, fecha y hora_fin de una actividad para validaciones temporales
    */
-  async actividadExistsAsync(actividadId: number): Promise<boolean> {
+  async findActividadDatosAsync(
+    actividadId: number,
+  ): Promise<{ estado: string; fecha: string; hora_fin: string } | null> {
     const { data, error } = await supabase
       .from('actividad')
-      .select('id')
+      .select('estado, fecha, hora_fin')
       .eq('id', actividadId)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return false;
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data !== null;
+    return data as { estado: string; fecha: string; hora_fin: string };
+  }
+
+  /**
+   * Verifica si un miembro es el líder principal del grupo al que pertenece una actividad
+   */
+  async isLiderDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
+    const { data: actividad, error: actError } = await supabase
+      .from('actividad')
+      .select('grupo_id')
+      .eq('id', actividadId)
+      .single();
+
+    if (actError) {
+      if (actError.code === 'PGRST116') return false;
+      throw actError;
+    }
+    if (!actividad || actividad.grupo_id === null) return false;
+
+    const { data: grupo, error: grupoError } = await supabase
+      .from('grupo_ministerial')
+      .select('id_grupo')
+      .eq('id_grupo', actividad.grupo_id)
+      .eq('lider_principal_id', miembroId)
+      .eq('activo', true)
+      .single();
+
+    if (grupoError) {
+      if (grupoError.code === 'PGRST116') return false;
+      throw grupoError;
+    }
+    return grupo !== null;
   }
 
   /**
@@ -123,7 +211,7 @@ export class NecesidadesLogisticasRepository {
    * Crea una nueva necesidad logística
    */
   async createAsync(
-    necesidadData: Omit<NecesidadLogistica, 'id' | 'fecha_registro' | 'estado'>
+    necesidadData: Omit<NecesidadLogistica, 'id' | 'fecha_registro' | 'estado'>,
   ): Promise<NecesidadLogistica> {
     const { data, error } = await supabase
       .from('necesidad_logistica')
@@ -140,7 +228,7 @@ export class NecesidadesLogisticasRepository {
    */
   async updateAsync(
     id: number,
-    necesidadData: Partial<NecesidadLogistica>
+    necesidadData: Partial<NecesidadLogistica>,
   ): Promise<NecesidadLogistica | null> {
     const { data, error } = await supabase
       .from('necesidad_logistica')
@@ -159,10 +247,7 @@ export class NecesidadesLogisticasRepository {
   /**
    * Cambia el estado de una necesidad logística
    */
-  async updateEstadoAsync(
-    id: number,
-    estado: string
-  ): Promise<NecesidadLogistica | null> {
+  async updateEstadoAsync(id: number, estado: string): Promise<NecesidadLogistica | null> {
     const { data, error } = await supabase
       .from('necesidad_logistica')
       .update({ estado })
@@ -178,13 +263,25 @@ export class NecesidadesLogisticasRepository {
   }
 
   /**
+   * Suma la cantidad_ofrecida de colaboradores aceptados para una necesidad
+   */
+  async sumCantidadOfrecidaAceptadaAsync(necesidadId: number): Promise<number> {
+    const { data, error } = await supabase
+      .from('colaborador')
+      .select('cantidad_ofrecida')
+      .eq('necesidad_id', necesidadId)
+      .eq('estado', 'aceptada');
+
+    if (error) throw error;
+    if (!data || data.length === 0) return 0;
+    return data.reduce((sum, c) => sum + (c.cantidad_ofrecida as number), 0);
+  }
+
+  /**
    * Elimina una necesidad logística
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('necesidad_logistica')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('necesidad_logistica').delete().eq('id', id);
 
     if (error) throw error;
     return true;

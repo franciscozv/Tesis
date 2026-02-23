@@ -2,9 +2,8 @@ import bcrypt from 'bcryptjs';
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
+import type { ROLES_USUARIO, Usuario } from './usuariosModel';
 import { UsuariosRepository } from './usuariosRepository';
-import type { Usuario } from './usuariosModel';
-import type { ROLES_USUARIO } from './usuariosModel';
 
 const SALT_ROUNDS = 10;
 
@@ -29,15 +28,12 @@ export class UsuariosService {
         return ServiceResponse.failure(
           'Error al obtener usuarios',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
       if (usuarios.length === 0) {
-        return ServiceResponse.success<Usuario[]>(
-          'No se encontraron usuarios',
-          []
-        );
+        return ServiceResponse.success<Usuario[]>('No se encontraron usuarios', []);
       }
 
       return ServiceResponse.success<Usuario[]>('Usuarios encontrados', usuarios);
@@ -47,7 +43,7 @@ export class UsuariosService {
       return ServiceResponse.failure(
         'Error al obtener usuarios',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -60,11 +56,7 @@ export class UsuariosService {
       const usuario = await this.usuariosRepository.findByIdAsync(id);
 
       if (!usuario) {
-        return ServiceResponse.failure(
-          'Usuario no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Usuario no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success<Usuario>('Usuario encontrado', usuario);
@@ -74,7 +66,7 @@ export class UsuariosService {
       return ServiceResponse.failure(
         'Error al obtener usuario',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -95,32 +87,32 @@ export class UsuariosService {
         return ServiceResponse.failure(
           'Ya existe un usuario con ese email',
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
       // Validar que el miembro exista (si se proporcionó)
       if (usuarioData.miembro_id) {
         const miembroExiste = await this.usuariosRepository.miembroExistsAsync(
-          usuarioData.miembro_id
+          usuarioData.miembro_id,
         );
         if (!miembroExiste) {
           return ServiceResponse.failure(
             'El miembro especificado no existe o no está activo',
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
 
         // Validar que el miembro no tenga ya un usuario
         const miembroTieneUsuario = await this.usuariosRepository.miembroHasUsuarioAsync(
-          usuarioData.miembro_id
+          usuarioData.miembro_id,
         );
         if (miembroTieneUsuario) {
           return ServiceResponse.failure(
             'El miembro especificado ya tiene un usuario asociado',
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
       }
@@ -138,7 +130,7 @@ export class UsuariosService {
       return ServiceResponse.success<Usuario>(
         'Usuario creado exitosamente',
         usuario,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (error) {
       const errorMessage = `Error al crear usuario: ${(error as Error).message}`;
@@ -146,7 +138,7 @@ export class UsuariosService {
       return ServiceResponse.failure(
         'Error al crear usuario',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -156,20 +148,17 @@ export class UsuariosService {
    */
   async update(
     id: number,
-    usuarioData: { email?: string; rol?: (typeof ROLES_USUARIO)[number] }
+    usuarioData: { email?: string; rol?: (typeof ROLES_USUARIO)[number] },
   ): Promise<ServiceResponse<Usuario | null>> {
     try {
       // Validar email único (excluyendo el usuario actual)
       if (usuarioData.email) {
-        const existeEmail = await this.usuariosRepository.existsByEmailAsync(
-          usuarioData.email,
-          id
-        );
+        const existeEmail = await this.usuariosRepository.existsByEmailAsync(usuarioData.email, id);
         if (existeEmail) {
           return ServiceResponse.failure(
             'Ya existe un usuario con ese email',
             null,
-            StatusCodes.CONFLICT
+            StatusCodes.CONFLICT,
           );
         }
       }
@@ -177,11 +166,7 @@ export class UsuariosService {
       const usuario = await this.usuariosRepository.updateAsync(id, usuarioData);
 
       if (!usuario) {
-        return ServiceResponse.failure(
-          'Usuario no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Usuario no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success<Usuario>('Usuario actualizado exitosamente', usuario);
@@ -191,7 +176,7 @@ export class UsuariosService {
       return ServiceResponse.failure(
         'Error al actualizar usuario',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -204,11 +189,7 @@ export class UsuariosService {
       // Verificar que el usuario exista
       const usuario = await this.usuariosRepository.findByIdIncludingInactiveAsync(id);
       if (!usuario) {
-        return ServiceResponse.failure(
-          'Usuario no encontrado',
-          null,
-          StatusCodes.NOT_FOUND
-        );
+        return ServiceResponse.failure('Usuario no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
       if (usuario.activo === activo) {
@@ -216,7 +197,7 @@ export class UsuariosService {
         return ServiceResponse.failure(
           `El usuario ya se encuentra ${estado}`,
           null,
-          StatusCodes.CONFLICT
+          StatusCodes.CONFLICT,
         );
       }
 
@@ -226,13 +207,11 @@ export class UsuariosService {
         return ServiceResponse.failure(
           'Error al cambiar el estado del usuario',
           null,
-          StatusCodes.INTERNAL_SERVER_ERROR
+          StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
-      const mensaje = activo
-        ? 'Usuario activado exitosamente'
-        : 'Usuario desactivado exitosamente';
+      const mensaje = activo ? 'Usuario activado exitosamente' : 'Usuario desactivado exitosamente';
 
       return ServiceResponse.success<Usuario>(mensaje, usuarioActualizado);
     } catch (error) {
@@ -241,7 +220,7 @@ export class UsuariosService {
       return ServiceResponse.failure(
         'Error al cambiar el estado del usuario',
         null,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }

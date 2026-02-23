@@ -105,7 +105,7 @@ membresiaGrupoRouter.patch(
 
 /**
  * GET /api/membresia-grupo/miembro/:miembro_id - Obtener grupos de un miembro
- * Permisos: admin, lider
+ * Permisos: admin, lider, miembro (solo su propio miembro_id)
  */
 membresiaGrupoRegistry.registerPath({
   method: 'get',
@@ -118,7 +118,7 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.get(
   '/miembro/:miembro_id',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'lider', 'miembro'),
   validateRequest(GetMembresiasByMiembroSchema),
   membresiaGrupoController.getMembresiasByMiembro,
 );

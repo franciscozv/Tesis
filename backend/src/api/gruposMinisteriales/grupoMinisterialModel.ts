@@ -1,5 +1,9 @@
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { z } from 'zod';
+
+dayjs.extend(isSameOrBefore);
 
 import { commonValidations } from '@/common/utils/commonValidation';
 
@@ -43,9 +47,11 @@ export const CreateGrupoMinisterialSchema = z.object({
       .optional()
       .transform((val) => val || null),
     fecha_creacion: z
-      .string()
-      .date('Fecha de creación debe ser una fecha válida (YYYY-MM-DD)')
-      .optional(), // Default será la fecha actual en el backend
+      .string({ required_error: 'La fecha de creación es obligatoria.' })
+      .date('Debe ser una fecha válida (YYYY-MM-DD)')
+      .refine((fecha) => dayjs(fecha).isSameOrBefore(dayjs(), 'day'), {
+        message: 'La fecha de creación no puede ser futura.',
+      }),
   }),
 });
 

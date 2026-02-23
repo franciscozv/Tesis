@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { verificarToken, verificarRol } from '@/common/middleware/authMiddleware';
+import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { candidatosController } from './candidatosController';
 import { CandidatoSchema, SugerirCargoSchema, SugerirRolSchema } from './candidatosModel';
@@ -36,7 +36,7 @@ candidatosRegistry.registerPath({
 candidatosRouter.post(
   '/sugerir-rol',
   validateRequest(SugerirRolSchema),
-  candidatosController.sugerirRol
+  candidatosController.sugerirRol,
 );
 
 // POST /api/candidatos/sugerir-cargo - Sugerir candidatos para cargo en grupo
@@ -59,5 +59,5 @@ candidatosRegistry.registerPath({
 candidatosRouter.post(
   '/sugerir-cargo',
   validateRequest(SugerirCargoSchema),
-  candidatosController.sugerirCargo
+  candidatosController.sugerirCargo,
 );

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { env } from '@/common/utils/envConfig';
 
@@ -35,7 +35,7 @@ export const verificarToken = (req: Request, res: Response, next: NextFunction):
     const response = ServiceResponse.failure(
       'Token de acceso requerido',
       null,
-      StatusCodes.UNAUTHORIZED
+      StatusCodes.UNAUTHORIZED,
     );
     res.status(response.statusCode).send(response);
     return;
@@ -64,11 +64,7 @@ export const verificarToken = (req: Request, res: Response, next: NextFunction):
 export const verificarRol = (...rolesPermitidos: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.usuario) {
-      const response = ServiceResponse.failure(
-        'No autenticado',
-        null,
-        StatusCodes.UNAUTHORIZED
-      );
+      const response = ServiceResponse.failure('No autenticado', null, StatusCodes.UNAUTHORIZED);
       res.status(response.statusCode).send(response);
       return;
     }
@@ -77,7 +73,7 @@ export const verificarRol = (...rolesPermitidos: string[]) => {
       const response = ServiceResponse.failure(
         'No tiene permisos para realizar esta acción',
         null,
-        StatusCodes.FORBIDDEN
+        StatusCodes.FORBIDDEN,
       );
       res.status(response.statusCode).send(response);
       return;

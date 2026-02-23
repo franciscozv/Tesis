@@ -120,13 +120,7 @@ export class GrupoMinisterialService {
         );
       }
 
-      // Si no se proporciona fecha_creacion, usar la fecha actual
-      const dataToCreate = {
-        ...grupoData,
-        fecha_creacion: grupoData.fecha_creacion || new Date().toISOString().split('T')[0],
-      };
-
-      const grupo = await this.grupoMinisterialRepository.createAsync(dataToCreate);
+      const grupo = await this.grupoMinisterialRepository.createAsync(grupoData);
       return ServiceResponse.success<GrupoMinisterial>(
         'Grupo ministerial creado exitosamente',
         grupo,
@@ -337,10 +331,7 @@ export class GrupoMinisterialService {
         grupos = [];
       }
 
-      return ServiceResponse.success<GrupoMinisterial[]>(
-        'Grupos obtenidos exitosamente',
-        grupos,
-      );
+      return ServiceResponse.success<GrupoMinisterial[]>('Grupos obtenidos exitosamente', grupos);
     } catch (ex) {
       const errorMessage = `Error al obtener grupos del usuario: ${(ex as Error).message}`;
       logger.error(errorMessage);

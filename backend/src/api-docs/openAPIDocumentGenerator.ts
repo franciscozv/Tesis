@@ -1,6 +1,6 @@
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { authRegistry } from '@/api/auth/authRouter';
 import { actividadesRegistry } from '@/api/actividades/actividadesRouter';
+import { authRegistry } from '@/api/auth/authRouter';
 import { calendarioRegistry } from '@/api/calendario/calendarioRouter';
 import { candidatosRegistry } from '@/api/candidatos/candidatosRouter';
 import { colaboradoresRegistry } from '@/api/colaboradores/colaboradoresRouter';
@@ -9,9 +9,9 @@ import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { historialEstadoRegistry } from '@/api/historialEstado/historialEstadoRouter';
 import { historialRolGrupoRegistry } from '@/api/historialRolGrupo/historialRolGrupoRouter';
 import { invitadosRegistry } from '@/api/invitados/invitadosRouter';
-import { misResponsabilidadesRegistry } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { membresiaGrupoRegistry } from '@/api/membresiaGrupo/membresiaGrupoRouter';
 import { miembrosRegistry } from '@/api/miembros/miembrosRouter';
+import { misResponsabilidadesRegistry } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { necesidadesLogisticasRegistry } from '@/api/necesidadesLogisticas/necesidadesLogisticasRouter';
 import { patronesActividadRegistry } from '@/api/patronesActividad/patronesActividadRouter';
 import { rolesActividadRegistry } from '@/api/rolesActividad/rolesActividadRouter';
