@@ -31,6 +31,10 @@ function formatFecha(fecha: string) {
   });
 }
 
+function formatHora(hora: string) {
+  return hora.slice(0, 5);
+}
+
 export default function NecesidadesAbiertasPage() {
   const { usuario } = useAuth();
   const isAdminOrLider = usuario?.rol === 'administrador' || usuario?.rol === 'lider';
@@ -153,6 +157,7 @@ export default function NecesidadesAbiertasPage() {
                   {nec.actividad?.fecha && (
                     <p className="text-xs text-muted-foreground">
                       {formatFecha(nec.actividad.fecha)}
+                      {nec.actividad.hora_inicio && ` · ${formatHora(nec.actividad.hora_inicio)}`}
                     </p>
                   )}
                 </CardHeader>
@@ -177,7 +182,11 @@ export default function NecesidadesAbiertasPage() {
                       </span>
                     </span>
                     {faltante > 0 && miembroId && (
-                      <Button size="sm" onClick={() => setOfreciendose(nec)}>
+                      <Button
+                        size="sm"
+                        onClick={() => setOfreciendose(nec)}
+                        aria-label={`Ofrecerme para ${nec.actividad?.nombre ?? `Actividad #${nec.actividad_id}`}${nec.actividad?.fecha ? `, ${formatFecha(nec.actividad.fecha)}` : ''}, ${tipoNombre}`}
+                      >
                         <HandHeart className="size-4" />
                         Ofrecerme
                       </Button>

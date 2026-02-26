@@ -1,7 +1,7 @@
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
- * Miembro activo con datos para scoring
+ * Miembro activo con datos básicos
  */
 export interface MiembroBase {
   id: number;
@@ -18,14 +18,54 @@ export interface MiembroBase {
  */
 export class CandidatosRepository {
   /**
-   * Obtiene todos los miembros activos con datos básicos para scoring
+   * Obtiene miembros activos con filtros opcionales de plena comunión y cuerpo_id.
+   * Si cuerpo_id está presente, solo retorna miembros con membresía activa en ese grupo.
    */
-  async findMiembrosActivosAsync(): Promise<MiembroBase[]> {
-    const { data, error } = await supabase
+  async findMiembrosActivosFiltradosAsync(filtros: {
+    plenaComun?: boolean;
+    cuerpoId?: number;
+  }): Promise<MiembroBase[]> {
+    if (filtros.cuerpoId !== undefined) {
+      // Filtrar por grupo vía inner join con membresia_grupo
+      let query = supabase
+        .from('miembro')
+        .select(
+          'id, nombre, apellido, telefono, email, estado_membresia, fecha_ingreso, membresia_grupo!inner(grupo_id, fecha_desvinculacion)',
+        )
+        .eq('activo', true)
+        .eq('membresia_grupo.grupo_id', filtros.cuerpoId)
+        .is('membresia_grupo.fecha_desvinculacion', null);
+
+      if (filtros.plenaComun === true) {
+        query = query.eq('estado_membresia', 'plena_comunion');
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Extraer solo los campos de MiembroBase (descartar la relación embebida)
+      return (data ?? []).map((row) => ({
+        id: row.id as number,
+        nombre: row.nombre as string,
+        apellido: row.apellido as string,
+        telefono: row.telefono as string | null,
+        email: row.email as string | null,
+        estado_membresia: row.estado_membresia as string,
+        fecha_ingreso: row.fecha_ingreso as string,
+      }));
+    }
+
+    // Sin filtro de cuerpo: búsqueda global
+    let query = supabase
       .from('miembro')
       .select('id, nombre, apellido, telefono, email, estado_membresia, fecha_ingreso')
       .eq('activo', true);
 
+    if (filtros.plenaComun === true) {
+      query = query.eq('estado_membresia', 'plena_comunion');
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data as MiembroBase[];
   }
@@ -66,169 +106,226 @@ export class CandidatosRepository {
   }
 
   /**
-   * Verifica si un rol de grupo (cargo) existe y está activo
+   * Obtiene requisitos de un cargo de grupo: existencia, nombre y si requiere plena comunión.
+   * Reemplaza rolGrupoExistsAsync + getRolGrupoNombreAsync en una sola query.
    */
-  async rolGrupoExistsAsync(cargoId: number): Promise<boolean> {
+  async getCargoRequisitosAsync(
+    cargoId: number,
+  ): Promise<{ existe: boolean; requiere_plena_comunion: boolean; nombre: string | null }> {
     const { data, error } = await supabase
       .from('rol_grupo_ministerial')
-      .select('id_rol_grupo')
+      .select('id_rol_grupo, nombre, requiere_plena_comunion')
       .eq('id_rol_grupo', cargoId)
       .eq('activo', true)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return false;
+      if (error.code === 'PGRST116')
+        return { existe: false, requiere_plena_comunion: false, nombre: null };
       throw error;
     }
-    return data !== null;
+    return {
+      existe: data !== null,
+      requiere_plena_comunion: (data as any)?.requiere_plena_comunion ?? false,
+      nombre: (data as any)?.nombre ?? null,
+    };
   }
 
   /**
-   * Obtiene el nombre de un rol de grupo (cargo)
+   * Retorna miembros con membresía vigente (fecha_desvinculacion IS NULL) en un cuerpo.
+   * Si requierePlenaComunion es true, filtra solo los de estado 'plena_comunion'.
    */
-  async getRolGrupoNombreAsync(cargoId: number): Promise<string | null> {
+  async findMiembrosVigentesEnCuerpoAsync(
+    cuerpoId: number,
+    requierePlenaComunion: boolean,
+  ): Promise<MiembroBase[]> {
+    let query = supabase
+      .from('miembro')
+      .select(
+        'id, nombre, apellido, telefono, email, estado_membresia, fecha_ingreso, membresia_grupo!inner(grupo_id, fecha_desvinculacion)',
+      )
+      .eq('activo', true)
+      .eq('membresia_grupo.grupo_id', cuerpoId)
+      .is('membresia_grupo.fecha_desvinculacion', null);
+
+    if (requierePlenaComunion) {
+      query = query.eq('estado_membresia', 'plena_comunion');
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return (data ?? []).map((row) => ({
+      id: row.id as number,
+      nombre: row.nombre as string,
+      apellido: row.apellido as string,
+      telefono: row.telefono as string | null,
+      email: row.email as string | null,
+      estado_membresia: row.estado_membresia as string,
+      fecha_ingreso: row.fecha_ingreso as string,
+    }));
+  }
+
+  // ─── Métodos BATCH para sugerirParaRol (evitan N+1) ─────────────────────────
+
+  /**
+   * BATCH: Cuenta invitaciones asistidas por rol en actividades realizadas,
+   * para una lista de miembros. Retorna Map<miembro_id, count>.
+   */
+  async getExperienciaRolBatchAsync(
+    miembroIds: number[],
+    rolId: number,
+  ): Promise<Map<number, number>> {
+    if (miembroIds.length === 0) return new Map();
+
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
-      .select('nombre')
-      .eq('id_rol_grupo', cargoId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
-    }
-    return data?.nombre ?? null;
-  }
-
-  /**
-   * Cuenta cuántas veces un miembro ha tenido un rol específico en invitaciones
-   */
-  async countExperienciaRolAsync(miembroId: number, rolId: number): Promise<number> {
-    const { count, error } = await supabase
       .from('invitado')
-      .select('*, actividad!inner(estado)', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
+      .select('miembro_id, actividad!inner(estado)')
+      .in('miembro_id', miembroIds)
       .eq('rol_id', rolId)
       .eq('asistio', true)
       .eq('actividad.estado', 'realizada');
 
     if (error) throw error;
-    return count ?? 0;
-  }
 
-  /**
-   * Cuenta cuántas veces un miembro ha tenido un cargo específico en grupos
-   * Busca en membresia_grupo (cargo actual) + historial_rol_grupo (cargos anteriores)
-   */
-  async countExperienciaCargoAsync(miembroId: number, cargoId: number): Promise<number> {
-    // Contar membresías activas con ese cargo
-    const { count: membresiaCount, error: error1 } = await supabase
-      .from('membresia_grupo')
-      .select('*', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
-      .eq('rol_grupo_id', cargoId);
-
-    if (error1) throw error1;
-
-    // Contar en historial donde el cargo fue asignado (rol_grupo_nuevo)
-    // Necesitamos unir con membresia_grupo para filtrar por miembro_id
-    const { data: membresias, error: error2 } = await supabase
-      .from('membresia_grupo')
-      .select('id_membresia')
-      .eq('miembro_id', miembroId);
-
-    if (error2) throw error2;
-
-    let historialCount = 0;
-    if (membresias && membresias.length > 0) {
-      const membresiaIds = membresias.map((m) => m.id_membresia);
-
-      const { count, error: error3 } = await supabase
-        .from('historial_rol_grupo')
-        .select('*', { count: 'exact', head: true })
-        .in('miembro_grupo_id', membresiaIds)
-        .eq('rol_grupo_nuevo', cargoId);
-
-      if (error3) throw error3;
-      historialCount = count ?? 0;
+    const result = new Map<number, number>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number }>) {
+      result.set(row.miembro_id, (result.get(row.miembro_id) ?? 0) + 1);
     }
-
-    return (membresiaCount ?? 0) + historialCount;
+    return result;
   }
 
   /**
-   * Obtiene datos de asistencia de un miembro en los últimos 12 meses
-   * Retorna { totalConfirmadas, asistioReal }
+   * BATCH: Igual que getExperienciaRolBatchAsync, pero filtrando por tipo de actividad.
+   * Retorna Map<miembro_id, count>.
    */
-  async getAsistenciaUltimoAnioAsync(
-    miembroId: number,
-    fechaReferencia: string,
-  ): Promise<{ totalConfirmadas: number; asistioReal: number }> {
-    // Calcular fecha de hace 12 meses
-    const fechaRef = new Date(fechaReferencia);
-    const fechaInicio = new Date(fechaRef);
-    fechaInicio.setFullYear(fechaInicio.getFullYear() - 1);
-    const fechaInicioStr = fechaInicio.toISOString().split('T')[0];
+  async getExperienciaRolEnTipoBatchAsync(
+    miembroIds: number[],
+    rolId: number,
+    tipoActividadId: number,
+  ): Promise<Map<number, number>> {
+    if (miembroIds.length === 0) return new Map();
 
-    // Total confirmadas en el último año (solo actividades realizadas)
-    const { count: totalConfirmadas, error: error1 } = await supabase
+    const { data, error } = await supabase
       .from('invitado')
-      .select('*, actividad!inner(fecha, estado)', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
-      .eq('estado', 'confirmado')
-      .eq('actividad.estado', 'realizada')
-      .gte('actividad.fecha', fechaInicioStr)
-      .lte('actividad.fecha', fechaReferencia);
-
-    if (error1) throw error1;
-
-    // Confirmadas Y asistió (solo actividades realizadas)
-    const { count: asistioReal, error: error2 } = await supabase
-      .from('invitado')
-      .select('*, actividad!inner(fecha, estado)', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
-      .eq('estado', 'confirmado')
+      .select('miembro_id, actividad!inner(estado, tipo_actividad_id)')
+      .in('miembro_id', miembroIds)
+      .eq('rol_id', rolId)
       .eq('asistio', true)
       .eq('actividad.estado', 'realizada')
-      .gte('actividad.fecha', fechaInicioStr)
-      .lte('actividad.fecha', fechaReferencia);
+      .eq('actividad.tipo_actividad_id', tipoActividadId);
 
-    if (error2) throw error2;
+    if (error) throw error;
 
-    return {
-      totalConfirmadas: totalConfirmadas ?? 0,
-      asistioReal: asistioReal ?? 0,
-    };
+    const result = new Map<number, number>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number }>) {
+      result.set(row.miembro_id, (result.get(row.miembro_id) ?? 0) + 1);
+    }
+    return result;
   }
 
   /**
-   * Cuenta cuántos grupos activos tiene un miembro (membresías sin fecha_desvinculacion)
+   * BATCH: Para cada miembro, obtiene (confirmadas, asistidas) en actividades realizadas
+   * dentro del rango de fechas. Retorna Map<miembro_id, {confirmadas, asistidas}>.
    */
-  async countGruposActivosAsync(miembroId: number): Promise<number> {
-    const { count, error } = await supabase
+  async getAsistenciaBatchAsync(
+    miembroIds: number[],
+    fechaInicio: string,
+    fechaFin: string,
+  ): Promise<Map<number, { confirmadas: number; asistidas: number }>> {
+    if (miembroIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from('invitado')
+      .select('miembro_id, asistio, actividad!inner(fecha, estado)')
+      .in('miembro_id', miembroIds)
+      .eq('estado', 'confirmado')
+      .eq('actividad.estado', 'realizada')
+      .gte('actividad.fecha', fechaInicio)
+      .lte('actividad.fecha', fechaFin);
+
+    if (error) throw error;
+
+    const result = new Map<number, { confirmadas: number; asistidas: number }>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number; asistio: boolean }>) {
+      const cur = result.get(row.miembro_id) ?? { confirmadas: 0, asistidas: 0 };
+      cur.confirmadas++;
+      if (row.asistio) cur.asistidas++;
+      result.set(row.miembro_id, cur);
+    }
+    return result;
+  }
+
+  /**
+   * BATCH: Conteo histórico de un cargo en un cuerpo específico para una lista de miembros.
+   * Incluye membresías pasadas y vigentes. Retorna Map<miembro_id, count>.
+   */
+  async getExperienciaCargoEnCuerpoBatchAsync(
+    miembroIds: number[],
+    cargoId: number,
+    cuerpoId: number,
+  ): Promise<Map<number, number>> {
+    if (miembroIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
       .from('membresia_grupo')
-      .select('*', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
+      .select('miembro_id')
+      .in('miembro_id', miembroIds)
+      .eq('rol_grupo_id', cargoId)
+      .eq('grupo_id', cuerpoId);
+
+    if (error) throw error;
+
+    const result = new Map<number, number>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number }>) {
+      result.set(row.miembro_id, (result.get(row.miembro_id) ?? 0) + 1);
+    }
+    return result;
+  }
+
+  /**
+   * BATCH: Conteo de membresías vigentes (fecha_desvinculacion IS NULL) en cualquier grupo,
+   * para una lista de miembros. Retorna Map<miembro_id, count>.
+   */
+  async getGruposActivosBatchAsync(miembroIds: number[]): Promise<Map<number, number>> {
+    if (miembroIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from('membresia_grupo')
+      .select('miembro_id')
+      .in('miembro_id', miembroIds)
       .is('fecha_desvinculacion', null);
 
     if (error) throw error;
-    return count ?? 0;
+
+    const result = new Map<number, number>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number }>) {
+      result.set(row.miembro_id, (result.get(row.miembro_id) ?? 0) + 1);
+    }
+    return result;
   }
 
   /**
-   * Verifica si un miembro tiene conflictos de horario en una fecha dada
-   * (actividades programadas donde está confirmado)
+   * BATCH: Cuenta invitaciones confirmadas en actividades programadas para una fecha dada,
+   * por miembro. Retorna Map<miembro_id, count_conflictos>.
    */
-  async tieneConflictoHorarioAsync(miembroId: number, fecha: string): Promise<boolean> {
-    const { count, error } = await supabase
+  async getConflictosBatchAsync(miembroIds: number[], fecha: string): Promise<Map<number, number>> {
+    if (miembroIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
       .from('invitado')
-      .select('*, actividad!inner(fecha, estado)', { count: 'exact', head: true })
-      .eq('miembro_id', miembroId)
+      .select('miembro_id, actividad!inner(fecha, estado)')
+      .in('miembro_id', miembroIds)
       .eq('estado', 'confirmado')
       .eq('actividad.fecha', fecha)
       .eq('actividad.estado', 'programada');
 
     if (error) throw error;
-    return (count ?? 0) > 0;
+
+    const result = new Map<number, number>();
+    for (const row of (data ?? []) as Array<{ miembro_id: number }>) {
+      result.set(row.miembro_id, (result.get(row.miembro_id) ?? 0) + 1);
+    }
+    return result;
   }
 }

@@ -1,3 +1,4 @@
+import { isEncargadoDeGrupo, ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { Colaborador } from './colaboradoresModel';
 
@@ -231,23 +232,25 @@ export class ColaboradoresRepository {
   }
 
   /**
-   * Obtiene colaboradores cuya cadena necesidad→actividad→grupo pertenece al líder
+   * Obtiene colaboradores cuya cadena necesidad→actividad→grupo pertenece al encargado
+   * (miembro con membresía vigente con ROL_ENCARGADO_ID en membresia_grupo).
    */
-  async findAllForLiderAsync(
+  async findAllForEncargadoAsync(
     filters: ColaboradorFilters,
     liderMiembroId: number,
   ): Promise<Colaborador[]> {
-    // 1. Grupos activos del líder
-    const { data: grupos, error: gruposError } = await supabase
-      .from('grupo_ministerial')
-      .select('id_grupo')
-      .eq('lider_principal_id', liderMiembroId)
-      .eq('activo', true);
+    // 1. Grupos donde el miembro es encargado vigente
+    const { data: membresias, error: gruposError } = await supabase
+      .from('membresia_grupo')
+      .select('grupo_id')
+      .eq('miembro_id', liderMiembroId)
+      .eq('rol_grupo_id', ROL_ENCARGADO_ID)
+      .is('fecha_desvinculacion', null);
 
     if (gruposError) throw gruposError;
-    if (!grupos || grupos.length === 0) return [];
+    if (!membresias || membresias.length === 0) return [];
 
-    const grupoIds = grupos.map((g: { id_grupo: number }) => g.id_grupo);
+    const grupoIds = membresias.map((m: { grupo_id: number }) => m.grupo_id);
 
     // 2. Actividades de esos grupos
     const { data: actividades, error: actError } = await supabase
@@ -294,9 +297,10 @@ export class ColaboradoresRepository {
   }
 
   /**
-   * Verifica si una necesidad pertenece a un grupo donde el miembro es líder principal
+   * Verifica si una necesidad pertenece a un grupo donde el miembro es encargado vigente
+   * (membresia_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
-  async perteneceLiderAsync(necesidadId: number, liderMiembroId: number): Promise<boolean> {
+  async perteneceEncargadoAsync(necesidadId: number, liderMiembroId: number): Promise<boolean> {
     const { data: necesidad, error: necError } = await supabase
       .from('necesidad_logistica')
       .select('actividad_id')
@@ -313,19 +317,7 @@ export class ColaboradoresRepository {
 
     if (actError || !actividad || actividad.grupo_id === null) return false;
 
-    const { data: grupo, error: grupoError } = await supabase
-      .from('grupo_ministerial')
-      .select('id_grupo')
-      .eq('id_grupo', actividad.grupo_id)
-      .eq('lider_principal_id', liderMiembroId)
-      .eq('activo', true)
-      .single();
-
-    if (grupoError) {
-      if (grupoError.code === 'PGRST116') return false;
-      throw grupoError;
-    }
-    return grupo !== null;
+    return isEncargadoDeGrupo(liderMiembroId, actividad.grupo_id);
   }
 
   /**

@@ -44,7 +44,7 @@ actividadesRegistry.registerPath({
 actividadesRouter.get(
   '/',
   verificarToken,
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(ListActividadesQuerySchema),
   actividadesController.getAll,
 );
@@ -85,7 +85,7 @@ actividadesRegistry.registerPath({
 actividadesRouter.post(
   '/',
   verificarToken,
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(CreateActividadSchema),
   actividadesController.create,
 );
@@ -111,7 +111,7 @@ actividadesRegistry.registerPath({
 actividadesRouter.put(
   '/:id',
   verificarToken,
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(UpdateActividadSchema),
   actividadesController.update,
 );
@@ -137,7 +137,7 @@ actividadesRegistry.registerPath({
 actividadesRouter.patch(
   '/:id/estado',
   verificarToken,
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(PatchEstadoActividadSchema),
   actividadesController.updateEstado,
 );

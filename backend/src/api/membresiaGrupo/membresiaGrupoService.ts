@@ -1,11 +1,12 @@
-import { StatusCodes } from 'http-status-codes';
+﻿import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type { MembresiaGrupo, MembresiaGrupoConNombres } from './membresiaGrupoModel';
 import { MembresiaGrupoRepository } from './membresiaGrupoRepository';
 
 /**
- * Service para lógica de negocio de Membresía en Grupos Ministeriales
+ * Service para lÃ³gica de negocio de MembresÃ­a en Grupos Ministeriales
  */
 export class MembresiaGrupoService {
   private membresiaGrupoRepository: MembresiaGrupoRepository;
@@ -31,7 +32,7 @@ export class MembresiaGrupoService {
     fechaVinculacion?: string,
   ): Promise<ServiceResponse<MembresiaGrupo | null>> {
     try {
-      // 1. Verificar que miembro exista y esté activo
+      // 1. Verificar que miembro exista y estÃ© activo
       const miembroStatus = await this.membresiaGrupoRepository.verificarMiembroActivo(miembroId);
 
       if (!miembroStatus.existe) {
@@ -39,19 +40,19 @@ export class MembresiaGrupoService {
       }
 
       if (!miembroStatus.activo) {
-        return ServiceResponse.failure('El miembro no está activo', null, StatusCodes.BAD_REQUEST);
+        return ServiceResponse.failure('El miembro no estÃ¡ activo', null, StatusCodes.BAD_REQUEST);
       }
 
       // // 2. Verificar que estado_membresia = 'plena_comunion'
       // if (!miembroStatus.plena_comunion) {
       //   return ServiceResponse.failure(
-      //     'El miembro debe tener estado de plena comunión para ser vinculado',
+      //     'El miembro debe tener estado de plena comuniÃ³n para ser vinculado',
       //     null,
       //     StatusCodes.BAD_REQUEST,
       //   );
       // }
 
-      // 3. Verificar que grupo exista y esté activo
+      // 3. Verificar que grupo exista y estÃ© activo
       const grupoStatus = await this.membresiaGrupoRepository.verificarGrupoActivo(grupoId);
 
       if (!grupoStatus.existe) {
@@ -64,13 +65,13 @@ export class MembresiaGrupoService {
 
       if (!grupoStatus.activo) {
         return ServiceResponse.failure(
-          'El grupo ministerial no está activo',
+          'El grupo ministerial no estÃ¡ activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 4. Verificar que rol exista y esté activo
+      // 4. Verificar que rol exista y estÃ© activo
       const rolStatus = await this.membresiaGrupoRepository.verificarRolActivo(rolId);
 
       if (!rolStatus.existe) {
@@ -79,16 +80,47 @@ export class MembresiaGrupoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no está activo',
+          'El rol de grupo no estÃ¡ activo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+      // 4a. Si el rol requiere plena comunión, el miembro debe cumplirla.
+      if (rolStatus.requiere_plena_comunion && !miembroStatus.plena_comunion) {
+        return ServiceResponse.failure(
+          'Este rol requiere plena comunión. El miembro no cumple esa condición.',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 5. Verificar que el rol no requiera plena comunión si el miembro no la tiene
-      // (Esta validación ya está cubierta en el punto 2)
+      // 4b. Bloquear asignaciÃ³n directa del rol ENCARGADO
+      if (rolId === ROL_ENCARGADO_ID) {
+        return ServiceResponse.failure(
+          'El rol ENCARGADO se asigna solo mediante PUT /api/grupos-ministeriales/:id/encargado',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
 
-      // 6. No permitir duplicados (mismo miembro, grupo, rol activo)
+      // 5. Verificar que el rol no requiera plena comuniÃ³n si el miembro no la tiene
+      // (Esta validaciÃ³n ya estÃ¡ cubierta en el punto 2)
+
+      // 6. Regla 1: un miembro solo puede tener 1 rol activo por grupo
+      const tieneRolActivo = await this.membresiaGrupoRepository.existeMembresiaActivaEnGrupo(
+        miembroId,
+        grupoId,
+      );
+
+      if (tieneRolActivo) {
+        return ServiceResponse.failure(
+          'El miembro ya tiene un rol activo en este grupo. Debes cambiar el rol en lugar de vincular otro.',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      // 7. No permitir duplicados (mismo miembro, grupo, rol activo)
       const existeDuplicado = await this.membresiaGrupoRepository.verificarDuplicado(
         miembroId,
         grupoId,
@@ -97,7 +129,7 @@ export class MembresiaGrupoService {
 
       if (existeDuplicado) {
         return ServiceResponse.failure(
-          'El miembro ya está vinculado a este grupo con este rol',
+          'El miembro ya estÃ¡ vinculado a este grupo con este rol',
           null,
           StatusCodes.CONFLICT,
         );
@@ -131,31 +163,43 @@ export class MembresiaGrupoService {
    * Desvincula un miembro de un grupo ministerial (RF_07)
    *
    * Validaciones:
-   * - Membresía debe existir
-   * - fecha_desvinculacion debe ser NULL (membresía activa)
+   * - MembresÃ­a debe existir
+   * - fecha_desvinculacion debe ser NULL (membresÃ­a activa)
    */
   async desvincularMiembro(
     id: number,
     fechaDesvinculacion?: string,
   ): Promise<ServiceResponse<MembresiaGrupo | null>> {
     try {
-      // 1. Verificar que la membresía exista
+      // 1. Verificar que la membresÃ­a exista
       const membresiaExistente = await this.membresiaGrupoRepository.findByIdAsync(id);
 
       if (!membresiaExistente) {
-        return ServiceResponse.failure('La membresía no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La membresÃ­a no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 2. Verificar que fecha_desvinculacion sea NULL (membresía activa)
-      if (membresiaExistente.fecha_desvinculacion !== null) {
+      // 2. Bloquear desvinculaciÃ³n directa del Encargado
+      if (
+        membresiaExistente.rol_grupo_id === ROL_ENCARGADO_ID &&
+        membresiaExistente.fecha_desvinculacion === null
+      ) {
         return ServiceResponse.failure(
-          'La membresía ya está desvinculada',
+          'No se puede desvincular el Encargado directamente. Usa PUT /api/grupos-ministeriales/:id/encargado.',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 3. Desvincular miembro
+      // 3. Verificar que fecha_desvinculacion sea NULL (membresÃ­a activa)
+      if (membresiaExistente.fecha_desvinculacion !== null) {
+        return ServiceResponse.failure(
+          'La membresÃ­a ya estÃ¡ desvinculada',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // 4. Desvincular miembro
       const membresia = await this.membresiaGrupoRepository.desvincularMiembroAsync(
         id,
         fechaDesvinculacion,
@@ -185,30 +229,48 @@ export class MembresiaGrupoService {
   }
 
   /**
-   * Cambia el rol de una membresía activa
+   * Cambia el rol de una membresÃ­a activa
    */
   async cambiarRol(
     id: number,
     rolGrupoId: number,
   ): Promise<ServiceResponse<MembresiaGrupo | null>> {
     try {
-      // 1. Verificar que la membresía exista
+      // 1. Verificar que la membresÃ­a exista
       const membresiaExistente = await this.membresiaGrupoRepository.findByIdAsync(id);
 
       if (!membresiaExistente) {
-        return ServiceResponse.failure('La membresía no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La membresÃ­a no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 2. Verificar que esté activa
+      // 2. Verificar que estÃ© activa
       if (membresiaExistente.fecha_desvinculacion !== null) {
         return ServiceResponse.failure(
-          'No se puede cambiar el rol de una membresía desvinculada',
+          'No se puede cambiar el rol de una membresÃ­a desvinculada',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 3. Verificar que no sea el mismo rol
+      // 2b. Bloquear cambio de rol cuando la membresÃ­a actual ya es ENCARGADO
+      if (membresiaExistente.rol_grupo_id === ROL_ENCARGADO_ID) {
+        return ServiceResponse.failure(
+          'El rol ENCARGADO no se cambia por este endpoint. Usa PUT /api/grupos-ministeriales/:id/encargado.',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // 3. Bloquear asignaciÃ³n del rol ENCARGADO por esta vÃ­a
+      if (rolGrupoId === ROL_ENCARGADO_ID) {
+        return ServiceResponse.failure(
+          'El rol ENCARGADO se asigna solo mediante PUT /api/grupos-ministeriales/:id/encargado',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // 4. Verificar que no sea el mismo rol
       if (membresiaExistente.rol_grupo_id === rolGrupoId) {
         return ServiceResponse.failure(
           'El miembro ya tiene este rol asignado',
@@ -217,7 +279,7 @@ export class MembresiaGrupoService {
         );
       }
 
-      // 4. Verificar que el nuevo rol exista y esté activo
+      // 4. Verificar que el nuevo rol exista y estÃ© activo
       const rolStatus = await this.membresiaGrupoRepository.verificarRolActivo(rolGrupoId);
 
       if (!rolStatus.existe) {
@@ -226,44 +288,46 @@ export class MembresiaGrupoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no está activo',
+          'El rol de grupo no estÃ¡ activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
+      // 4b. Si el nuevo rol requiere plena comunión, validar estado del miembro actual.
+      if (rolStatus.requiere_plena_comunion) {
+        const miembroStatus = await this.membresiaGrupoRepository.verificarMiembroActivo(
+          membresiaExistente.miembro_id,
+        );
+        if (!miembroStatus.existe || !miembroStatus.activo) {
+          return ServiceResponse.failure(
+            'El miembro asociado a la membresía no existe o no está activo',
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+        if (!miembroStatus.plena_comunion) {
+          return ServiceResponse.failure(
+            'Este rol requiere plena comunión. El miembro no cumple esa condición.',
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+      }
 
-      // 5. Verificar que no haya duplicado activo
-      const existeDuplicado = await this.membresiaGrupoRepository.verificarDuplicado(
+      // 5. Rotar: cerrar fila actual e insertar nueva fila activa con el nuevo rol
+      const membresia = await this.membresiaGrupoRepository.rotarRolAsync(
+        id,
         membresiaExistente.miembro_id,
         membresiaExistente.grupo_id,
         rolGrupoId,
       );
 
-      if (existeDuplicado) {
-        return ServiceResponse.failure(
-          'El miembro ya tiene una membresía activa con este rol en el grupo',
-          null,
-          StatusCodes.CONFLICT,
-        );
-      }
-
-      // 6. Cambiar rol
-      const membresia = await this.membresiaGrupoRepository.cambiarRolAsync(id, rolGrupoId);
-
-      if (!membresia) {
-        return ServiceResponse.failure(
-          'Error al cambiar el rol de la membresía',
-          null,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        );
-      }
-
       return ServiceResponse.success<MembresiaGrupo>('Rol cambiado exitosamente', membresia);
     } catch (error) {
-      const errorMessage = `Error al cambiar rol de membresía: ${(error as Error).message}`;
+      const errorMessage = `Error al cambiar rol de membresÃ­a: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al cambiar el rol de la membresía',
+        'Error al cambiar el rol de la membresÃ­a',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -271,18 +335,18 @@ export class MembresiaGrupoService {
   }
 
   /**
-   * Obtiene todas las membresías de un miembro
+   * Obtiene todas las membresÃ­as de un miembro
    */
   async getMembresiasByMiembro(
     miembroId: number,
-    rol?: 'administrador' | 'lider' | 'miembro',
+    rol?: 'administrador' | 'usuario',
     miembroIdToken?: number | null,
   ): Promise<ServiceResponse<MembresiaGrupoConNombres[] | null>> {
     try {
-      // Un miembro solo puede consultar sus propias membresías
-      if (rol === 'miembro' && miembroIdToken !== miembroId) {
+      // Un usuario no-admin solo puede consultar sus propias membresÃ­as
+      if (rol !== 'administrador' && rol !== undefined && miembroIdToken !== miembroId) {
         return ServiceResponse.failure(
-          'No tiene permisos para consultar las membresías de otro miembro',
+          'No tiene permisos para consultar las membresÃ­as de otro miembro',
           null,
           StatusCodes.FORBIDDEN,
         );
@@ -292,7 +356,7 @@ export class MembresiaGrupoService {
 
       if (!membresias) {
         return ServiceResponse.failure(
-          'Error al obtener membresías del miembro',
+          'Error al obtener membresÃ­as del miembro',
           null,
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
@@ -300,20 +364,20 @@ export class MembresiaGrupoService {
 
       if (membresias.length === 0) {
         return ServiceResponse.success<MembresiaGrupoConNombres[]>(
-          'No se encontraron membresías para este miembro',
+          'No se encontraron membresÃ­as para este miembro',
           [],
         );
       }
 
       return ServiceResponse.success<MembresiaGrupoConNombres[]>(
-        'Membresías encontradas',
+        'MembresÃ­as encontradas',
         membresias,
       );
     } catch (error) {
-      const errorMessage = `Error al obtener membresías por miembro: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener membresÃ­as por miembro: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener membresías del miembro',
+        'Error al obtener membresÃ­as del miembro',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -321,7 +385,7 @@ export class MembresiaGrupoService {
   }
 
   /**
-   * Obtiene todas las membresías activas de un grupo
+   * Obtiene todas las membresÃ­as activas de un grupo
    */
   async getMembresiasByGrupo(
     grupoId: number,
@@ -349,7 +413,7 @@ export class MembresiaGrupoService {
         membresias,
       );
     } catch (error) {
-      const errorMessage = `Error al obtener membresías por grupo: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener membresÃ­as por grupo: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Error al obtener miembros del grupo',

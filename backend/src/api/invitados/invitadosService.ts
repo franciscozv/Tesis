@@ -125,8 +125,8 @@ export class InvitadosService {
         );
       }
 
-      // Verificar permisos: un líder solo puede gestionar invitaciones de sus grupos
-      if (usuario?.rol === 'lider') {
+      // Verificar permisos: admin bypass total; líder debe ser encargado vigente del grupo.
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -134,11 +134,11 @@ export class InvitadosService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.invitadosRepository.isLiderDeActividadAsync(
+        const esEncargado = await this.invitadosRepository.isEncargadoDeActividadAsync(
           invitadoData.actividad_id,
           usuario.miembro_id,
         );
-        if (!esLider) {
+        if (!esEncargado) {
           return ServiceResponse.failure(
             'Solo puede gestionar invitaciones de actividades de sus grupos',
             null,
@@ -329,8 +329,8 @@ export class InvitadosService {
         return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      // Verificar permisos: un líder solo puede gestionar invitaciones de sus grupos
-      if (usuario?.rol === 'lider') {
+      // Verificar permisos: admin bypass total; líder debe ser encargado vigente del grupo.
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -338,11 +338,11 @@ export class InvitadosService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.invitadosRepository.isLiderDeActividadAsync(
+        const esEncargado = await this.invitadosRepository.isEncargadoDeActividadAsync(
           invitado.actividad_id,
           usuario.miembro_id,
         );
-        if (!esLider) {
+        if (!esEncargado) {
           return ServiceResponse.failure(
             'Solo puede gestionar invitaciones de actividades de sus grupos',
             null,

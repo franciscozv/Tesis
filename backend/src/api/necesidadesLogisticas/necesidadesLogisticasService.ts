@@ -33,7 +33,7 @@ export class NecesidadesLogisticasService {
     try {
       let necesidades: NecesidadLogistica[] = [];
 
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -41,7 +41,7 @@ export class NecesidadesLogisticasService {
             StatusCodes.FORBIDDEN,
           );
         }
-        necesidades = await this.necesidadesRepository.findAllForLiderAsync(
+        necesidades = await this.necesidadesRepository.findAllForEncargadoAsync(
           filters,
           usuario.miembro_id,
         );
@@ -143,7 +143,10 @@ export class NecesidadesLogisticasService {
    * Crea una nueva necesidad logística
    */
   async create(
-    necesidadData: Omit<NecesidadLogistica, 'id' | 'fecha_registro' | 'estado'>,
+    necesidadData: Omit<
+      NecesidadLogistica,
+      'id' | 'fecha_registro' | 'estado' | 'cantidad_cubierta'
+    >,
     usuario?: JwtPayload,
   ): Promise<ServiceResponse<NecesidadLogistica | null>> {
     try {
@@ -177,7 +180,7 @@ export class NecesidadesLogisticasService {
       }
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -185,7 +188,7 @@ export class NecesidadesLogisticasService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.necesidadesRepository.isLiderDeActividadAsync(
+        const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidadData.actividad_id,
           usuario.miembro_id,
         );
@@ -210,16 +213,10 @@ export class NecesidadesLogisticasService {
         );
       }
 
-      // Validar que cantidad_cubierta no supere cantidad_requerida
-      if (necesidadData.cantidad_cubierta > necesidadData.cantidad_requerida) {
-        return ServiceResponse.failure(
-          'La cantidad cubierta no puede superar la cantidad requerida',
-          null,
-          StatusCodes.BAD_REQUEST,
-        );
-      }
-
-      const necesidad = await this.necesidadesRepository.createAsync(necesidadData);
+      const necesidad = await this.necesidadesRepository.createAsync({
+        ...necesidadData,
+        cantidad_cubierta: 0,
+      });
       return ServiceResponse.success<NecesidadLogistica>(
         'Necesidad logística creada exitosamente',
         necesidad,
@@ -256,7 +253,7 @@ export class NecesidadesLogisticasService {
       }
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -264,7 +261,7 @@ export class NecesidadesLogisticasService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.necesidadesRepository.isLiderDeActividadAsync(
+        const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidadExistente.actividad_id,
           usuario.miembro_id,
         );
@@ -291,15 +288,13 @@ export class NecesidadesLogisticasService {
         }
       }
 
-      // Validar que cantidad_cubierta no supere cantidad_requerida
-      const cantidadRequerida =
-        necesidadData.cantidad_requerida ?? necesidadExistente.cantidad_requerida;
-      const cantidadCubierta =
-        necesidadData.cantidad_cubierta ?? necesidadExistente.cantidad_cubierta;
-
-      if (cantidadCubierta > cantidadRequerida) {
+      // Validar que la nueva cantidad_requerida no quede por debajo de lo ya cubierto
+      if (
+        necesidadData.cantidad_requerida !== undefined &&
+        necesidadExistente.cantidad_cubierta > necesidadData.cantidad_requerida
+      ) {
         return ServiceResponse.failure(
-          'La cantidad cubierta no puede superar la cantidad requerida',
+          'La cantidad requerida no puede ser menor a la cantidad ya cubierta',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -369,7 +364,7 @@ export class NecesidadesLogisticasService {
       }
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -377,7 +372,7 @@ export class NecesidadesLogisticasService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.necesidadesRepository.isLiderDeActividadAsync(
+        const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidad.actividad_id,
           usuario.miembro_id,
         );
@@ -450,7 +445,7 @@ export class NecesidadesLogisticasService {
       }
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'No tiene un perfil de miembro asociado para realizar esta acción',
@@ -458,7 +453,7 @@ export class NecesidadesLogisticasService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.necesidadesRepository.isLiderDeActividadAsync(
+        const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidad.actividad_id,
           usuario.miembro_id,
         );

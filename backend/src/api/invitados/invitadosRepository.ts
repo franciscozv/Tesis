@@ -1,3 +1,4 @@
+import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { Invitado } from './invitadosModel';
 
@@ -109,9 +110,10 @@ export class InvitadosRepository {
   }
 
   /**
-   * Verifica si un miembro es el líder principal del grupo al que pertenece una actividad
+   * Verifica si un miembro es encargado vigente del grupo al que pertenece una actividad
+   * (membresia_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
-  async isLiderDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
+  async isEncargadoDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
     const { data: actividad, error: actError } = await supabase
       .from('actividad')
       .select('grupo_id')
@@ -124,19 +126,7 @@ export class InvitadosRepository {
     }
     if (!actividad || actividad.grupo_id === null) return false;
 
-    const { data: grupo, error: grupoError } = await supabase
-      .from('grupo_ministerial')
-      .select('id_grupo')
-      .eq('id_grupo', actividad.grupo_id)
-      .eq('lider_principal_id', miembroId)
-      .eq('activo', true)
-      .single();
-
-    if (grupoError) {
-      if (grupoError.code === 'PGRST116') return false;
-      throw grupoError;
-    }
-    return grupo !== null;
+    return isEncargadoDeGrupo(miembroId, actividad.grupo_id);
   }
 
   /**

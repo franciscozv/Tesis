@@ -7,10 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Package,
   Pencil,
   RefreshCw,
-  UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useId, useMemo, useState } from 'react';
@@ -35,6 +33,8 @@ import { useCreateActividad } from '@/features/actividades/hooks/use-create-acti
 import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
 import type { CreateActividadFormData } from '@/features/actividades/schemas';
 import type { Actividad, ActividadFilters, EstadoActividad } from '@/features/actividades/types';
+import { useCalendarioConsolidado } from '@/features/calendario/hooks/use-calendario';
+import type { CalendarioEvento } from '@/features/calendario/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { tiposActividadHooks } from '@/features/catalogos/hooks';
 import type { TipoActividad } from '@/features/catalogos/types';
@@ -56,6 +56,28 @@ const estadoColors: Record<EstadoActividad, string> = {
   realizada: '#22c55e',
   cancelada: '#ef4444',
 };
+
+// Convierte CalendarioEvento (consolidado) al shape Actividad que usa el calendario
+function toCalendarActividad(evento: CalendarioEvento): Actividad {
+  return {
+    id: evento.id,
+    nombre: evento.nombre,
+    tipo_actividad_id: evento.tipo_actividad.id,
+    tipo_actividad: null,
+    fecha: evento.fecha,
+    hora_inicio: evento.hora_inicio,
+    hora_fin: evento.hora_fin,
+    lugar: evento.lugar ?? '',
+    grupo_id: evento.grupo_organizador?.id ?? null,
+    descripcion: null,
+    es_publica: false,
+    estado: 'programada',
+    motivo_cancelacion: null,
+    patron_id: null,
+    creador_id: 0,
+    fecha_creacion: '',
+  };
+}
 
 interface CalendarEvent {
   id: number;
@@ -88,6 +110,7 @@ export default function CalendarioPage() {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
   const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
+  const isMember = !!usuario && !isAdminOrLider;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('month');
@@ -99,10 +122,15 @@ export default function CalendarioPage() {
   const filters: ActividadFilters = { mes, anio };
   if (soloPublicas) filters.es_publica = true;
 
-  const { data: actividades } = useActividades(filters);
-  const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
+  const { data: actividadesAll } = useActividades(filters, { enabled: !!usuario && isAdminOrLider });
+  const { data: consolidado } = useCalendarioConsolidado(mes, anio, { enabled: isMember });
+  const actividades = useMemo(
+    () => (isMember ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
+    [isMember, consolidado, actividadesAll],
+  );
+  const { data: tiposActividad } = tiposActividadHooks.useAll();
   const { data: todosLosGrupos } = useGrupos();
-  const { grupos: gruposPermitidos } = useGruposPermitidos();
+  const { grupos: gruposPermitidos, misGruposIds } = useGruposPermitidos();
 
   const createMutation = useCreateActividad();
   const updateMutation = useUpdateActividad();
@@ -140,8 +168,10 @@ export default function CalendarioPage() {
   const eventStyleGetter = useCallback(
     (event: CalendarEvent) => {
       const actividad = event.resource;
-      const tipo = tiposMap.get(actividad.tipo_actividad_id);
-      const bgColor = tipo?.color ?? estadoColors[actividad.estado];
+      const bgColor =
+        tiposMap.get(actividad.tipo_actividad_id)?.color ??
+        actividad.tipo_actividad?.color ??
+        estadoColors[actividad.estado];
       const opacity = actividad.estado === 'cancelada' ? 0.5 : 1;
 
       return {
@@ -184,6 +214,7 @@ export default function CalendarioPage() {
       fecha: actividad.fecha,
       hora_inicio: formatHora(actividad.hora_inicio),
       hora_fin: formatHora(actividad.hora_fin),
+      lugar: actividad.lugar,
       grupo_id: actividad.grupo_id ?? 0,
       es_publica: actividad.es_publica,
     });
@@ -247,8 +278,25 @@ export default function CalendarioPage() {
     }
   }
 
+  const canManageDetalleActividad =
+    isAdmin ||
+    (isAdminOrLider &&
+      !!detalleActividad?.grupo_id &&
+      misGruposIds.has(detalleActividad.grupo_id));
+
   const detalleTipo = detalleActividad
-    ? tiposMap.get(detalleActividad.tipo_actividad_id)
+    ? (tiposMap.get(detalleActividad.tipo_actividad_id) ??
+        (detalleActividad.tipo_actividad
+          ? ({
+              id_tipo: detalleActividad.tipo_actividad_id,
+              nombre: detalleActividad.tipo_actividad.nombre,
+              color: detalleActividad.tipo_actividad.color,
+              activo: false,
+              descripcion: null,
+              created_at: '',
+              updated_at: '',
+            } satisfies TipoActividad)
+          : undefined))
     : undefined;
   const detalleGrupo = detalleActividad?.grupo_id
     ? gruposMap.get(detalleActividad.grupo_id)
@@ -299,7 +347,7 @@ export default function CalendarioPage() {
         />
       </div>
 
-      {tiposActividad && <CalendarLegend tiposActividad={tiposActividad} />}
+      {actividades.length > 0 && <CalendarLegend actividades={actividades} tiposMap={tiposMap} />}
 
       <ActividadFormModal
         open={formOpen}
@@ -318,7 +366,7 @@ export default function CalendarioPage() {
         onOpenChange={setDetalleOpen}
         tipo={detalleTipo}
         grupoNombre={detalleGrupo?.nombre}
-        isAdminOrLider={isAdminOrLider}
+        canManageActividad={canManageDetalleActividad}
         onEdit={openEdit}
         onCambiarEstado={openEstadoModal}
       />
@@ -416,7 +464,7 @@ interface DetalleRapidoModalProps {
   onOpenChange: (open: boolean) => void;
   tipo: TipoActividad | undefined;
   grupoNombre: string | undefined;
-  isAdminOrLider: boolean;
+  canManageActividad: boolean;
   onEdit: (a: Actividad) => void;
   onCambiarEstado: (a: Actividad) => void;
 }
@@ -427,7 +475,7 @@ function DetalleRapidoModal({
   onOpenChange,
   tipo,
   grupoNombre,
-  isAdminOrLider,
+  canManageActividad,
   onEdit,
   onCambiarEstado,
 }: DetalleRapidoModalProps) {
@@ -468,6 +516,10 @@ function DetalleRapidoModal({
             </span>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Lugar</span>
+            <span>{actividad.lugar}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Estado</span>
             <Badge
               variant={
@@ -502,12 +554,12 @@ function DetalleRapidoModal({
 
         <div className="flex flex-wrap gap-2 border-t pt-3">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/actividades/${actividad.id}`}>
+            <Link href={`/dashboard/actividades/${actividad.id}?origin=calendar`}>
               <Eye className="size-4" />
-              Ver completo
+              Ver detalle
             </Link>
           </Button>
-          {isAdminOrLider && actividad.estado !== 'cancelada' && (
+          {canManageActividad && actividad.estado !== 'cancelada' && (
             <>
               <Button variant="outline" size="sm" onClick={() => onEdit(actividad)}>
                 <Pencil className="size-4" />
@@ -519,18 +571,6 @@ function DetalleRapidoModal({
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/actividades/${actividad.id}`}>
-              <UserPlus className="size-4" />
-              Invitados
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/actividades/${actividad.id}`}>
-              <Package className="size-4" />
-              Necesidades
-            </Link>
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -539,20 +579,36 @@ function DetalleRapidoModal({
 
 // --- Legend ---
 
-function CalendarLegend({ tiposActividad }: { tiposActividad: TipoActividad[] }) {
+function CalendarLegend({
+  actividades,
+  tiposMap,
+}: {
+  actividades: Actividad[];
+  tiposMap: Map<number, TipoActividad>;
+}) {
+  const tiposEnPeriodo = useMemo(() => {
+    const seen = new Set<number>();
+    const result: TipoActividad[] = [];
+    for (const a of actividades) {
+      const tipo = tiposMap.get(a.tipo_actividad_id);
+      if (tipo && !seen.has(tipo.id_tipo)) {
+        seen.add(tipo.id_tipo);
+        result.push(tipo);
+      }
+    }
+    return result;
+  }, [actividades, tiposMap]);
+
+  if (!tiposEnPeriodo.length) return null;
+
   return (
     <div className="flex flex-wrap gap-3 text-sm">
-      {tiposActividad
-        .filter((t) => t.activo)
-        .map((t) => (
-          <div key={t.id_tipo} className="flex items-center gap-1.5">
-            <span
-              className="inline-block size-3 rounded-full"
-              style={{ backgroundColor: t.color }}
-            />
-            <span className="text-muted-foreground">{t.nombre}</span>
-          </div>
-        ))}
+      {tiposEnPeriodo.map((t) => (
+        <div key={t.id_tipo} className="flex items-center gap-1.5">
+          <span className="inline-block size-3 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
+          <span className="text-muted-foreground">{t.nombre}</span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -22,16 +22,23 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
-import { type CreateGrupoFormData, createGrupoSchema } from '../schemas';
+import {
+  type CreateGrupoFormData,
+  createGrupoSchema,
+  type UpdateGrupoFormData,
+  updateGrupoSchema,
+} from '../schemas';
 
 interface GrupoFormProps {
+  mode?: 'create' | 'edit';
   defaultValues?: Partial<CreateGrupoFormData>;
-  onSubmit: (data: CreateGrupoFormData) => void;
+  onSubmit: (data: CreateGrupoFormData | UpdateGrupoFormData) => void;
   isPending: boolean;
   submitLabel?: string;
 }
 
 export function GrupoForm({
+  mode = 'create',
   defaultValues,
   onSubmit,
   isPending,
@@ -41,8 +48,10 @@ export function GrupoForm({
   const lideres =
     miembros?.filter((m) => m.estado_membresia === 'plena_comunion' && m.activo) ?? [];
 
+  const schema = mode === 'edit' ? updateGrupoSchema : createGrupoSchema;
+
   const form = useForm<CreateGrupoFormData>({
-    resolver: zodResolver(createGrupoSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       nombre: '',
       lider_principal_id: 0,

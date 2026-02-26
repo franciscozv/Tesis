@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { hoyCL, nowEnZona, parseActividadFin, parseActividadInicio } from '@/common/utils/dateTime';
+import { requireEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type { Actividad, ESTADOS_ACTIVIDAD } from './actividadesModel';
 import { ActividadesRepository } from './actividadesRepository';
@@ -177,7 +178,8 @@ export class ActividadesService {
       }
 
       // Validar permisos según rol
-      if (usuario?.rol === 'lider') {
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      if (usuario?.rol === 'usuario') {
         if (!actividadData.grupo_id) {
           return ServiceResponse.failure(
             'Como líder, debes asignar la actividad a uno de tus grupos.',
@@ -192,17 +194,8 @@ export class ActividadesService {
             StatusCodes.BAD_REQUEST,
           );
         }
-        const esLider = await this.actividadesRepository.isLiderOfGrupoAsync(
-          actividadData.grupo_id,
-          usuario.miembro_id,
-        );
-        if (!esLider) {
-          return ServiceResponse.failure(
-            'No tienes permiso para crear actividades en este grupo.',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
+        const forbidden = await requireEncargadoDeGrupo(usuario.miembro_id, actividadData.grupo_id);
+        if (forbidden) return forbidden;
       }
 
       // Validar que el grupo ministerial exista (si se proporcionó)
@@ -282,7 +275,8 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda modificar actividades de sus grupos
-      if (usuario?.rol === 'lider') {
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'Tu usuario no tiene un miembro asociado',
@@ -297,17 +291,11 @@ export class ActividadesService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.actividadesRepository.isLiderOfGrupoAsync(
-          actividadExistente.grupo_id,
+        const forbidden = await requireEncargadoDeGrupo(
           usuario.miembro_id,
+          actividadExistente.grupo_id,
         );
-        if (!esLider) {
-          return ServiceResponse.failure(
-            'Solo puedes modificar actividades de grupos donde eres líder principal',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
+        if (forbidden) return forbidden;
       }
 
       // No permitir editar actividades que ya comenzaron (basado en fecha+hora_inicio)
@@ -399,7 +387,8 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda cambiar el estado de actividades de sus grupos
-      if (usuario?.rol === 'lider') {
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
             'Tu usuario no tiene un miembro asociado',
@@ -414,17 +403,8 @@ export class ActividadesService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const esLider = await this.actividadesRepository.isLiderOfGrupoAsync(
-          actividad.grupo_id,
-          usuario.miembro_id,
-        );
-        if (!esLider) {
-          return ServiceResponse.failure(
-            'Solo puedes cambiar el estado de actividades de grupos donde eres líder principal',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
+        const forbidden = await requireEncargadoDeGrupo(usuario.miembro_id, actividad.grupo_id);
+        if (forbidden) return forbidden;
       }
 
       // Validar transiciones de estado permitidas
@@ -453,7 +433,7 @@ export class ActividadesService {
       }
 
       if (actividad.estado === 'realizada' && estado === 'cancelada') {
-        if (usuario?.rol !== 'administrador') {
+        if (usuario?.rol === 'usuario') {
           return ServiceResponse.failure(
             'Solo el administrador puede cancelar una actividad ya realizada (corrección administrativa).',
             null,

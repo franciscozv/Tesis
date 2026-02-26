@@ -28,6 +28,7 @@ interface MiembroFormProps {
   isPending: boolean;
   submitLabel?: string;
   disableRut?: boolean;
+  allowEstadoMembresia?: boolean;
 }
 
 export function MiembroForm({
@@ -36,6 +37,7 @@ export function MiembroForm({
   isPending,
   submitLabel = 'Guardar',
   disableRut = false,
+  allowEstadoMembresia = true,
 }: MiembroFormProps) {
   const form = useForm<CreateMiembroFormData>({
     resolver: zodResolver(createMiembroSchema),
@@ -170,28 +172,30 @@ export function MiembroForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="estado_membresia"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Estado Membresía *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="sin_membresia">Sin Membresía</SelectItem>
-                  <SelectItem value="probando">Probando</SelectItem>
-                  <SelectItem value="plena_comunion">Plena Comunión</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {allowEstadoMembresia && (
+          <FormField
+            control={form.control}
+            name="estado_membresia"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado Membresía *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="sin_membresia">Sin Membresía</SelectItem>
+                    <SelectItem value="probando">Probando</SelectItem>
+                    <SelectItem value="plena_comunion">Plena Comunión</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="fecha_ingreso"

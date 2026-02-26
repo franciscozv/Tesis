@@ -5,13 +5,15 @@ import { ServiceResponse } from '@/common/models/serviceResponse';
 import { env } from '@/common/utils/envConfig';
 
 /**
- * Payload del JWT
+ * Payload del JWT (roles globales permitidos: 'administrador' | 'usuario')
  */
 export interface JwtPayload {
   id: number;
   email: string;
-  rol: 'administrador' | 'lider' | 'miembro';
+  rol: 'administrador' | 'usuario';
   miembro_id: number | null;
+  /** grupo_id del grupo donde el usuario es encargado activo (si aplica) */
+  cuerpo_id?: number;
 }
 
 /**
@@ -26,7 +28,7 @@ declare global {
 }
 
 /**
- * Middleware que valida el JWT en el header Authorization Bearer
+ * Middleware que valida el JWT en el header Authorization Bearer.
  */
 export const verificarToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
@@ -44,8 +46,19 @@ export const verificarToken = (req: Request, res: Response, next: NextFunction):
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-    req.usuario = decoded;
+    const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+
+    if (payload.rol !== 'administrador' && payload.rol !== 'usuario') {
+      const response = ServiceResponse.failure(
+        'Token inválido: rol no permitido',
+        null,
+        StatusCodes.UNAUTHORIZED,
+      );
+      res.status(response.statusCode).send(response);
+      return;
+    }
+
+    req.usuario = payload;
     next();
   } catch (error) {
     const message =

@@ -26,24 +26,18 @@ export class ColaboradoresService {
     try {
       let colaboradores: Colaborador[];
 
-      if (usuario?.rol === 'lider') {
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
-            'El líder no tiene un miembro asociado',
+            'El usuario no tiene un miembro asociado',
             null,
             StatusCodes.FORBIDDEN,
           );
         }
-        colaboradores = await this.colaboradoresRepository.findAllForLiderAsync(
+        colaboradores = await this.colaboradoresRepository.findAllForEncargadoAsync(
           filters,
           usuario.miembro_id,
         );
-      } else if (usuario?.rol === 'miembro') {
-        const scopedFilters = {
-          ...filters,
-          miembro_id: usuario.miembro_id ?? undefined,
-        };
-        colaboradores = await this.colaboradoresRepository.findAllAsync(scopedFilters);
       } else {
         // administrador: acceso global
         colaboradores = await this.colaboradoresRepository.findAllAsync(filters);
@@ -202,20 +196,20 @@ export class ColaboradoresService {
         return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      // Lider: validar que la oferta pertenece a una necesidad de sus grupos
-      if (usuario?.rol === 'lider') {
+      // Usuario no-admin: validar que la oferta pertenece a una necesidad de sus grupos
+      if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
-            'El líder no tiene un miembro asociado',
+            'El usuario no tiene un miembro asociado',
             null,
             StatusCodes.FORBIDDEN,
           );
         }
-        const perteneceALider = await this.colaboradoresRepository.perteneceLiderAsync(
+        const esEncargado = await this.colaboradoresRepository.perteneceEncargadoAsync(
           colaborador.necesidad_id,
           usuario.miembro_id,
         );
-        if (!perteneceALider) {
+        if (!esEncargado) {
           return ServiceResponse.failure(
             'No tiene permisos para decidir esta oferta',
             null,

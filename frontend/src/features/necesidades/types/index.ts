@@ -16,7 +16,8 @@ export interface NecesidadLogistica {
     fecha: string;
     hora_inicio: string;
     hora_fin: string;
-    estado: string;
+    lugar: string;
+    estado?: string;
   };
   tipo_necesidad?: {
     id_tipo: number;

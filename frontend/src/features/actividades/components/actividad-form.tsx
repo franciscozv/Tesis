@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { TipoActividad } from '@/features/catalogos/types';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
 import { type CreateActividadFormData, createActividadSchema } from '../schemas';
@@ -55,6 +56,10 @@ export function ActividadFormModal({
   grupos,
   isEditing = false,
 }: ActividadFormProps) {
+  const { usuario } = useAuth();
+  const isAdmin = usuario?.rol === 'administrador';
+  const today = new Date().toISOString().slice(0, 10);
+
   const form = useForm<CreateActividadFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce + refine creates input type mismatch with zodResolver
     resolver: zodResolver(createActividadSchema) as any,
@@ -65,6 +70,7 @@ export function ActividadFormModal({
       fecha: '',
       hora_inicio: '',
       hora_fin: '',
+      lugar: '',
       grupo_id: 0,
       es_publica: false,
       ...defaultValues,
@@ -80,6 +86,7 @@ export function ActividadFormModal({
         fecha: '',
         hora_inicio: '',
         hora_fin: '',
+        lugar: '',
         grupo_id: 0,
         es_publica: false,
         ...defaultValues,
@@ -97,7 +104,18 @@ export function ActividadFormModal({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
+          <form
+            onSubmit={form.handleSubmit((data) => {
+              if (!isAdmin && (!data.grupo_id || data.grupo_id === 0)) {
+                form.setError('grupo_id', {
+                  message: 'Como líder, es obligatorio seleccionar un grupo.',
+                });
+                return;
+              }
+              onSubmit(data);
+            })}
+            className="grid gap-4 sm:grid-cols-2"
+          >
             <FormField
               control={form.control}
               name="nombre"
@@ -147,7 +165,7 @@ export function ActividadFormModal({
                 <FormItem>
                   <FormLabel>Fecha *</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" min={isEditing ? undefined : today} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,6 +202,20 @@ export function ActividadFormModal({
 
             <FormField
               control={form.control}
+              name="lugar"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <FormLabel>Lugar *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Templo principal" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="descripcion"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
@@ -201,7 +233,7 @@ export function ActividadFormModal({
               name="grupo_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Grupo Organizador</FormLabel>
+                  <FormLabel>Grupo Organizador {!isAdmin && '*'}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value ? String(field.value) : '0'}
@@ -212,7 +244,7 @@ export function ActividadFormModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="0">Ninguno</SelectItem>
+                      {isAdmin && <SelectItem value="0">Ninguno</SelectItem>}
                       {grupos?.map((g) => (
                         <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
                           {g.nombre}

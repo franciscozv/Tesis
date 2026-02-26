@@ -55,11 +55,6 @@ export const CreateNecesidadLogisticaSchema = z.object({
       .min(1, 'Unidad de medida es obligatoria')
       .max(50, 'Unidad de medida no puede exceder 50 caracteres')
       .openapi({ example: 'unidades' }),
-    cantidad_cubierta: z
-      .number()
-      .min(0, 'Cantidad cubierta no puede ser negativa')
-      .default(0)
-      .openapi({ example: 0 }),
   }),
 });
 
@@ -99,11 +94,6 @@ export const UpdateNecesidadLogisticaSchema = z.object({
       .max(50, 'Unidad de medida no puede exceder 50 caracteres')
       .optional()
       .openapi({ example: 'unidades' }),
-    cantidad_cubierta: z
-      .number()
-      .min(0, 'Cantidad cubierta no puede ser negativa')
-      .optional()
-      .openapi({ example: 10 }),
   }),
 });
 

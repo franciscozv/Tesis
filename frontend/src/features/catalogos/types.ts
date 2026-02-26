@@ -54,13 +54,11 @@ export type UpdateTipoActividadInput = Partial<CreateTipoActividadInput>;
 export interface TipoNecesidad extends CatalogoBase {
   id_tipo: number;
   descripcion: string | null;
-  requiere_asignacion_beneficiarios: boolean;
 }
 
 export interface CreateTipoNecesidadInput {
   nombre: string;
   descripcion?: string;
-  requiere_asignacion_beneficiarios?: boolean;
 }
 
 export type UpdateTipoNecesidadInput = Partial<CreateTipoNecesidadInput>;

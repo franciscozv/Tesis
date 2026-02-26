@@ -38,7 +38,6 @@ export type UpdateTipoActividadFormData = z.infer<typeof updateTipoActividadSche
 export const createTipoNecesidadSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
   descripcion: z.string().or(z.literal('')).optional(),
-  requiere_asignacion_beneficiarios: z.boolean().default(false),
 });
 
 export const updateTipoNecesidadSchema = createTipoNecesidadSchema.partial();

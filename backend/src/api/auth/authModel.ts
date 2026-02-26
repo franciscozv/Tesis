@@ -11,8 +11,12 @@ export const LoginResponseSchema = z.object({
   usuario: z.object({
     id: z.number().openapi({ example: 1 }),
     email: z.string().email().openapi({ example: 'admin@iglesia.cl' }),
-    rol: z.enum(['administrador', 'lider', 'miembro']).openapi({ example: 'administrador' }),
+    rol: z.enum(['administrador', 'usuario']).openapi({ example: 'administrador' }),
     miembro_id: z.number().nullable().openapi({ example: 5 }),
+    cuerpo_id: z
+      .number()
+      .optional()
+      .openapi({ example: 3, description: 'grupo_id si el usuario es encargado activo' }),
   }),
 });
 

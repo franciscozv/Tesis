@@ -14,6 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { use, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -66,6 +67,7 @@ import {
   tiposNecesidadHooks,
 } from '@/features/catalogos/hooks';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 
 // ---------------------------------------------------------------------------
@@ -142,20 +144,37 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const { id } = use(params);
   const actividadId = Number(id);
 
+  // Auth (must be before backHref derivation)
+  const { usuario } = useAuth();
+
+  const searchParams = useSearchParams();
+  const origin = searchParams.get('origin');
+  const isMember = usuario?.rol === 'miembro';
+  const isLider = usuario?.rol === 'lider';
+  const backHref =
+    origin === 'calendar' || isMember || isLider
+      ? '/dashboard/calendario'
+      : '/dashboard/actividades';
+
   // Data queries
   const { data: actividad, isLoading } = useActividad(actividadId);
   const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
   const { data: grupos } = useGrupos();
+  const { data: misGrupos } = useMisGrupos();
   const { data: invitados, isLoading: loadingInvitados } = useInvitadosActividad(actividadId);
   const { data: necesidades, isLoading: loadingNecesidades } = useNecesidadesActividad(actividadId);
   const { data: miembros } = useMiembros();
   const { data: rolesActividad } = rolesActividadHooks.useAllActivos();
   const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
-
-  // Auth
-  const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
-  const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
+
+  // El lider puede gestionar invitados/necesidades solo en actividades de sus grupos
+  const misGruposIds = useMemo(
+    () => new Set(misGrupos?.map((g) => g.id_grupo) ?? []),
+    [misGrupos],
+  );
+  const canManageGestion =
+    isAdmin || (isLider && !!actividad?.grupo_id && misGruposIds.has(actividad.grupo_id));
 
   // Mutations
   const updateMutation = useUpdateActividad();
@@ -181,9 +200,9 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   }
 
   // Lookups
-  const tipoNombre = tiposActividad?.find(
-    (t) => t.id_tipo === actividad?.tipo_actividad_id,
-  )?.nombre;
+  const tipoNombre =
+    actividad?.tipo_actividad?.nombre ??
+    tiposActividad?.find((t) => t.id_tipo === actividad?.tipo_actividad_id)?.nombre;
   const grupoNombre = actividad?.grupo_id
     ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
     : null;
@@ -262,6 +281,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     fecha: actividad.fecha,
     hora_inicio: formatHora(actividad.hora_inicio),
     hora_fin: formatHora(actividad.hora_fin),
+    lugar: actividad.lugar,
     grupo_id: actividad.grupo_id ?? 0,
     es_publica: actividad.es_publica,
   };
@@ -272,7 +292,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard/actividades">
+            <Link href={backHref}>
               <ArrowLeft className="size-4" />
             </Link>
           </Button>
@@ -281,7 +301,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
             <p className="text-sm text-muted-foreground">{formatFecha(actividad.fecha)}</p>
           </div>
         </div>
-        {isAdminOrLider && !isCancelada && (
+        {canManageGestion && !isCancelada && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setEstadoOpen(true)}>
               <RefreshCw className="size-4" />
@@ -312,6 +332,8 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
               label="Horario"
               value={`${formatHora(actividad.hora_inicio)} - ${formatHora(actividad.hora_fin)}`}
             />
+            <Separator />
+            <InfoRow label="Lugar" value={actividad.lugar} />
             <Separator />
             <InfoRow label="Descripción" value={actividad.descripcion} />
           </CardContent>
@@ -357,7 +379,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
               <Users className="size-4" />
               Invitados ({invitados?.length ?? 0})
             </span>
-            {isAdminOrLider && !isCancelada && (
+            {canManageGestion && !isCancelada && (
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => setSugerirOpen(true)}>
                   <Sparkles className="size-4" />
@@ -396,7 +418,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                   <TableHead>Rol</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Asistió</TableHead>
-                  {isAdminOrLider && <TableHead className="w-24">Acciones</TableHead>}
+                  {canManageGestion && <TableHead className="w-24">Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -420,7 +442,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {isAdminOrLider && inv.estado === 'confirmado' ? (
+                      {canManageGestion && inv.estado === 'confirmado' ? (
                         <Checkbox
                           checked={inv.asistio}
                           onCheckedChange={(checked) =>
@@ -435,7 +457,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                         <XCircle className="size-4 text-muted-foreground" />
                       )}
                     </TableCell>
-                    {isAdminOrLider && (
+                    {canManageGestion && (
                       <TableCell>
                         {inv.estado === 'pendiente' && (
                           <Button
@@ -465,7 +487,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
               <Package className="size-4" />
               Necesidades Logísticas ({necesidades?.length ?? 0})
             </span>
-            {isAdminOrLider && !isCancelada && (
+            {canManageGestion && !isCancelada && (
               <Button size="sm" onClick={() => setNecesidadOpen(true)}>
                 <Plus className="size-4" />
                 Agregar
@@ -547,6 +569,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         miembros={miembros}
         rolesActividad={rolesActividad}
         defaultValues={invitarDefaults}
+        excludeMiembroId={usuario?.miembro_id}
       />
 
       <SugerirCandidatoModal

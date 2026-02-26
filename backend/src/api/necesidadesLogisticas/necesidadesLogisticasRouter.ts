@@ -84,7 +84,7 @@ necesidadesLogisticasRegistry.registerPath({
 });
 necesidadesLogisticasRouter.post(
   '/',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(CreateNecesidadLogisticaSchema),
   necesidadesLogisticasController.create,
 );
@@ -109,7 +109,7 @@ necesidadesLogisticasRegistry.registerPath({
 });
 necesidadesLogisticasRouter.put(
   '/:id',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(UpdateNecesidadLogisticaSchema),
   necesidadesLogisticasController.update,
 );
@@ -134,7 +134,7 @@ necesidadesLogisticasRegistry.registerPath({
 });
 necesidadesLogisticasRouter.patch(
   '/:id/estado',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(PatchEstadoNecesidadSchema),
   necesidadesLogisticasController.updateEstado,
 );
@@ -150,7 +150,7 @@ necesidadesLogisticasRegistry.registerPath({
 });
 necesidadesLogisticasRouter.delete(
   '/:id',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(GetNecesidadLogisticaSchema),
   necesidadesLogisticasController.delete,
 );

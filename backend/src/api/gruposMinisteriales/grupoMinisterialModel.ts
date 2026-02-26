@@ -14,7 +14,6 @@ extendZodWithOpenApi(z);
  */
 export const GrupoMinisterialSchema = z.object({
   id_grupo: z.number(),
-  lider_principal_id: z.number(),
   nombre: z.string(),
   descripcion: z.string().nullable(),
   fecha_creacion: z.string(), // ISO date string
@@ -24,6 +23,20 @@ export const GrupoMinisterialSchema = z.object({
 });
 
 export type GrupoMinisterial = z.infer<typeof GrupoMinisterialSchema>;
+
+export const EncargadoActualSchema = z.object({
+  miembro_id: z.number(),
+  nombre: z.string(),
+  apellido: z.string(),
+});
+
+export type EncargadoActual = z.infer<typeof EncargadoActualSchema>;
+
+export const GrupoConEncargadoSchema = GrupoMinisterialSchema.extend({
+  encargado_actual: EncargadoActualSchema.nullable(),
+});
+
+export type GrupoConEncargado = z.infer<typeof GrupoConEncargadoSchema>;
 
 /**
  * Schema para obtener un grupo ministerial por ID
@@ -41,7 +54,6 @@ export const CreateGrupoMinisterialSchema = z.object({
       .string()
       .min(2, 'Nombre debe tener mínimo 2 caracteres')
       .max(100, 'Nombre debe tener máximo 100 caracteres'),
-    lider_principal_id: z.number().int().positive('El ID del líder principal es obligatorio'),
     descripcion: z
       .string()
       .optional()
@@ -66,14 +78,25 @@ export const UpdateGrupoMinisterialSchema = z.object({
       .min(2, 'Nombre debe tener mínimo 2 caracteres')
       .max(100, 'Nombre debe tener máximo 100 caracteres')
       .optional(),
-    lider_principal_id: z
-      .number()
-      .int()
-      .positive('El ID del líder principal debe ser un número positivo')
-      .optional(),
     descripcion: z
       .string()
       .optional()
       .transform((val) => val || null),
+  }),
+});
+
+/**
+ * Schema para asignar / cambiar el encargado de un grupo ministerial
+ * PUT /api/grupos-ministeriales/:id/encargado
+ */
+export const AsignarEncargadoSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    nuevo_miembro_id: z
+      .number({ required_error: 'El miembro es obligatorio.' })
+      .int()
+      .positive('El miembro debe ser un ID válido.'),
+    fecha: z.string().date('Debe ser una fecha válida (YYYY-MM-DD)').optional(),
+    motivo: z.string().optional(),
   }),
 });

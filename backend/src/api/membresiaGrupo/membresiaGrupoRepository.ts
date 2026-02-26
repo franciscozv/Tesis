@@ -72,6 +72,31 @@ export class MembresiaGrupoRepository {
   }
 
   /**
+   * Verifica si ya existe cualquier membresía activa para el miembro en el grupo,
+   * independiente del rol. Regla 1: 1 rol vigente por miembro por grupo.
+   */
+  async existeMembresiaActivaEnGrupo(
+    miembroId: number,
+    grupoId: number,
+    excludeMembresiaId?: number,
+  ): Promise<boolean> {
+    let query = supabase
+      .from('membresia_grupo')
+      .select('id_membresia')
+      .eq('miembro_id', miembroId)
+      .eq('grupo_id', grupoId)
+      .is('fecha_desvinculacion', null);
+
+    if (excludeMembresiaId !== undefined) {
+      query = query.neq('id_membresia', excludeMembresiaId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    return data !== null;
+  }
+
+  /**
    * Verifica si ya existe una membresía activa para el miembro en el grupo con el rol
    */
   async verificarDuplicado(miembroId: number, grupoId: number, rolId: number): Promise<boolean> {
@@ -154,21 +179,40 @@ export class MembresiaGrupoRepository {
   }
 
   /**
-   * Cambia el rol de una membresía activa
+   * Cambia el rol de una membresía activa mediante rotación:
+   * cierra la fila actual e inserta una nueva fila activa con el nuevo rol.
    */
-  async cambiarRolAsync(id: number, rolGrupoId: number): Promise<MembresiaGrupo | null> {
-    const { data, error } = await supabase
+  async rotarRolAsync(
+    id: number,
+    miembroId: number,
+    grupoId: number,
+    nuevoRolId: number,
+    fecha?: string,
+  ): Promise<MembresiaGrupo> {
+    const hoy = fecha || new Date().toISOString();
+
+    // 1. Cerrar fila activa
+    const { error: errorCierre } = await supabase
       .from('membresia_grupo')
-      .update({ rol_grupo_id: rolGrupoId })
+      .update({ fecha_desvinculacion: hoy })
       .eq('id_membresia', id)
-      .is('fecha_desvinculacion', null)
+      .is('fecha_desvinculacion', null);
+
+    if (errorCierre) throw errorCierre;
+
+    // 2. Insertar nueva fila activa con el nuevo rol
+    const { data, error: errorInsert } = await supabase
+      .from('membresia_grupo')
+      .insert({
+        miembro_id: miembroId,
+        grupo_id: grupoId,
+        rol_grupo_id: nuevoRolId,
+        fecha_vinculacion: hoy,
+      })
       .select()
       .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
-    }
+    if (errorInsert) throw errorInsert;
     return data as MembresiaGrupo;
   }
 

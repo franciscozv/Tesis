@@ -294,6 +294,23 @@ export class PatronesActividadService {
         );
       }
 
+      // Blindaje backend: impedir creación de actividades si algún tipo quedó inactivo.
+      const tipoIdsUnicos = [...new Set(patrones.map((p) => p.tipo_actividad_id))];
+      const tiposValidos = await Promise.all(
+        tipoIdsUnicos.map(async (tipoId) => ({
+          tipoId,
+          activo: await this.actividadesRepository.tipoActividadExistsAsync(tipoId),
+        })),
+      );
+      const tiposInvalidos = tiposValidos.filter((t) => !t.activo).map((t) => t.tipoId);
+      if (tiposInvalidos.length > 0) {
+        return ServiceResponse.failure(
+          `No se pueden generar actividades: hay tipos de actividad inactivos (${tiposInvalidos.join(', ')}).`,
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
       const detalle: GenerarInstanciasResponse['detalle'] = [];
       const todasLasActividades: Parameters<ActividadesRepository['createManyAsync']>[0] = [];
 

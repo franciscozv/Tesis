@@ -11,7 +11,11 @@ const TZ_CHILE = 'America/Santiago';
  * Parsea fecha (YYYY-MM-DD) y hora_inicio (HH:mm o HH:mm:ss) como hora local de Chile.
  * Retorna un objeto dayjs anclado a la zona America/Santiago.
  */
-export function parseActividadInicio(fecha: string, hora_inicio: string, tz = TZ_CHILE): dayjs.Dayjs {
+export function parseActividadInicio(
+  fecha: string,
+  hora_inicio: string,
+  tz = TZ_CHILE,
+): dayjs.Dayjs {
   const hora = hora_inicio.length === 5 ? `${hora_inicio}:00` : hora_inicio;
   return dayjs.tz(`${fecha}T${hora}`, tz);
 }

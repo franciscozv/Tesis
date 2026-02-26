@@ -33,7 +33,7 @@ export interface CreateMiembroInput {
   fecha_ingreso: string;
 }
 
-export interface UpdateMiembroInput extends Partial<CreateMiembroInput> {}
+export interface UpdateMiembroInput extends Partial<Omit<CreateMiembroInput, 'estado_membresia'>> {}
 
 export interface UpdateMiPerfilInput {
   direccion?: string | null;

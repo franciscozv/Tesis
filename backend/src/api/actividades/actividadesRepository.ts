@@ -1,4 +1,5 @@
 import { hoyCL } from '@/common/utils/dateTime';
+import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { Actividad } from './actividadesModel';
 
@@ -168,22 +169,11 @@ export class ActividadesRepository {
   }
 
   /**
-   * Verifica si un miembro es lider_principal_id de un grupo
+   * Verifica si un miembro es encargado vigente de un grupo
+   * (membresia_grupo con rol ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
-  async isLiderOfGrupoAsync(grupoId: number, miembroId: number): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('grupo_ministerial')
-      .select('id_grupo')
-      .eq('id_grupo', grupoId)
-      .eq('lider_principal_id', miembroId)
-      .eq('activo', true)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return false;
-      throw error;
-    }
-    return data !== null;
+  async isEncargadoDeGrupoAsync(grupoId: number, miembroId: number): Promise<boolean> {
+    return isEncargadoDeGrupo(miembroId, grupoId);
   }
 
   /**

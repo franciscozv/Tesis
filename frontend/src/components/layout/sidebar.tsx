@@ -6,7 +6,6 @@ import {
   FolderCog,
   HandHeart,
   Home,
-  Mail,
   Package,
   Repeat,
   ShieldCheck,
@@ -62,7 +61,7 @@ const navItems: NavItem[] = [
     label: 'Actividades',
     href: '/dashboard/actividades',
     icon: HandHeart,
-    roles: ['administrador', 'lider'],
+    roles: ['administrador'],
   },
   {
     label: 'Patrones de Actividad',
@@ -74,12 +73,6 @@ const navItems: NavItem[] = [
     label: 'Calendario',
     href: '/dashboard/calendario',
     icon: Calendar,
-    roles: ['administrador', 'lider', 'miembro'],
-  },
-  {
-    label: 'Invitaciones',
-    href: '/dashboard/invitaciones',
-    icon: Mail,
     roles: ['administrador', 'lider', 'miembro'],
   },
   {

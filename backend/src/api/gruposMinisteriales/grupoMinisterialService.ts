@@ -1,12 +1,16 @@
-import { StatusCodes } from 'http-status-codes';
+﻿import { StatusCodes } from 'http-status-codes';
 
-import type { GrupoMinisterial } from '@/api/gruposMinisteriales/grupoMinisterialModel';
+import type {
+  GrupoConEncargado,
+  GrupoMinisterial,
+} from '@/api/gruposMinisteriales/grupoMinisterialModel';
 import { GrupoMinisterialRepository } from '@/api/gruposMinisteriales/grupoMinisterialRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 
 /**
- * Service para lógica de negocio de Grupos Ministeriales
+ * Service para lÃ³gica de negocio de Grupos Ministeriales
  */
 export class GrupoMinisterialService {
   private grupoMinisterialRepository: GrupoMinisterialRepository;
@@ -16,9 +20,9 @@ export class GrupoMinisterialService {
   }
 
   /**
-   * Obtiene todos los grupos ministeriales activos
+   * Obtiene todos los grupos ministeriales activos, con encargado_actual derivado de membresia_grupo.
    */
-  async findAll(): Promise<ServiceResponse<GrupoMinisterial[] | null>> {
+  async findAll(): Promise<ServiceResponse<GrupoConEncargado[] | null>> {
     try {
       const grupos = await this.grupoMinisterialRepository.findAllAsync();
 
@@ -31,21 +35,30 @@ export class GrupoMinisterialService {
       }
 
       if (grupos.length === 0) {
-        return ServiceResponse.success<GrupoMinisterial[]>(
+        return ServiceResponse.success<GrupoConEncargado[]>(
           'No se encontraron grupos ministeriales',
           [],
         );
       }
 
-      return ServiceResponse.success<GrupoMinisterial[]>(
+      const grupoIds = grupos.map((g) => g.id_grupo);
+      const encargadosMap =
+        await this.grupoMinisterialRepository.getEncargadosForGruposAsync(grupoIds);
+
+      const gruposConEncargado: GrupoConEncargado[] = grupos.map((g) => ({
+        ...g,
+        encargado_actual: encargadosMap.get(g.id_grupo) ?? null,
+      }));
+
+      return ServiceResponse.success<GrupoConEncargado[]>(
         'Grupos ministeriales encontrados',
-        grupos,
+        gruposConEncargado,
       );
     } catch (ex) {
       const errorMessage = `Error al obtener grupos ministeriales: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Ocurrió un error al obtener los grupos ministeriales',
+        'OcurriÃ³ un error al obtener los grupos ministeriales',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -53,9 +66,9 @@ export class GrupoMinisterialService {
   }
 
   /**
-   * Busca un grupo ministerial por ID
+   * Busca un grupo ministerial por ID, con encargado_actual derivado de membresia_grupo.
    */
-  async findById(id: number): Promise<ServiceResponse<GrupoMinisterial | null>> {
+  async findById(id: number): Promise<ServiceResponse<GrupoConEncargado | null>> {
     try {
       const grupo = await this.grupoMinisterialRepository.findByIdAsync(id);
 
@@ -67,12 +80,17 @@ export class GrupoMinisterialService {
         );
       }
 
-      return ServiceResponse.success<GrupoMinisterial>('Grupo ministerial encontrado', grupo);
+      const encargado_actual = await this.grupoMinisterialRepository.getEncargadoActualAsync(id);
+
+      return ServiceResponse.success<GrupoConEncargado>('Grupo ministerial encontrado', {
+        ...grupo,
+        encargado_actual,
+      });
     } catch (ex) {
       const errorMessage = `Error al obtener grupo ministerial con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Ocurrió un error al obtener el grupo ministerial',
+        'OcurriÃ³ un error al obtener el grupo ministerial',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -82,44 +100,12 @@ export class GrupoMinisterialService {
   /**
    * Crea un nuevo grupo ministerial
    * Validaciones:
-   * - El líder principal debe existir
-   * - El líder debe estar activo
-   * - El líder debe estar en estado plena_comunion
-   * - El nombre debe ser único
+   * - El nombre debe ser Ãºnico
    */
   async create(
     grupoData: Omit<GrupoMinisterial, 'id_grupo' | 'created_at' | 'updated_at' | 'activo'>,
   ): Promise<ServiceResponse<GrupoMinisterial | null>> {
     try {
-      // Validar que el líder principal exista, esté activo y en plena_comunion
-      const liderValidation = await this.grupoMinisterialRepository.validateLiderAsync(
-        grupoData.lider_principal_id,
-      );
-
-      if (!liderValidation.exists) {
-        return ServiceResponse.failure(
-          'El líder principal no existe',
-          null,
-          StatusCodes.BAD_REQUEST,
-        );
-      }
-
-      if (!liderValidation.isActive) {
-        return ServiceResponse.failure(
-          'El líder principal no está activo',
-          null,
-          StatusCodes.BAD_REQUEST,
-        );
-      }
-
-      if (!liderValidation.isPlenaComunion) {
-        return ServiceResponse.failure(
-          'El líder principal debe estar en estado de plena comunión',
-          null,
-          StatusCodes.BAD_REQUEST,
-        );
-      }
-
       const grupo = await this.grupoMinisterialRepository.createAsync(grupoData);
       return ServiceResponse.success<GrupoMinisterial>(
         'Grupo ministerial creado exitosamente',
@@ -130,7 +116,7 @@ export class GrupoMinisterialService {
       const errorMessage = `Error al crear grupo ministerial: ${(ex as Error).message}`;
       logger.error(errorMessage);
 
-      // Manejar error de duplicado (nombre único)
+      // Manejar error de duplicado (nombre Ãºnico)
       if ((ex as any).code === '23505') {
         return ServiceResponse.failure(
           'Ya existe un grupo ministerial con ese nombre',
@@ -139,17 +125,8 @@ export class GrupoMinisterialService {
         );
       }
 
-      // Manejar error de clave foránea (líder no existe)
-      if ((ex as any).code === '23503') {
-        return ServiceResponse.failure(
-          'El líder principal especificado no existe',
-          null,
-          StatusCodes.BAD_REQUEST,
-        );
-      }
-
       return ServiceResponse.failure(
-        'Ocurrió un error al crear el grupo ministerial',
+        'OcurriÃ³ un error al crear el grupo ministerial',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -159,8 +136,7 @@ export class GrupoMinisterialService {
   /**
    * Actualiza un grupo ministerial existente
    * Validaciones:
-   * - Si se cambia el líder, debe existir, estar activo y en plena_comunion
-   * - Si se cambia el nombre, debe ser único
+   * - Si se cambia el nombre, debe ser Ãºnico
    * - No se permite cambiar fecha_creacion
    */
   async update(
@@ -176,40 +152,6 @@ export class GrupoMinisterialService {
           null,
           StatusCodes.NOT_FOUND,
         );
-      }
-
-      // Si se está cambiando el líder principal, validarlo
-      if (
-        grupoData.lider_principal_id &&
-        grupoData.lider_principal_id !== grupoExistente.lider_principal_id
-      ) {
-        const liderValidation = await this.grupoMinisterialRepository.validateLiderAsync(
-          grupoData.lider_principal_id,
-        );
-
-        if (!liderValidation.exists) {
-          return ServiceResponse.failure(
-            'El nuevo líder principal no existe',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
-
-        if (!liderValidation.isActive) {
-          return ServiceResponse.failure(
-            'El nuevo líder principal no está activo',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
-
-        if (!liderValidation.isPlenaComunion) {
-          return ServiceResponse.failure(
-            'El nuevo líder principal debe estar en estado de plena comunión',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
       }
 
       // No permitir cambiar fecha_creacion
@@ -234,7 +176,7 @@ export class GrupoMinisterialService {
       const errorMessage = `Error al actualizar grupo ministerial con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
 
-      // Manejar error de duplicado (nombre único)
+      // Manejar error de duplicado (nombre Ãºnico)
       if ((ex as any).code === '23505') {
         return ServiceResponse.failure(
           'Ya existe un grupo ministerial con ese nombre',
@@ -243,17 +185,17 @@ export class GrupoMinisterialService {
         );
       }
 
-      // Manejar error de clave foránea (líder no existe)
+      // Manejar error de clave forÃ¡nea (lÃ­der no existe)
       if ((ex as any).code === '23503') {
         return ServiceResponse.failure(
-          'El líder principal especificado no existe',
+          'El lÃ­der principal especificado no existe',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
       return ServiceResponse.failure(
-        'Ocurrió un error al actualizar el grupo ministerial',
+        'OcurriÃ³ un error al actualizar el grupo ministerial',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -261,8 +203,8 @@ export class GrupoMinisterialService {
   }
 
   /**
-   * Elimina lógicamente un grupo ministerial (soft delete)
-   * Validación:
+   * Elimina lÃ³gicamente un grupo ministerial (soft delete)
+   * ValidaciÃ³n:
    * - No debe tener miembros activos (fecha_desvinculacion IS NULL en membresia_grupo)
    */
   async delete(id: number): Promise<ServiceResponse<null>> {
@@ -293,7 +235,7 @@ export class GrupoMinisterialService {
       const errorMessage = `Error al eliminar grupo ministerial con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Ocurrió un error al eliminar el grupo ministerial',
+        'OcurriÃ³ un error al eliminar el grupo ministerial',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -301,42 +243,153 @@ export class GrupoMinisterialService {
   }
 
   /**
-   * Obtiene los grupos ministeriales que un usuario puede gestionar según su rol
+   * Asigna o cambia el encargado de un grupo ministerial.
+   * Solo administradores (verificado en el router).
+   *
+   * Validaciones:
+   * - Grupo debe existir y estar activo.
+   * - nuevo_miembro_id debe existir y estar activo.
+   * - nuevo_miembro_id no debe ser ya el encargado vigente.
+   */
+  async asignarEncargado(
+    grupoId: number,
+    nuevoMiembroId: number,
+    fecha?: string,
+  ): Promise<ServiceResponse<GrupoConEncargado | null>> {
+    try {
+      // 1. Verificar que el grupo existe
+      const grupo = await this.grupoMinisterialRepository.findByIdAsync(grupoId);
+      if (!grupo) {
+        return ServiceResponse.failure(
+          'Grupo ministerial no encontrado',
+          null,
+          StatusCodes.NOT_FOUND,
+        );
+      }
+
+      // 2. Verificar que el nuevo miembro existe y estÃ¡ activo
+      const miembroStatus =
+        await this.grupoMinisterialRepository.validateLiderAsync(nuevoMiembroId);
+      if (!miembroStatus.exists) {
+        return ServiceResponse.failure(
+          'El miembro especificado no existe',
+          null,
+          StatusCodes.NOT_FOUND,
+        );
+      }
+      if (!miembroStatus.isActive) {
+        return ServiceResponse.failure(
+          'El miembro especificado no estÃ¡ activo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+      // 2b. Validar regla de plena comunión según configuración del rol ENCARGADO
+      const encargadoRol =
+        await this.grupoMinisterialRepository.getRolStatusAsync(ROL_ENCARGADO_ID);
+      if (!encargadoRol.exists || !encargadoRol.activo) {
+        return ServiceResponse.failure(
+          'No existe un rol ENCARGADO activo en rol_grupo_ministerial',
+          null,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+      if (encargadoRol.requiere_plena_comunion && !miembroStatus.isPlenaComunion) {
+        return ServiceResponse.failure(
+          'Este rol requiere plena comunión. El miembro no cumple esa condición.',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // 3. Verificar que no es ya el encargado vigente
+      const encargadoActual =
+        await this.grupoMinisterialRepository.getEncargadoActualAsync(grupoId);
+      if (encargadoActual?.miembro_id === nuevoMiembroId) {
+        return ServiceResponse.failure(
+          'El miembro ya es el encargado vigente de este grupo',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      // 4. Resolver rol base 'Miembro'
+      const idRolMiembro = await this.grupoMinisterialRepository.findRolBaseIdAsync('Miembro');
+      if (idRolMiembro === null) {
+        return ServiceResponse.failure(
+          "No existe rol base 'Miembro' en rol_grupo_ministerial",
+          null,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      // 5. Ejecutar la transacciÃ³n (cerrar anterior + insertar nuevo + degradar anterior)
+      const nuevoEncargado = await this.grupoMinisterialRepository.asignarEncargadoAsync(
+        grupoId,
+        nuevoMiembroId,
+        idRolMiembro,
+        fecha,
+      );
+
+      return ServiceResponse.success<GrupoConEncargado>('Encargado asignado exitosamente', {
+        ...grupo,
+        encargado_actual: nuevoEncargado,
+      });
+    } catch (ex) {
+      const errorMessage = `Error al asignar encargado al grupo ${grupoId}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'OcurriÃ³ un error al asignar el encargado',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Obtiene los grupos ministeriales que un usuario puede gestionar segÃºn su rol
    * - Administrador: Retorna todos los grupos activos
-   * - Líder: Retorna solo los grupos donde es líder
-   * - Miembro: Retorna array vacío
+   * - LÃ­der: Retorna solo los grupos donde es lÃ­der
+   * - Miembro: Retorna array vacÃ­o
    */
   async findMisGrupos(
-    rol: 'administrador' | 'lider' | 'miembro',
+    rol: 'administrador' | 'usuario',
     miembro_id: number | null,
-  ): Promise<ServiceResponse<GrupoMinisterial[] | null>> {
+  ): Promise<ServiceResponse<GrupoConEncargado[] | null>> {
     try {
       let grupos: GrupoMinisterial[] = [];
 
       if (rol === 'administrador') {
-        // Administrador: retornar todos los grupos activos
         grupos = await this.grupoMinisterialRepository.findAllAsync();
-      } else if (rol === 'lider') {
-        // Líder: retornar solo los grupos donde tiene rol de Líder
+      } else {
         if (!miembro_id) {
           return ServiceResponse.failure(
-            'El usuario líder no tiene un miembro_id asociado',
+            'El usuario no tiene un miembro_id asociado',
             null,
             StatusCodes.BAD_REQUEST,
           );
         }
-        grupos = await this.grupoMinisterialRepository.findGruposByLiderAsync(miembro_id);
-      } else {
-        // Miembro: retornar array vacío (no gestiona grupos)
-        grupos = [];
+        grupos = await this.grupoMinisterialRepository.findGruposByEncargadoAsync(miembro_id);
       }
 
-      return ServiceResponse.success<GrupoMinisterial[]>('Grupos obtenidos exitosamente', grupos);
+      const grupoIds = grupos.map((g) => g.id_grupo);
+      const encargadosMap =
+        await this.grupoMinisterialRepository.getEncargadosForGruposAsync(grupoIds);
+
+      const gruposConEncargado: GrupoConEncargado[] = grupos.map((g) => ({
+        ...g,
+        encargado_actual: encargadosMap.get(g.id_grupo) ?? null,
+      }));
+
+      return ServiceResponse.success<GrupoConEncargado[]>(
+        'Grupos obtenidos exitosamente',
+        gruposConEncargado,
+      );
     } catch (ex) {
       const errorMessage = `Error al obtener grupos del usuario: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Ocurrió un error al obtener los grupos',
+        'OcurriÃ³ un error al obtener los grupos',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

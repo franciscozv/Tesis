@@ -5,9 +5,14 @@ import { commonValidations } from '@/common/utils/commonValidation';
 extendZodWithOpenApi(z);
 
 /**
- * Roles permitidos para usuarios
+ * Roles válidos en el sistema
  */
-export const ROLES_USUARIO = ['administrador', 'lider', 'miembro'] as const;
+export const ROLES_USUARIO = ['administrador', 'usuario'] as const;
+
+/**
+ * Roles asignables en el sistema actual
+ */
+const ROLES_ASIGNABLES = ['administrador', 'usuario'] as const;
 
 /**
  * Schema para Usuario (respuesta, sin password_hash)
@@ -49,9 +54,9 @@ export const CreateUsuarioSchema = z.object({
       .max(100, 'La contraseña no puede exceder 100 caracteres')
       .openapi({ example: 'Password123' }),
     rol: z
-      .enum(ROLES_USUARIO, {
+      .enum(ROLES_ASIGNABLES, {
         errorMap: () => ({
-          message: 'Rol debe ser: administrador, lider o miembro',
+          message: 'Rol debe ser: administrador o usuario',
         }),
       })
       .openapi({ example: 'administrador' }),
@@ -84,13 +89,13 @@ export const UpdateUsuarioSchema = z.object({
       .optional()
       .openapi({ example: 'nuevo@iglesia.cl' }),
     rol: z
-      .enum(ROLES_USUARIO, {
+      .enum(ROLES_ASIGNABLES, {
         errorMap: () => ({
-          message: 'Rol debe ser: administrador, lider o miembro',
+          message: 'Rol debe ser: administrador o usuario',
         }),
       })
       .optional()
-      .openapi({ example: 'lider' }),
+      .openapi({ example: 'usuario' }),
   }),
 });
 

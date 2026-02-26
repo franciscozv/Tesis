@@ -49,6 +49,7 @@ interface InvitarParticipanteModalProps {
   miembros: Miembro[] | undefined;
   rolesActividad: RolActividad[] | undefined;
   defaultValues?: { miembro_id?: number; rol_id?: number };
+  excludeMiembroId?: number;
 }
 
 export function InvitarParticipanteModal({
@@ -58,8 +59,13 @@ export function InvitarParticipanteModal({
   miembros,
   rolesActividad,
   defaultValues,
+  excludeMiembroId,
 }: InvitarParticipanteModalProps) {
   const mutation = useCreateInvitado();
+
+  const miembrosFiltrados = excludeMiembroId
+    ? (miembros?.filter((m) => m.id !== excludeMiembroId) ?? [])
+    : miembros;
 
   const form = useForm<InvitarFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce creates input type mismatch with zodResolver
@@ -82,6 +88,10 @@ export function InvitarParticipanteModal({
   }, [open, defaultValues, form]);
 
   function onSubmit(data: InvitarFormData) {
+    if (excludeMiembroId && data.miembro_id === excludeMiembroId) {
+      toast.error('No puede invitarse a sí mismo');
+      return;
+    }
     mutation.mutate(
       {
         actividad_id: actividadId,
@@ -125,7 +135,7 @@ export function InvitarParticipanteModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {miembros?.map((m) => (
+                      {miembrosFiltrados?.map((m) => (
                         <SelectItem key={m.id} value={String(m.id)}>
                           {m.nombre} {m.apellido}
                         </SelectItem>

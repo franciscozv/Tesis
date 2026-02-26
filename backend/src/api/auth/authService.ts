@@ -42,12 +42,23 @@ export class AuthService {
         return ServiceResponse.failure('Credenciales incorrectas', null, StatusCodes.UNAUTHORIZED);
       }
 
-      // Generar JWT
+      // Generar JWT — normalizar roles heredados al nuevo esquema de 2 roles
+      const rolNormalizado: JwtPayload['rol'] =
+        usuario.rol === 'administrador' ? 'administrador' : 'usuario';
+
+      // Si el usuario tiene un miembro_id, buscar si es encargado activo de algún grupo
+      let cuerpo_id: number | undefined;
+      if (usuario.miembro_id) {
+        const grupoId = await this.authRepository.findCuerpoIdByMiembroAsync(usuario.miembro_id);
+        if (grupoId !== null) cuerpo_id = grupoId;
+      }
+
       const payload: JwtPayload = {
         id: usuario.id,
         email: usuario.email,
-        rol: usuario.rol,
+        rol: rolNormalizado,
         miembro_id: usuario.miembro_id,
+        ...(cuerpo_id !== undefined && { cuerpo_id }),
       };
 
       const token = jwt.sign(payload, env.JWT_SECRET, {
@@ -62,8 +73,9 @@ export class AuthService {
         usuario: {
           id: usuario.id,
           email: usuario.email,
-          rol: usuario.rol,
+          rol: rolNormalizado,
           miembro_id: usuario.miembro_id,
+          ...(cuerpo_id !== undefined && { cuerpo_id }),
         },
       };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -26,6 +27,18 @@ import { Textarea } from '@/components/ui/textarea';
 import type { NecesidadLogistica } from '@/features/necesidades/types';
 import { useOfrecerColaboracion } from '../hooks/use-ofrecer-colaboracion';
 import { type OfrecerColaboracionFormData, ofrecerColaboracionSchema } from '../schemas';
+
+function formatFecha(fecha: string) {
+  return new Date(`${fecha}T12:00:00`).toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatHora(hora: string) {
+  return hora.slice(0, 5);
+}
 
 interface OfrecerseModalProps {
   necesidad: NecesidadLogistica | null;
@@ -72,7 +85,13 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
           onOpenChange(false);
           form.reset();
         },
-        onError: () => toast.error('Error al registrar oferta'),
+        onError: (error) => {
+          if (isAxiosError(error) && error.response?.status === 409) {
+            toast.error(error.response.data.message || 'Esta oferta ya fue registrada.');
+          } else {
+            toast.error('Error al registrar la oferta.');
+          }
+        },
       },
     );
   }
@@ -83,15 +102,45 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
         <DialogHeader>
           <DialogTitle>Ofrecerse como Colaborador</DialogTitle>
           <DialogDescription>
-            {necesidad?.descripcion ?? 'Registre su oferta de colaboración para esta necesidad.'}
+            {necesidad?.actividad
+              ? `${necesidad.actividad.nombre} · ${formatFecha(necesidad.actividad.fecha)}, ${formatHora(necesidad.actividad.hora_inicio)}`
+              : (necesidad?.descripcion ?? 'Registre su oferta de colaboración para esta necesidad.')}
           </DialogDescription>
         </DialogHeader>
 
         {necesidad && (
           <div className="grid gap-3 rounded-md border p-3 text-sm">
+            {necesidad.actividad && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Actividad</span>
+                  <span className="font-medium text-right">{necesidad.actividad.nombre}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fecha y hora</span>
+                  <span>
+                    {formatFecha(necesidad.actividad.fecha)} ·{' '}
+                    {formatHora(necesidad.actividad.hora_inicio)}–
+                    {formatHora(necesidad.actividad.hora_fin)}
+                  </span>
+                </div>
+                {necesidad.actividad.lugar && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Lugar</span>
+                    <span>{necesidad.actividad.lugar}</span>
+                  </div>
+                )}
+              </>
+            )}
+            {necesidad.tipo_necesidad && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tipo</span>
+                <span>{necesidad.tipo_necesidad.nombre}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Necesidad</span>
-              <span className="font-medium">{necesidad.descripcion}</span>
+              <span className="font-medium text-right">{necesidad.descripcion}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Progreso</span>
@@ -153,7 +202,15 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                aria-label={
+                  necesidad?.actividad
+                    ? `Ofrecerme para ${necesidad.actividad.nombre}, ${formatFecha(necesidad.actividad.fecha)}, ${necesidad.tipo_necesidad?.nombre ?? 'necesidad logística'}`
+                    : 'Confirmar oferta de colaboración'
+                }
+              >
                 {mutation.isPending && <Loader2 className="animate-spin" />}
                 Ofrecerme
               </Button>

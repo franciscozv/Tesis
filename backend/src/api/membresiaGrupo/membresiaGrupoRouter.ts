@@ -44,7 +44,7 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.post(
   '/',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(VincularMiembroSchema),
   membresiaGrupoController.vincularMiembro,
 );
@@ -71,7 +71,7 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.patch(
   '/:id/desvincular',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(DesvincularMiembroSchema),
   membresiaGrupoController.desvincularMiembro,
 );
@@ -98,7 +98,7 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.patch(
   '/:id/cambiar-rol',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(CambiarRolMembresiaSchema),
   membresiaGrupoController.cambiarRol,
 );
@@ -118,7 +118,7 @@ membresiaGrupoRegistry.registerPath({
 });
 membresiaGrupoRouter.get(
   '/miembro/:miembro_id',
-  verificarRol('administrador', 'lider', 'miembro'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(GetMembresiasByMiembroSchema),
   membresiaGrupoController.getMembresiasByMiembro,
 );

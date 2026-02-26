@@ -2,7 +2,8 @@
 
 import { Eye, MoreHorizontal, Pencil, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ function formatFecha(fecha: string) {
 
 export default function ActividadesPage() {
   const { usuario } = useAuth();
+  const router = useRouter();
   const isAdmin = usuario?.rol === 'administrador';
   const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
 
@@ -106,9 +108,17 @@ export default function ActividadesPage() {
     return actividades.filter(
       (a) =>
         a.nombre.toLowerCase().includes(q) ||
-        (tiposMap.get(a.tipo_actividad_id)?.nombre ?? '').toLowerCase().includes(q),
+        (a.tipo_actividad?.nombre ?? tiposMap.get(a.tipo_actividad_id)?.nombre ?? '').toLowerCase().includes(q),
     );
   }, [actividades, search, tiposMap]);
+
+  useEffect(() => {
+    if (usuario?.rol === 'miembro' || usuario?.rol === 'lider') {
+      router.replace('/dashboard/calendario');
+    }
+  }, [usuario, router]);
+
+  if (!usuario || usuario.rol === 'miembro' || usuario.rol === 'lider') return null;
 
   function openCreate() {
     setEditing(null);
@@ -279,7 +289,8 @@ export default function ActividadesPage() {
                     {formatHora(actividad.hora_inicio)} - {formatHora(actividad.hora_fin)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {tiposMap.get(actividad.tipo_actividad_id)?.nombre ??
+                    {actividad.tipo_actividad?.nombre ??
+                      tiposMap.get(actividad.tipo_actividad_id)?.nombre ??
                       actividad.tipo_actividad_id}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">

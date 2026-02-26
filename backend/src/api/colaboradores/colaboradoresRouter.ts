@@ -97,7 +97,7 @@ colaboradoresRegistry.registerPath({
 });
 colaboradoresRouter.patch(
   '/:id/decision',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(PatchDecisionColaboradorSchema),
   colaboradoresController.updateDecision,
 );

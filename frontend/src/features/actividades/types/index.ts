@@ -4,11 +4,13 @@ export interface Actividad {
   id: number;
   patron_id: number | null;
   tipo_actividad_id: number;
+  tipo_actividad?: { nombre: string; color: string } | null;
   nombre: string;
   descripcion: string | null;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
+  lugar: string;
   grupo_id: number | null;
   es_publica: boolean;
   estado: EstadoActividad;
@@ -25,6 +27,7 @@ export interface CreateActividadInput {
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
+  lugar: string;
   grupo_id?: number | null;
   es_publica: boolean;
   creador_id: number;

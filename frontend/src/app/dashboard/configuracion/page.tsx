@@ -297,7 +297,6 @@ function TiposNecesidadTab({ isAdmin }: { isAdmin: boolean }) {
     toDefaults: (r) => ({
       nombre: r?.nombre ?? '',
       descripcion: r?.descripcion ?? '',
-      requiere_asignacion_beneficiarios: r?.requiere_asignacion_beneficiarios ?? false,
     }),
     entityName: 'Tipo de necesidad',
   });
@@ -305,24 +304,12 @@ function TiposNecesidadTab({ isAdmin }: { isAdmin: boolean }) {
   const columns: ColumnConfig<TipoNecesidad>[] = [
     { key: 'nombre', header: 'Nombre' },
     { key: 'descripcion', header: 'Descripción', render: (r) => r.descripcion ?? '—' },
-    {
-      key: 'requiere_asignacion_beneficiarios',
-      header: 'Requiere beneficiarios',
-      render: (r) => (
-        <BooleanBadge value={r.requiere_asignacion_beneficiarios} trueLabel="Sí" falseLabel="No" />
-      ),
-    },
     { key: 'activo', header: 'Estado', render: (r) => <ActiveBadge activo={r.activo} /> },
   ];
 
   const fields: FieldConfig<z.infer<typeof createTipoNecesidadSchema>>[] = [
     { name: 'nombre', label: 'Nombre', type: 'text', placeholder: 'Ej: Transporte' },
     { name: 'descripcion', label: 'Descripción', type: 'textarea', placeholder: 'Opcional' },
-    {
-      name: 'requiere_asignacion_beneficiarios',
-      label: 'Requiere asignación de beneficiarios',
-      type: 'checkbox',
-    },
   ];
 
   return (

@@ -7,9 +7,15 @@ export const createActividadSchema = z
     tipo_actividad_id: z.coerce.number().int().positive('Seleccione un tipo de actividad'),
     nombre: z.string().min(1, 'El nombre es requerido').max(150, 'Máximo 150 caracteres'),
     descripcion: z.string().or(z.literal('')).optional(),
-    fecha: z.string().min(1, 'La fecha es requerida'),
+    fecha: z
+      .string()
+      .min(1, 'La fecha es requerida')
+      .refine((val) => val >= new Date().toISOString().slice(0, 10), {
+        message: 'La fecha no puede ser anterior a hoy',
+      }),
     hora_inicio: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato HH:MM'),
     hora_fin: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato HH:MM'),
+    lugar: z.string().min(1, 'El lugar es requerido').max(200, 'Máximo 200 caracteres'),
     grupo_id: z.coerce
       .number()
       .int()
@@ -45,6 +51,7 @@ export const updateActividadSchema = z
       .string()
       .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato HH:MM')
       .optional(),
+    lugar: z.string().min(1, 'El lugar es requerido').max(200, 'Máximo 200 caracteres').optional(),
     grupo_id: z.coerce
       .number()
       .int()

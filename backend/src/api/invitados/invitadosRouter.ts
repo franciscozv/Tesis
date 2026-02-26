@@ -66,7 +66,7 @@ invitadosRegistry.registerPath({
 });
 invitadosRouter.post(
   '/',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(CreateInvitadoSchema),
   invitadosController.create,
 );
@@ -115,7 +115,7 @@ invitadosRegistry.registerPath({
 });
 invitadosRouter.patch(
   '/:id/asistencia',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(PatchAsistenciaInvitadoSchema),
   invitadosController.marcarAsistencia,
 );
@@ -131,7 +131,7 @@ invitadosRegistry.registerPath({
 });
 invitadosRouter.delete(
   '/:id',
-  verificarRol('administrador', 'lider'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(GetInvitadoSchema),
   invitadosController.delete,
 );
