@@ -6,10 +6,9 @@ export const vincularMiembroSchema = z.object({
   fecha_vinculacion: z
     .string()
     .min(1, 'Fecha de vinculación es requerida')
-    .refine(
-      (val) => new Date(val) <= new Date(),
-      { message: 'La fecha de vinculación no puede ser una fecha futura.' }
-    ),
+    .refine((val) => new Date(val) <= new Date(), {
+      message: 'La fecha de vinculación no puede ser una fecha futura.',
+    }),
 });
 
 export type VincularMiembroFormData = z.infer<typeof vincularMiembroSchema>;

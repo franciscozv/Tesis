@@ -4,8 +4,8 @@ import type {
   CambiarEstadoInput,
   CreateMiembroInput,
   Miembro,
-  UpdateMiPerfilInput,
   UpdateMiembroInput,
+  UpdateMiPerfilInput,
 } from '../types';
 
 export const miembrosApi = {

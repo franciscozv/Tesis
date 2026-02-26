@@ -38,14 +38,12 @@ import type { Usuario } from '@/features/usuarios/types';
 
 const rolLabels: Record<string, string> = {
   administrador: 'Administrador',
-  lider: 'Líder',
-  miembro: 'Miembro',
+  usuario: 'Usuario',
 };
 
 const rolVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
   administrador: 'default',
-  lider: 'secondary',
-  miembro: 'outline',
+  usuario: 'secondary',
 };
 
 export default function UsuariosPage() {

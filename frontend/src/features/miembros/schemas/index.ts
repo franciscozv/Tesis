@@ -21,7 +21,9 @@ export const createMiembroSchema = z.object({
   fecha_ingreso: z.string().min(1, 'Fecha de ingreso es requerida'),
 });
 
-export const updateMiembroSchema = createMiembroSchema.partial().omit({ rut: true, estado_membresia: true });
+export const updateMiembroSchema = createMiembroSchema
+  .partial()
+  .omit({ rut: true, estado_membresia: true });
 
 export const cambiarEstadoSchema = z.object({
   estado_nuevo: estadoMembresiaEnum,

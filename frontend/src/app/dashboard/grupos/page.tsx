@@ -36,11 +36,9 @@ import { GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-grup
 import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
 import { MIS_GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
-import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 
 export default function GruposPage() {
   const { grupos, isLoading, isAdmin } = useGruposPermitidos();
-  const { data: miembros } = useMiembros();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -58,8 +56,6 @@ export default function GruposPage() {
       toast.error('Error al eliminar grupo');
     },
   });
-
-  const liderMap = new Map(miembros?.map((m) => [m.id, `${m.nombre} ${m.apellido}`]));
 
   const filtered =
     grupos?.filter((g) => !search || g.nombre.toLowerCase().includes(search.toLowerCase())) ?? [];
@@ -123,7 +119,11 @@ export default function GruposPage() {
                   <TableCell className="text-muted-foreground hidden max-w-xs truncate md:table-cell">
                     {grupo.descripcion ?? '—'}
                   </TableCell>
-                  <TableCell>{liderMap.get(grupo.lider_principal_id) ?? '—'}</TableCell>
+                  <TableCell>
+                    {grupo.encargado_actual
+                      ? `${grupo.encargado_actual.nombre} ${grupo.encargado_actual.apellido}`
+                      : 'Sin encargado'}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={grupo.activo ? 'default' : 'secondary'}>
                       {grupo.activo ? 'Activo' : 'Inactivo'}

@@ -19,8 +19,7 @@ import { Sidebar } from './sidebar';
 
 const rolLabels: Record<string, string> = {
   administrador: 'Admin',
-  lider: 'Líder',
-  miembro: 'Miembro',
+  usuario: 'Usuario',
 };
 
 export function Navbar() {

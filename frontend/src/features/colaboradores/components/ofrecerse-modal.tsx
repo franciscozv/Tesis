@@ -104,7 +104,8 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
           <DialogDescription>
             {necesidad?.actividad
               ? `${necesidad.actividad.nombre} · ${formatFecha(necesidad.actividad.fecha)}, ${formatHora(necesidad.actividad.hora_inicio)}`
-              : (necesidad?.descripcion ?? 'Registre su oferta de colaboración para esta necesidad.')}
+              : (necesidad?.descripcion ??
+                'Registre su oferta de colaboración para esta necesidad.')}
           </DialogDescription>
         </DialogHeader>
 

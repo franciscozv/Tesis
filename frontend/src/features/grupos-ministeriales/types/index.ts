@@ -1,6 +1,6 @@
 export interface GrupoMinisterial {
   id_grupo: number;
-  lider_principal_id: number;
+  encargado_actual: { miembro_id: number; nombre: string; apellido: string } | null;
   nombre: string;
   descripcion: string | null;
   fecha_creacion: string;
@@ -11,15 +11,18 @@ export interface GrupoMinisterial {
 
 export interface CreateGrupoInput {
   nombre: string;
-  lider_principal_id: number;
   descripcion?: string | null;
   fecha_creacion: string;
 }
 
 export interface UpdateGrupoInput {
   nombre?: string;
-  lider_principal_id?: number;
   descripcion?: string | null;
+}
+
+export interface AsignarEncargadoInput {
+  nuevo_miembro_id: number;
+  fecha?: string;
 }
 
 export interface MiembroGrupo {

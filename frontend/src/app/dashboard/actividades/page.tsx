@@ -71,7 +71,6 @@ export default function ActividadesPage() {
   const { usuario } = useAuth();
   const router = useRouter();
   const isAdmin = usuario?.rol === 'administrador';
-  const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
 
   const [mesFilter, setMesFilter] = useState<string>('todos');
   const [anioFilter, setAnioFilter] = useState<string>(String(currentYear));
@@ -108,17 +107,19 @@ export default function ActividadesPage() {
     return actividades.filter(
       (a) =>
         a.nombre.toLowerCase().includes(q) ||
-        (a.tipo_actividad?.nombre ?? tiposMap.get(a.tipo_actividad_id)?.nombre ?? '').toLowerCase().includes(q),
+        (a.tipo_actividad?.nombre ?? tiposMap.get(a.tipo_actividad_id)?.nombre ?? '')
+          .toLowerCase()
+          .includes(q),
     );
   }, [actividades, search, tiposMap]);
 
   useEffect(() => {
-    if (usuario?.rol === 'miembro' || usuario?.rol === 'lider') {
+    if (usuario?.rol === 'usuario') {
       router.replace('/dashboard/calendario');
     }
   }, [usuario, router]);
 
-  if (!usuario || usuario.rol === 'miembro' || usuario.rol === 'lider') return null;
+  if (!usuario || usuario.rol === 'usuario') return null;
 
   function openCreate() {
     setEditing(null);
@@ -172,7 +173,7 @@ export default function ActividadesPage() {
       }
     : undefined;
 
-  const colSpan = isAdminOrLider ? 9 : 8;
+  const colSpan = isAdmin ? 9 : 8;
 
   return (
     <div className="grid gap-6">
@@ -181,7 +182,7 @@ export default function ActividadesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Actividades</h1>
           <p className="text-muted-foreground">Gestión de actividades de la iglesia.</p>
         </div>
-        {isAdminOrLider && (
+        {isAdmin && (
           <Button onClick={openCreate}>
             <Plus className="size-4" />
             Nueva Actividad
@@ -253,7 +254,7 @@ export default function ActividadesPage() {
               <TableHead className="hidden lg:table-cell">Grupo</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="hidden md:table-cell">Pública</TableHead>
-              {isAdminOrLider && <TableHead className="w-12" />}
+              {isAdmin && <TableHead className="w-12" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -308,7 +309,7 @@ export default function ActividadesPage() {
                       <span className="text-muted-foreground">No</span>
                     )}
                   </TableCell>
-                  {isAdminOrLider && (
+                  {isAdmin && (
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

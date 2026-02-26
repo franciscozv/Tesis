@@ -66,7 +66,6 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
           <GrupoForm
             defaultValues={{
               nombre: grupo.nombre,
-              lider_principal_id: grupo.lider_principal_id,
               descripcion: grupo.descripcion ?? '',
               fecha_creacion: grupo.fecha_creacion,
             }}

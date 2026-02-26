@@ -1,6 +1,11 @@
 import type { ApiResponse } from '@/features/auth/types';
 import apiClient from '@/lib/api-client';
-import type { CreateGrupoInput, GrupoMinisterial, UpdateGrupoInput } from '../types';
+import type {
+  AsignarEncargadoInput,
+  CreateGrupoInput,
+  GrupoMinisterial,
+  UpdateGrupoInput,
+} from '../types';
 
 export const gruposApi = {
   getAll: async () => {
@@ -40,5 +45,13 @@ export const gruposApi = {
 
   delete: async (id: number) => {
     await apiClient.delete(`/grupos-ministeriales/${id}`);
+  },
+
+  asignarEncargado: async (id: number, input: AsignarEncargadoInput) => {
+    const { data } = await apiClient.put<ApiResponse<GrupoMinisterial>>(
+      `/grupos-ministeriales/${id}/encargado`,
+      input,
+    );
+    return data.responseObject;
   },
 };

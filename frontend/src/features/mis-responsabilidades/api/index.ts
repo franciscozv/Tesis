@@ -4,9 +4,7 @@ import type { Responsabilidad } from '../types';
 
 export const misResponsabilidadesApi = {
   getAll: async () => {
-    const { data } = await apiClient.get<ApiResponse<Responsabilidad[]>>(
-      '/mis-responsabilidades',
-    );
+    const { data } = await apiClient.get<ApiResponse<Responsabilidad[]>>('/mis-responsabilidades');
     return data.responseObject;
   },
 };

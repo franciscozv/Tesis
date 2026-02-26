@@ -22,14 +22,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { authApi } from '@/features/auth/api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import {
-  cambiarPasswordSchema,
-  type CambiarPasswordFormData,
-} from '@/features/auth/schemas';
+import { type CambiarPasswordFormData, cambiarPasswordSchema } from '@/features/auth/schemas';
 import { useMembresiaseMiembro } from '@/features/membresia-grupo/hooks/use-membresias-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import { useUpdateMiPerfil } from '@/features/miembros/hooks/use-update-mi-perfil';
-import { miPerfilSchema, type MiPerfilFormData } from '@/features/miembros/schemas';
+import { type MiPerfilFormData, miPerfilSchema } from '@/features/miembros/schemas';
 import type { EstadoMembresia } from '@/features/miembros/types';
 
 const estadoLabels: Record<EstadoMembresia, string> = {
@@ -80,8 +77,7 @@ export default function MiPerfilPage() {
       {
         onSuccess: () => toast.success('Perfil actualizado exitosamente'),
         onError: (error: any) => {
-          const message =
-            error.response?.data?.message || 'Error al actualizar el perfil';
+          const message = error.response?.data?.message || 'Error al actualizar el perfil';
           toast.error(message);
         },
       },
@@ -94,9 +90,7 @@ export default function MiPerfilPage() {
         <h1 className="text-2xl font-bold">Mi Perfil</h1>
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">
-              Tu usuario no tiene un miembro asociado.
-            </p>
+            <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
           </CardContent>
         </Card>
       </div>

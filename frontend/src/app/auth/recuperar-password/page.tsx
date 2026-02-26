@@ -18,10 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { authApi } from '@/features/auth/api';
-import {
-  recuperarPasswordSchema,
-  type RecuperarPasswordFormData,
-} from '@/features/auth/schemas';
+import { type RecuperarPasswordFormData, recuperarPasswordSchema } from '@/features/auth/schemas';
 
 export default function RecuperarPasswordPage() {
   const [isPending, setIsPending] = useState(false);
@@ -68,8 +65,8 @@ export default function RecuperarPasswordPage() {
                 <Mail className="size-6 text-green-600 dark:text-green-400" />
               </div>
               <p className="text-muted-foreground text-sm">
-                Si el email está registrado, recibirás un enlace para restablecer tu contraseña.
-                El enlace expira en 1 hora.
+                Si el email está registrado, recibirás un enlace para restablecer tu contraseña. El
+                enlace expira en 1 hora.
               </p>
               <Button variant="outline" asChild>
                 <Link href="/auth/login">

@@ -2,14 +2,7 @@
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
-import {
-  CalendarPlus,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Pencil,
-  RefreshCw,
-} from 'lucide-react';
+import { CalendarPlus, ChevronLeft, ChevronRight, Eye, Pencil, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { Calendar, dayjsLocalizer, type View } from 'react-big-calendar';
@@ -33,9 +26,9 @@ import { useCreateActividad } from '@/features/actividades/hooks/use-create-acti
 import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
 import type { CreateActividadFormData } from '@/features/actividades/schemas';
 import type { Actividad, ActividadFilters, EstadoActividad } from '@/features/actividades/types';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useCalendarioConsolidado } from '@/features/calendario/hooks/use-calendario';
 import type { CalendarioEvento } from '@/features/calendario/types';
-import { useAuth } from '@/features/auth/hooks/use-auth';
 import { tiposActividadHooks } from '@/features/catalogos/hooks';
 import type { TipoActividad } from '@/features/catalogos/types';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
@@ -109,8 +102,7 @@ const messages = {
 export default function CalendarioPage() {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
-  const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
-  const isMember = !!usuario && !isAdminOrLider;
+  const isUsuario = !!usuario && !isAdmin;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('month');
@@ -122,13 +114,14 @@ export default function CalendarioPage() {
   const filters: ActividadFilters = { mes, anio };
   if (soloPublicas) filters.es_publica = true;
 
-  const { data: actividadesAll } = useActividades(filters, { enabled: !!usuario && isAdminOrLider });
-  const { data: consolidado } = useCalendarioConsolidado(mes, anio, { enabled: isMember });
+  const { data: actividadesAll } = useActividades(filters, { enabled: !!usuario && isAdmin });
+  const { data: consolidado } = useCalendarioConsolidado(mes, anio, { enabled: isUsuario });
   const actividades = useMemo(
-    () => (isMember ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
-    [isMember, consolidado, actividadesAll],
+    () => (isUsuario ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
+    [isUsuario, consolidado, actividadesAll],
   );
   const { data: tiposActividad } = tiposActividadHooks.useAll();
+  const { data: tiposActividadActivos } = tiposActividadHooks.useAllActivos();
   const { data: todosLosGrupos } = useGrupos();
   const { grupos: gruposPermitidos, misGruposIds } = useGruposPermitidos();
 
@@ -148,7 +141,10 @@ export default function CalendarioPage() {
     [tiposActividad],
   );
 
-  const gruposMap = useMemo(() => new Map(todosLosGrupos?.map((g) => [g.id_grupo, g])), [todosLosGrupos]);
+  const gruposMap = useMemo(
+    () => new Map(todosLosGrupos?.map((g) => [g.id_grupo, g])),
+    [todosLosGrupos],
+  );
 
   const events: CalendarEvent[] = useMemo(() => {
     if (!actividades) return [];
@@ -188,15 +184,17 @@ export default function CalendarioPage() {
     [tiposMap],
   );
 
+  const canCreate = isAdmin || (isUsuario && misGruposIds.size > 0);
+
   const handleSelectSlot = useCallback(
     ({ start }: { start: Date }) => {
-      if (!isAdminOrLider) return;
+      if (!canCreate) return;
       const fecha = dayjs(start).format('YYYY-MM-DD');
       setEditing(null);
       setFormDefaults({ fecha });
       setFormOpen(true);
     },
-    [isAdminOrLider],
+    [canCreate],
   );
 
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
@@ -280,23 +278,21 @@ export default function CalendarioPage() {
 
   const canManageDetalleActividad =
     isAdmin ||
-    (isAdminOrLider &&
-      !!detalleActividad?.grupo_id &&
-      misGruposIds.has(detalleActividad.grupo_id));
+    (isUsuario && !!detalleActividad?.grupo_id && misGruposIds.has(detalleActividad.grupo_id));
 
   const detalleTipo = detalleActividad
     ? (tiposMap.get(detalleActividad.tipo_actividad_id) ??
-        (detalleActividad.tipo_actividad
-          ? ({
-              id_tipo: detalleActividad.tipo_actividad_id,
-              nombre: detalleActividad.tipo_actividad.nombre,
-              color: detalleActividad.tipo_actividad.color,
-              activo: false,
-              descripcion: null,
-              created_at: '',
-              updated_at: '',
-            } satisfies TipoActividad)
-          : undefined))
+      (detalleActividad.tipo_actividad
+        ? ({
+            id_tipo: detalleActividad.tipo_actividad_id,
+            nombre: detalleActividad.tipo_actividad.nombre,
+            color: detalleActividad.tipo_actividad.color,
+            activo: false,
+            descripcion: null,
+            created_at: '',
+            updated_at: '',
+          } satisfies TipoActividad)
+        : undefined))
     : undefined;
   const detalleGrupo = detalleActividad?.grupo_id
     ? gruposMap.get(detalleActividad.grupo_id)
@@ -336,7 +332,7 @@ export default function CalendarioPage() {
           view={view}
           onNavigate={setCurrentDate}
           onView={setView}
-          selectable={isAdminOrLider}
+          selectable={canCreate}
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={eventStyleGetter}
@@ -355,7 +351,7 @@ export default function CalendarioPage() {
         defaultValues={formDefaults}
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
-        tiposActividad={tiposActividad}
+        tiposActividad={tiposActividadActivos}
         grupos={gruposPermitidos}
         isEditing={!!editing}
       />
@@ -605,7 +601,10 @@ function CalendarLegend({
     <div className="flex flex-wrap gap-3 text-sm">
       {tiposEnPeriodo.map((t) => (
         <div key={t.id_tipo} className="flex items-center gap-1.5">
-          <span className="inline-block size-3 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
+          <span
+            className="inline-block size-3 shrink-0 rounded-full"
+            style={{ backgroundColor: t.color }}
+          />
           <span className="text-muted-foreground">{t.nombre}</span>
         </div>
       ))}

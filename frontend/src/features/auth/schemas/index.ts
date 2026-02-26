@@ -20,19 +20,21 @@ export const cambiarPasswordSchema = z.object({
     .regex(/[0-9]/, 'Debe contener al menos un número'),
 });
 
-export const resetPasswordSchema = z.object({
-  nueva_password: z
-    .string()
-    .min(8, 'Mínimo 8 caracteres')
-    .max(100, 'Máximo 100 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número'),
-  confirmar_password: z.string().min(1, 'Confirma tu contraseña'),
-}).refine((data) => data.nueva_password === data.confirmar_password, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmar_password'],
-});
+export const resetPasswordSchema = z
+  .object({
+    nueva_password: z
+      .string()
+      .min(8, 'Mínimo 8 caracteres')
+      .max(100, 'Máximo 100 caracteres')
+      .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
+      .regex(/[a-z]/, 'Debe contener al menos una minúscula')
+      .regex(/[0-9]/, 'Debe contener al menos un número'),
+    confirmar_password: z.string().min(1, 'Confirma tu contraseña'),
+  })
+  .refine((data) => data.nueva_password === data.confirmar_password, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmar_password'],
+  });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RecuperarPasswordFormData = z.infer<typeof recuperarPasswordSchema>;

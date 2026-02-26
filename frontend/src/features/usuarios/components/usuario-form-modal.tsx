@@ -64,7 +64,7 @@ export function UsuarioFormModal({
     defaultValues: {
       email: '',
       password: '',
-      rol: 'miembro',
+      rol: 'usuario',
       miembro_id: 0,
     },
   });
@@ -82,7 +82,7 @@ export function UsuarioFormModal({
         form.reset({
           email: '',
           password: '',
-          rol: 'miembro',
+          rol: 'usuario',
           miembro_id: 0,
         });
       }
@@ -162,8 +162,7 @@ export function UsuarioFormModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="administrador">Administrador</SelectItem>
-                      <SelectItem value="lider">Líder</SelectItem>
-                      <SelectItem value="miembro">Miembro</SelectItem>
+                      <SelectItem value="usuario">Usuario</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

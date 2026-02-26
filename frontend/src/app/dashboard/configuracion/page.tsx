@@ -127,9 +127,7 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
     toggleMutation.mutate(opts.getId(toggling) as never, {
       onSuccess: () => {
         const activo = (toggling as Record<string, unknown>).activo;
-        toast.success(
-          `${opts.entityName} ${activo ? 'desactivado' : 'activado'} exitosamente`,
-        );
+        toast.success(`${opts.entityName} ${activo ? 'desactivado' : 'activado'} exitosamente`);
         setToggling(null);
       },
       onError: () => toast.error(`Error al cambiar estado de ${opts.entityName.toLowerCase()}`),
@@ -413,9 +411,7 @@ function CatalogoTabContent<T, TForm extends FieldValues>({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={tab.handleToggle} disabled={tab.isToggling}>
-              {(tab.toggling as Record<string, unknown> | null)?.activo
-                ? 'Desactivar'
-                : 'Activar'}
+              {(tab.toggling as Record<string, unknown> | null)?.activo ? 'Desactivar' : 'Activar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

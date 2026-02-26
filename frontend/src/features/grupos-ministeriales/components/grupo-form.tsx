@@ -13,15 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 import {
   type CreateGrupoFormData,
   createGrupoSchema,
@@ -44,17 +36,12 @@ export function GrupoForm({
   isPending,
   submitLabel = 'Guardar',
 }: GrupoFormProps) {
-  const { data: miembros } = useMiembros();
-  const lideres =
-    miembros?.filter((m) => m.estado_membresia === 'plena_comunion' && m.activo) ?? [];
-
   const schema = mode === 'edit' ? updateGrupoSchema : createGrupoSchema;
 
   const form = useForm<CreateGrupoFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       nombre: '',
-      lider_principal_id: 0,
       descripcion: '',
       fecha_creacion: new Date().toISOString().split('T')[0],
       ...defaultValues,
@@ -73,33 +60,6 @@ export function GrupoForm({
               <FormControl>
                 <Input placeholder="Nombre del grupo" {...field} />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="lider_principal_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Líder Principal *</FormLabel>
-              <Select
-                onValueChange={(v) => field.onChange(Number(v))}
-                value={field.value ? String(field.value) : ''}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar líder" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {lideres.map((m) => (
-                    <SelectItem key={m.id} value={String(m.id)}>
-                      {m.nombre} {m.apellido}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <FormMessage />
             </FormItem>
           )}

@@ -1,8 +1,10 @@
 export interface Usuario {
   id: number;
   email: string;
-  rol: 'administrador' | 'lider' | 'miembro';
+  rol: 'administrador' | 'usuario';
   miembro_id: number | null;
+  /** Presente si el usuario es encargado activo de un grupo (se incluye en el JWT y en el login response) */
+  cuerpo_id?: number;
 }
 
 export interface LoginRequest {

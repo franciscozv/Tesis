@@ -1,9 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Eye, MoreHorizontal, Reply } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -115,9 +115,7 @@ export default function MisResponsabilidadesPage() {
         <h1 className="text-2xl font-bold">Mis Responsabilidades</h1>
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">
-              Tu usuario no tiene un miembro asociado.
-            </p>
+            <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
           </CardContent>
         </Card>
       </div>
@@ -173,12 +171,8 @@ export default function MisResponsabilidadesPage() {
 
       <Tabs defaultValue="proximas">
         <TabsList>
-          <TabsTrigger value="proximas">
-            Proximas ({proximas.length})
-          </TabsTrigger>
-          <TabsTrigger value="historial">
-            Historial ({historial.length})
-          </TabsTrigger>
+          <TabsTrigger value="proximas">Proximas ({proximas.length})</TabsTrigger>
+          <TabsTrigger value="historial">Historial ({historial.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="proximas" className="mt-4">
@@ -258,8 +252,7 @@ function ResponsabilidadesTable({
             </TableRow>
           ) : (
             items.map((r) => {
-              const highlight =
-                resaltarProximos && isProximos7Dias(r.actividad.fecha);
+              const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
 
               return (
                 <TableRow
@@ -295,18 +288,12 @@ function ResponsabilidadesTable({
                   <TableCell className="hidden whitespace-nowrap md:table-cell">
                     {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {r.grupo?.nombre ?? '—'}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {r.tipo_actividad.nombre}
-                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">{r.grupo?.nombre ?? '—'}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{r.tipo_actividad.nombre}</TableCell>
                   <TableCell>
                     {r.tipo === 'invitacion' ? (
                       <Badge
-                        variant={
-                          r.estado_invitacion === 'pendiente' ? 'default' : 'secondary'
-                        }
+                        variant={r.estado_invitacion === 'pendiente' ? 'default' : 'secondary'}
                       >
                         {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
                       </Badge>

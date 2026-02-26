@@ -14,14 +14,12 @@ const fechaCreacionValidation = z
 
 export const createGrupoSchema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres').max(100),
-  lider_principal_id: z.number().int().positive('Debe seleccionar un líder'),
   descripcion: z.string().or(z.literal('')).optional(),
   fecha_creacion: fechaCreacionValidation,
 });
 
 export const updateGrupoSchema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres').max(100).optional(),
-  lider_principal_id: z.number().int().positive('Debe seleccionar un líder').optional(),
   descripcion: z.string().or(z.literal('')).optional(),
   fecha_creacion: fechaCreacionValidation.optional(),
 });

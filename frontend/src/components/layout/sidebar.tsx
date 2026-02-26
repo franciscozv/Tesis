@@ -31,31 +31,31 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: Home,
-    roles: ['administrador', 'lider', 'miembro'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Mi Perfil',
     href: '/dashboard/mi-perfil',
     icon: UserPen,
-    roles: ['administrador', 'lider', 'miembro'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Mis Responsabilidades',
     href: '/dashboard/mis-responsabilidades',
     icon: ClipboardList,
-    roles: ['administrador', 'lider', 'miembro'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Miembros',
     href: '/dashboard/miembros',
     icon: Users,
-    roles: ['administrador', 'lider'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Grupos Ministeriales',
     href: '/dashboard/grupos',
     icon: UsersRound,
-    roles: ['administrador', 'lider'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Actividades',
@@ -67,19 +67,19 @@ const navItems: NavItem[] = [
     label: 'Patrones de Actividad',
     href: '/dashboard/patrones',
     icon: Repeat,
-    roles: ['administrador', 'lider'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Calendario',
     href: '/dashboard/calendario',
     icon: Calendar,
-    roles: ['administrador', 'lider', 'miembro'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Necesidades Logísticas',
     href: '/dashboard/necesidades',
     icon: Package,
-    roles: ['administrador', 'lider', 'miembro'],
+    roles: ['administrador', 'usuario'],
   },
   {
     label: 'Usuarios',
@@ -98,7 +98,7 @@ const navItems: NavItem[] = [
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const { usuario } = useAuth();
-  const rol = usuario?.rol ?? 'miembro';
+  const rol = usuario?.rol ?? 'usuario';
 
   const filtered = navItems.filter((item) => item.roles.includes(rol));
 

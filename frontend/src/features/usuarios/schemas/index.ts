@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const rolEnum = z.enum(['administrador', 'lider', 'miembro']);
+const rolEnum = z.enum(['administrador', 'usuario']);
 
 export const createUsuarioSchema = z.object({
   email: z.string().email('Email inválido').max(100),

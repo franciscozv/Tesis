@@ -1,6 +1,15 @@
 'use client';
 
-import { ArrowLeft, Pencil, Plus, RefreshCw, Sparkles, UserMinus, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  UserCog,
+  UserMinus,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
 import { toast } from 'sonner';
@@ -21,6 +30,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { SugerirCargoModal } from '@/features/candidatos/components/sugerir-cargo-modal';
 import { useSugerirCandidatosCargo } from '@/features/candidatos/hooks/use-sugerir-candidatos-cargo';
 import { rolesGrupoHooks } from '@/features/catalogos/hooks';
+import { AsignarEncargadoModal } from '@/features/grupos-ministeriales/components/asignar-encargado-modal';
 import { useGrupo } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import { CambiarRolModal } from '@/features/membresia-grupo/components/cambiar-rol-modal';
@@ -52,14 +62,16 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
 
   const [vincularOpen, setVincularOpen] = useState(false);
   const [sugerirOpen, setSugerirOpen] = useState(false);
-  const [cambiarRolTarget, setCambiarRolTarget] = useState<typeof activos[number] | null>(null);
+  const [asignarEncargadoOpen, setAsignarEncargadoOpen] = useState(false);
+  const [cambiarRolTarget, setCambiarRolTarget] = useState<(typeof activos)[number] | null>(null);
   const desvincularMutation = useDesvincularMiembro();
   const sugerirCargoMutation = useSugerirCandidatosCargo();
   const { data: rolesGrupo } = rolesGrupoHooks.useAllActivos();
 
   const miembroMap = new Map(allMiembros?.map((m) => [m.id, m]));
-  const lider = grupo ? miembroMap.get(grupo.lider_principal_id) : undefined;
-  const liderNombre = lider ? `${lider.nombre} ${lider.apellido}` : '—';
+  const encargadoNombre = grupo?.encargado_actual
+    ? `${grupo.encargado_actual.nombre} ${grupo.encargado_actual.apellido}`
+    : 'Sin encargado';
 
   const activos = miembrosGrupo?.filter((mg) => !mg.fecha_desvinculacion) ?? [];
 
@@ -123,7 +135,15 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
             <Separator />
             <InfoRow label="Descripción" value={grupo.descripcion} />
             <Separator />
-            <InfoRow label="Líder Principal" value={liderNombre} />
+            <InfoRow label="Encargado Actual" value={encargadoNombre} />
+            {isAdmin && (
+              <div className="py-2">
+                <Button size="sm" variant="outline" onClick={() => setAsignarEncargadoOpen(true)}>
+                  <UserCog className="size-4" />
+                  Asignar / Cambiar encargado
+                </Button>
+              </div>
+            )}
             <Separator />
             <InfoRow label="Fecha Creación" value={grupo.fecha_creacion} />
             <Separator />
@@ -182,9 +202,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
                             : `Miembro #${mg.miembro_id}`}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">
-                            {mg.rol.nombre}
-                          </Badge>
+                          <Badge variant="secondary">{mg.rol.nombre}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {new Date(mg.fecha_vinculacion).toLocaleDateString('es-CL')}
@@ -226,9 +244,17 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
 
       <CambiarRolModal
         open={!!cambiarRolTarget}
-        onOpenChange={(v) => { if (!v) setCambiarRolTarget(null); }}
+        onOpenChange={(v) => {
+          if (!v) setCambiarRolTarget(null);
+        }}
         membresia={cambiarRolTarget}
         rolesGrupo={rolesGrupo}
+      />
+
+      <AsignarEncargadoModal
+        grupoId={grupoId}
+        open={asignarEncargadoOpen}
+        onOpenChange={setAsignarEncargadoOpen}
       />
 
       <SugerirCargoModal

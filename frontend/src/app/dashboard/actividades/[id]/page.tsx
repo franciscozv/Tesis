@@ -149,12 +149,9 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
 
   const searchParams = useSearchParams();
   const origin = searchParams.get('origin');
-  const isMember = usuario?.rol === 'miembro';
-  const isLider = usuario?.rol === 'lider';
+  const isUsuario = usuario?.rol === 'usuario';
   const backHref =
-    origin === 'calendar' || isMember || isLider
-      ? '/dashboard/calendario'
-      : '/dashboard/actividades';
+    origin === 'calendar' || isUsuario ? '/dashboard/calendario' : '/dashboard/actividades';
 
   // Data queries
   const { data: actividad, isLoading } = useActividad(actividadId);
@@ -168,13 +165,10 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
   const isAdmin = usuario?.rol === 'administrador';
 
-  // El lider puede gestionar invitados/necesidades solo en actividades de sus grupos
-  const misGruposIds = useMemo(
-    () => new Set(misGrupos?.map((g) => g.id_grupo) ?? []),
-    [misGrupos],
-  );
+  // El encargado puede gestionar invitados/necesidades solo en actividades de sus grupos
+  const misGruposIds = useMemo(() => new Set(misGrupos?.map((g) => g.id_grupo) ?? []), [misGrupos]);
   const canManageGestion =
-    isAdmin || (isLider && !!actividad?.grupo_id && misGruposIds.has(actividad.grupo_id));
+    isAdmin || (isUsuario && !!actividad?.grupo_id && misGruposIds.has(actividad.grupo_id));
 
   // Mutations
   const updateMutation = useUpdateActividad();

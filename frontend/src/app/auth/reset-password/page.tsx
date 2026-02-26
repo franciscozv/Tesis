@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { authApi } from '@/features/auth/api';
-import { resetPasswordSchema, type ResetPasswordFormData } from '@/features/auth/schemas';
+import { type ResetPasswordFormData, resetPasswordSchema } from '@/features/auth/schemas';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -44,9 +44,7 @@ function ResetPasswordForm() {
             <XCircle className="size-6 text-red-600 dark:text-red-400" />
           </div>
           <CardTitle className="text-2xl">Enlace Inválido</CardTitle>
-          <CardDescription>
-            El enlace de recuperación no es válido o ha expirado.
-          </CardDescription>
+          <CardDescription>El enlace de recuperación no es válido o ha expirado.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3">

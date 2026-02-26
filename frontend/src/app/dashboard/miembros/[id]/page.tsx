@@ -52,7 +52,6 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
   const { data: membresias, isLoading: loadingMembresias } = useMembresiaseMiembro(miembroId);
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
-  const isAdminOrLider = isAdmin || usuario?.rol === 'lider';
 
   const { data: historial, isLoading: loadingHistorial } = useHistorialEstado(miembroId);
   const desvincularMutation = useDesvincularMiembro();
@@ -203,7 +202,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
                   <TableHead>Estado</TableHead>
                   <TableHead>Vinculación</TableHead>
                   <TableHead>Desvinculación</TableHead>
-                  {isAdminOrLider && <TableHead className="w-12" />}
+                  {isAdmin && <TableHead className="w-12" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,9 +216,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">
-                          {mg.rol.nombre}
-                        </Badge>
+                        <Badge variant="secondary">{mg.rol.nombre}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={activo ? 'default' : 'outline'}>
@@ -234,7 +231,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
                           ? new Date(mg.fecha_desvinculacion).toLocaleDateString('es-CL')
                           : '—'}
                       </TableCell>
-                      {isAdminOrLider && (
+                      {isAdmin && (
                         <TableCell>
                           {activo && (
                             <Button

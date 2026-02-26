@@ -28,7 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import type { ApiResponse } from '@/features/auth/types';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
+import { useMembresiasGrupo } from '../hooks/use-membresias-grupo';
 import { useRolesGrupo } from '../hooks/use-roles-grupo';
 import { useVincularMiembro } from '../hooks/use-vincular-miembro';
 import { type VincularMiembroFormData, vincularMiembroSchema } from '../schemas';
@@ -41,11 +43,16 @@ interface VincularMiembroModalProps {
 
 export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMiembroModalProps) {
   const { data: miembros } = useMiembros();
+  const { data: miembrosGrupo } = useMembresiasGrupo(grupoId);
   const { data: roles } = useRolesGrupo();
   const mutation = useVincularMiembro();
 
-  const miembrosActivos = miembros?.filter((m) => m.activo) ?? [];
-  const rolesActivos = roles?.filter((r) => r.activo) ?? [];
+  const miembrosYaEnGrupo = new Set((miembrosGrupo ?? []).map((m) => m.miembro_id));
+  const miembrosActivos = (miembros?.filter((m) => m.activo) ?? []).filter(
+    (m) => !miembrosYaEnGrupo.has(m.id),
+  );
+  const rolesActivos =
+    roles?.filter((r) => r.activo && r.nombre?.toLowerCase() !== 'encargado') ?? [];
 
   const form = useForm<VincularMiembroFormData>({
     resolver: zodResolver(vincularMiembroSchema),
@@ -69,8 +76,9 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
           onOpenChange(false);
           form.reset();
         },
-        onError: () => {
-          toast.error('Error al vincular miembro');
+        onError: (err: any) => {
+          const backendMsg = (err?.response?.data as ApiResponse | undefined)?.message;
+          toast.error(backendMsg || 'Error al vincular miembro');
         },
       },
     );
@@ -103,6 +111,11 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      {miembrosActivos.length === 0 && (
+                        <SelectItem value="-1" disabled>
+                          No hay miembros disponibles para vincular
+                        </SelectItem>
+                      )}
                       {miembrosActivos.map((m) => (
                         <SelectItem key={m.id} value={String(m.id)}>
                           {m.nombre} {m.apellido}

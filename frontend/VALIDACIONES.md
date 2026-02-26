@@ -1,4 +1,4 @@
-# Validaciones y Reglas de Negocio - Backend IEP Santa Juana
+﻿# Validaciones y Reglas de Negocio - Backend IEP Santa Juana
 
 Referencia completa para replicar esquemas Zod en el frontend.
 
@@ -23,7 +23,7 @@ rut: z.string()
 | Min caracteres | 9 |
 | Max caracteres | 10 |
 | Sin puntos | Almacenado sin puntos ni espacios |
-| Unicidad | Único en BD (error `23505`) |
+| Unicidad | Ãšnico en BD (error `23505`) |
 
 **Formato display vs almacenamiento:**
 
@@ -44,10 +44,10 @@ email: z.string().email().max(150)    // miembros
 
 | Regla | Usuarios | Miembros |
 |-------|----------|----------|
-| Formato | Email válido | Email válido |
+| Formato | Email vÃ¡lido | Email vÃ¡lido |
 | Max caracteres | 100 | 150 |
-| Requerido | Sí | No (opcional, transforma a `null`) |
-| Unicidad | Único en BD | Único en BD |
+| Requerido | SÃ­ | No (opcional, transforma a `null`) |
+| Unicidad | Ãšnico en BD | Ãšnico en BD |
 
 ---
 
@@ -69,7 +69,7 @@ password_nueva: z.string().min(8).max(100)  // cambiar password
 
 ---
 
-### 1.4 Teléfono
+### 1.4 TelÃ©fono
 
 ```typescript
 // Backend Zod
@@ -83,7 +83,7 @@ telefono: z.string().max(20).optional().transform(v => v ?? null)
 | Default | `null` |
 | Formato sugerido | `+56912345678` |
 
-> **Nota:** El backend no valida formato chileno con regex. La validación es solo de longitud máxima.
+> **Nota:** El backend no valida formato chileno con regex. La validaciÃ³n es solo de longitud mÃ¡xima.
 
 ---
 
@@ -97,11 +97,11 @@ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 fecha_vinculacion: z.string().datetime()
 ```
 
-| Tipo | Regex/Validación | Ejemplo |
+| Tipo | Regex/ValidaciÃ³n | Ejemplo |
 |------|------------------|---------|
 | Fecha simple | `/^\d{4}-\d{2}-\d{2}$/` | `2025-03-15` |
 | Datetime | `z.string().datetime()` | `2025-03-15T10:00:00Z` |
-| Fecha válida | `z.string().date()` | `2025-03-15` |
+| Fecha vÃ¡lida | `z.string().date()` | `2025-03-15` |
 
 **Formato display vs almacenamiento:**
 
@@ -111,13 +111,13 @@ fecha_vinculacion: z.string().datetime()
 | Display usuario | `DD/MM/YYYY` | `15/03/2025` |
 | Datetime BD | ISO 8601 | `2025-03-15T10:00:00.000Z` |
 
-**Restricciones específicas por módulo:**
+**Restricciones especÃ­ficas por mÃ³dulo:**
 
-| Campo | Restricción |
+| Campo | RestricciÃ³n |
 |-------|-------------|
-| `fecha_nacimiento` (miembro) | Fecha válida, sin restricción de edad |
-| `fecha_ingreso` (miembro) | Fecha válida, sin restricción pasado/futuro |
-| `fecha` (actividad) | Solo formato, sin restricción pasado/futuro |
+| `fecha_nacimiento` (miembro) | Fecha vÃ¡lida, sin restricciÃ³n de edad |
+| `fecha_ingreso` (miembro) | Fecha vÃ¡lida, sin restricciÃ³n pasado/futuro |
+| `fecha` (actividad) | Solo formato, sin restricciÃ³n pasado/futuro |
 | `anio` (generar instancias) | Min 2020, Max 2100 |
 
 ---
@@ -146,9 +146,9 @@ hora_fin: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)
 
 ---
 
-### 1.7 Textos con Longitud Mínima
+### 1.7 Textos con Longitud MÃ­nima
 
-| Campo | Min | Max | Módulo |
+| Campo | Min | Max | MÃ³dulo |
 |-------|-----|-----|--------|
 | `nombre` (miembro) | 2 | 100 | Miembros |
 | `apellido` (miembro) | 2 | 100 | Miembros |
@@ -157,31 +157,30 @@ hora_fin: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)
 | `nombre` (rol actividad) | 1 | 100 | Roles Actividad |
 | `nombre` (tipo actividad) | 1 | 100 | Tipos Actividad |
 | `nombre` (tipo necesidad) | 1 | 100 | Tipos Necesidad |
-| `nombre` (patrón) | 1 | 100 | Patrones |
+| `nombre` (patrÃ³n) | 1 | 100 | Patrones |
 | `nombre` (actividad) | 1 | 150 | Actividades |
-| `lugar` (patrón) | 1 | 200 | Patrones |
+| `lugar` (patrÃ³n) | 1 | 200 | Patrones |
 | `descripcion` (necesidad) | 1 | 1000 | Necesidades |
 | `motivo_cancelacion` | 1 | 500 | Actividades |
 | `motivo_rechazo` | 1 | 500 | Invitados |
 | `motivo` (historial estado) | 10 | 1000 | Historial Estado |
-| `motivo` (historial rol) | 10 | 1000 | Historial Rol Grupo |
-| `observaciones` (colaborador) | — | 500 | Colaboradores |
+| `observaciones` (colaborador) | â€” | 500 | Colaboradores |
 | `unidad_medida` | 1 | 50 | Necesidades |
 
 ---
 
-### 1.8 Números (Rangos Permitidos)
+### 1.8 NÃºmeros (Rangos Permitidos)
 
-| Campo | Tipo | Min | Max | Módulo |
+| Campo | Tipo | Min | Max | MÃ³dulo |
 |-------|------|-----|-----|--------|
 | `dia_semana` | int | 1 | 7 | Patrones |
-| `duracion_minutos` | int | 1 | — | Patrones |
+| `duracion_minutos` | int | 1 | â€” | Patrones |
 | `mes` (query) | int | 1 | 12 | Calendario / Patrones |
 | `anio` (query) | int | 2020 | 2100 | Patrones |
-| `cantidad_requerida` | number | >0 | — | Necesidades |
-| `cantidad_cubierta` | number | ≥0 | — | Necesidades |
-| `cantidad_ofrecida` | number | >0 | — | Colaboradores |
-| IDs generales | int | >0 | — | Todos |
+| `cantidad_requerida` | number | >0 | â€” | Necesidades |
+| `cantidad_cubierta` | number | â‰¥0 | â€” | Necesidades |
+| `cantidad_ofrecida` | number | >0 | â€” | Colaboradores |
+| IDs generales | int | >0 | â€” | Todos |
 
 ---
 
@@ -205,32 +204,32 @@ color: z.string().regex(/^#[0-9A-Fa-f]{6}$/)
 ### 2.1 Roles de Usuario
 
 ```typescript
-const RolesEnum = z.enum(['administrador', 'lider', 'miembro']);
+const RolesEnum = z.enum(['administrador', 'usuario']);
 ```
 
-| Valor | Descripción |
+| Valor | DescripciÃ³n |
 |-------|-------------|
 | `administrador` | Acceso completo al sistema |
-| `lider` | Gestión de grupos y actividades |
-| `miembro` | Acceso básico |
+| `lider` | GestiÃ³n de grupos y actividades |
+| `miembro` | Acceso bÃ¡sico |
 
 ---
 
-### 2.2 Estado de Membresía
+### 2.2 Estado de MembresÃ­a
 
 ```typescript
 const EstadoMembresiaEnum = z.enum(['sin_membresia', 'probando', 'plena_comunion']);
 ```
 
-| Valor | Descripción |
+| Valor | DescripciÃ³n |
 |-------|-------------|
-| `sin_membresia` | Sin membresía activa |
-| `probando` | En período de prueba |
+| `sin_membresia` | Sin membresÃ­a activa |
+| `probando` | En perÃ­odo de prueba |
 | `plena_comunion` | Miembro pleno |
 
 ---
 
-### 2.3 Género
+### 2.3 GÃ©nero
 
 ```typescript
 const GeneroEnum = z.enum(['masculino', 'femenino']);
@@ -247,18 +246,18 @@ const EstadoActividadEnum = z.enum(['programada', 'realizada', 'cancelada']);
 **Transiciones permitidas:**
 
 ```
-programada → realizada    ✅
-programada → cancelada    ✅ (requiere motivo_cancelacion)
-realizada  → cancelada    ✅ (requiere motivo_cancelacion)
-cancelada  → programada   ❌
-cancelada  → realizada    ❌
-realizada  → programada   ❌
-mismo → mismo             ❌
+programada â†’ realizada    âœ…
+programada â†’ cancelada    âœ… (requiere motivo_cancelacion)
+realizada  â†’ cancelada    âœ… (requiere motivo_cancelacion)
+cancelada  â†’ programada   âŒ
+cancelada  â†’ realizada    âŒ
+realizada  â†’ programada   âŒ
+mismo â†’ mismo             âŒ
 ```
 
 ---
 
-### 2.5 Estado de Invitación
+### 2.5 Estado de InvitaciÃ³n
 
 ```typescript
 const EstadoInvitadoEnum = z.enum(['pendiente', 'confirmado', 'rechazado']);
@@ -267,15 +266,15 @@ const EstadoInvitadoEnum = z.enum(['pendiente', 'confirmado', 'rechazado']);
 **Transiciones permitidas:**
 
 ```
-pendiente  → confirmado   ✅
-pendiente  → rechazado    ✅ (requiere motivo_rechazo)
-confirmado → *            ❌
-rechazado  → *            ❌
+pendiente  â†’ confirmado   âœ…
+pendiente  â†’ rechazado    âœ… (requiere motivo_rechazo)
+confirmado â†’ *            âŒ
+rechazado  â†’ *            âŒ
 ```
 
 ---
 
-### 2.6 Estado de Necesidad Logística
+### 2.6 Estado de Necesidad LogÃ­stica
 
 ```typescript
 const EstadoNecesidadEnum = z.enum(['abierta', 'cubierta', 'cerrada']);
@@ -284,13 +283,13 @@ const EstadoNecesidadEnum = z.enum(['abierta', 'cubierta', 'cerrada']);
 **Transiciones permitidas:**
 
 ```
-abierta  → cubierta   ✅
-abierta  → cerrada    ✅
-cubierta → abierta    ✅
-cubierta → cerrada    ✅
-cerrada  → cubierta   ✅
-cerrada  → abierta    ❌
-mismo → mismo         ❌
+abierta  â†’ cubierta   âœ…
+abierta  â†’ cerrada    âœ…
+cubierta â†’ abierta    âœ…
+cubierta â†’ cerrada    âœ…
+cerrada  â†’ cubierta   âœ…
+cerrada  â†’ abierta    âŒ
+mismo â†’ mismo         âŒ
 ```
 
 ---
@@ -304,15 +303,15 @@ const EstadoColaboradorEnum = z.enum(['pendiente', 'aceptada', 'rechazada']);
 **Transiciones permitidas:**
 
 ```
-pendiente → aceptada   ✅
-pendiente → rechazada  ✅
-aceptada  → *          ❌
-rechazada → *          ❌
+pendiente â†’ aceptada   âœ…
+pendiente â†’ rechazada  âœ…
+aceptada  â†’ *          âŒ
+rechazada â†’ *          âŒ
 ```
 
 ---
 
-### 2.8 Frecuencia de Patrón
+### 2.8 Frecuencia de PatrÃ³n
 
 ```typescript
 const FrecuenciaEnum = z.enum([
@@ -324,7 +323,7 @@ const FrecuenciaEnum = z.enum([
 ]);
 ```
 
-| Valor | Descripción |
+| Valor | DescripciÃ³n |
 |-------|-------------|
 | `semanal` | Todas las semanas del mes |
 | `primera_semana` | Solo la 1ra semana |
@@ -334,16 +333,16 @@ const FrecuenciaEnum = z.enum([
 
 ---
 
-### 2.9 Día de la Semana
+### 2.9 DÃ­a de la Semana
 
-| Valor | Día |
+| Valor | DÃ­a |
 |-------|-----|
 | 1 | Lunes |
 | 2 | Martes |
-| 3 | Miércoles |
+| 3 | MiÃ©rcoles |
 | 4 | Jueves |
 | 5 | Viernes |
-| 6 | Sábado |
+| 6 | SÃ¡bado |
 | 7 | Domingo |
 
 ---
@@ -372,27 +371,27 @@ interface ServiceResponse<null> {
 }
 ```
 
-### 3.3 Códigos HTTP Usados
+### 3.3 CÃ³digos HTTP Usados
 
-| Código | Significado | Cuándo |
+| CÃ³digo | Significado | CuÃ¡ndo |
 |--------|-------------|--------|
-| 200 | OK | Lectura, actualización, eliminación exitosa |
-| 201 | Created | Creación exitosa |
-| 400 | Bad Request | Validación Zod fallida, regla de negocio violada |
-| 401 | Unauthorized | Token inválido, expirado o ausente |
+| 200 | OK | Lectura, actualizaciÃ³n, eliminaciÃ³n exitosa |
+| 201 | Created | CreaciÃ³n exitosa |
+| 400 | Bad Request | ValidaciÃ³n Zod fallida, regla de negocio violada |
+| 401 | Unauthorized | Token invÃ¡lido, expirado o ausente |
 | 403 | Forbidden | Rol no autorizado, acceso a recurso de otro usuario |
 | 404 | Not Found | Recurso no encontrado |
-| 409 | Conflict | Duplicado (email, RUT, nombre único) |
+| 409 | Conflict | Duplicado (email, RUT, nombre Ãºnico) |
 | 500 | Internal Server Error | Error inesperado del servidor |
 
-### 3.4 Error de Validación Zod
+### 3.4 Error de ValidaciÃ³n Zod
 
-Cuando falla la validación Zod, el backend retorna los detalles del error:
+Cuando falla la validaciÃ³n Zod, el backend retorna los detalles del error:
 
 ```json
 {
   "success": false,
-  "message": "Datos de entrada inválidos",
+  "message": "Datos de entrada invÃ¡lidos",
   "responseObject": null,
   "statusCode": 400
 }
@@ -404,53 +403,53 @@ Cuando falla la validación Zod, el backend retorna los detalles del error:
 
 ### 4.1 Matriz de Permisos
 
-| Módulo | Leer | Crear | Editar | Eliminar | Cambiar Estado |
+| MÃ³dulo | Leer | Crear | Editar | Eliminar | Cambiar Estado |
 |--------|------|-------|--------|----------|----------------|
-| **Usuarios** | Admin | Admin | Admin | — | Admin |
+| **Usuarios** | Admin | Admin | Admin | â€” | Admin |
 | **Miembros** | Todos | Admin | Admin | Admin | Admin |
-| **Grupos** | Todos | Admin | Admin | Admin | — |
-| **Membresía Grupo** | Todos | Admin, Líder | — | — | Admin, Líder |
-| **Actividades** | Todos* | Admin, Líder | Admin, Líder | — | Admin, Líder |
-| **Patrones** | Todos | Admin | Admin | — | Admin |
-| **Invitados** | Todos | Admin, Líder | — | Admin, Líder | Todos** |
-| **Necesidades** | Todos | Admin, Líder | Admin, Líder | Admin, Líder | Admin, Líder |
-| **Colaboradores** | Todos | Todos | — | Todos*** | Admin, Líder |
-| **Candidatos** | — | Admin, Líder | — | — | — |
-| **Calendario** | Todos* | — | — | — | — |
-| **Roles Grupo** | Todos | Admin | Admin | Admin | — |
-| **Roles Actividad** | Todos | Admin | Admin | Admin | — |
-| **Tipos Actividad** | Todos | Admin | Admin | Admin | — |
-| **Tipos Necesidad** | Todos | Admin | Admin | Admin | — |
-| **Historial Estado** | Admin | Admin | — | — | — |
-| **Historial Rol** | Admin, Líder | Admin, Líder | — | — | — |
+| **Grupos** | Todos | Admin | Admin | Admin | â€” |
+| **MembresÃ­a Grupo** | Todos | Admin, LÃ­der | â€” | â€” | Admin, LÃ­der |
+| **Actividades** | Todos* | Admin, LÃ­der | Admin, LÃ­der | â€” | Admin, LÃ­der |
+| **Patrones** | Todos | Admin | Admin | â€” | Admin |
+| **Invitados** | Todos | Admin, LÃ­der | â€” | Admin, LÃ­der | Todos** |
+| **Necesidades** | Todos | Admin, LÃ­der | Admin, LÃ­der | Admin, LÃ­der | Admin, LÃ­der |
+| **Colaboradores** | Todos | Todos | â€” | Todos*** | Admin, LÃ­der |
+| **Candidatos** | â€” | Admin, LÃ­der | â€” | â€” | â€” |
+| **Calendario** | Todos* | â€” | â€” | â€” | â€” |
+| **Roles Grupo** | Todos | Admin | Admin | Admin | â€” |
+| **Roles Actividad** | Todos | Admin | Admin | Admin | â€” |
+| **Tipos Actividad** | Todos | Admin | Admin | Admin | â€” |
+| **Tipos Necesidad** | Todos | Admin | Admin | Admin | â€” |
+| **Historial Estado** | Admin | Admin | â€” | â€” | â€” |
+| **Historial Rol** | Admin, LÃ­der | Admin, LÃ­der | â€” | â€” | â€” |
 
-\* Incluye endpoints públicos (sin auth).
-\** Solo responder su propia invitación; marcar asistencia = Admin, Líder.
-\*** Solo eliminar propia colaboración pendiente.
+\* Incluye endpoints pÃºblicos (sin auth).
+\** Solo responder su propia invitaciÃ³n; marcar asistencia = Admin, LÃ­der.
+\*** Solo eliminar propia colaboraciÃ³n pendiente.
 
-### 4.2 Endpoints Públicos (sin autenticación)
+### 4.2 Endpoints PÃºblicos (sin autenticaciÃ³n)
 
-| Endpoint | Descripción |
+| Endpoint | DescripciÃ³n |
 |----------|-------------|
-| `POST /api/auth/login` | Iniciar sesión |
-| `POST /api/auth/recuperar-password` | Solicitar recuperación |
-| `POST /api/auth/reset-password` | Restablecer contraseña |
-| `GET /api/actividades/publicas` | Actividades públicas futuras |
-| `GET /api/calendario/publico` | Calendario público mensual |
+| `POST /api/auth/login` | Iniciar sesiÃ³n |
+| `POST /api/auth/recuperar-password` | Solicitar recuperaciÃ³n |
+| `POST /api/auth/reset-password` | Restablecer contraseÃ±a |
+| `GET /api/actividades/publicas` | Actividades pÃºblicas futuras |
+| `GET /api/calendario/publico` | Calendario pÃºblico mensual |
 
 ---
 
 ## 5. Reglas de Negocio Importantes
 
-### 5.1 Requisito de Plena Comunión
+### 5.1 Requisito de Plena ComuniÃ³n
 
 Varias operaciones requieren que el miembro tenga `estado_membresia = 'plena_comunion'`:
 
-| Operación | Requisito |
+| OperaciÃ³n | Requisito |
 |-----------|-----------|
-| Ser líder principal de grupo | Plena comunión |
-| Vincularse a grupo ministerial | Plena comunión |
-| Roles con `requiere_plena_comunion = true` | Plena comunión |
+| Ser lÃ­der principal de grupo | Plena comuniÃ³n |
+| Vincularse a grupo ministerial | Plena comuniÃ³n |
+| Roles con `requiere_plena_comunion = true` | Plena comuniÃ³n |
 
 ---
 
@@ -467,39 +466,39 @@ Varias operaciones requieren que el miembro tenga `estado_membresia = 'plena_com
 | `nombre` | roles grupo | 409 Conflict |
 | `nombre` | tipos actividad | 409 Conflict |
 | `nombre` | tipos necesidad | 409 Conflict |
-| (miembro, grupo, rol) activo | membresía grupo | 409 Conflict |
+| (miembro, grupo, rol) activo | membresÃ­a grupo | 409 Conflict |
 | (miembro, actividad, rol) | invitados | 409 Conflict |
 | (miembro, necesidad) pendiente | colaboradores | 409 Conflict |
 
 ---
 
-### 5.3 Eliminación Condicionada
+### 5.3 EliminaciÃ³n Condicionada
 
-No se puede eliminar un recurso si está en uso:
+No se puede eliminar un recurso si estÃ¡ en uso:
 
-| Recurso | Condición para eliminar |
+| Recurso | CondiciÃ³n para eliminar |
 |---------|------------------------|
 | Grupo ministerial | No tener miembros activos (`fecha_desvinculacion IS NULL`) |
-| Rol de grupo | No estar asignado en membresías activas |
+| Rol de grupo | No estar asignado en membresÃ­as activas |
 | Rol de actividad | No estar usado en invitaciones |
 | Tipo de actividad | No estar usado en actividades activas |
 | Tipo de necesidad | No estar usado en necesidades |
-| Invitación | Solo si `estado = 'pendiente'` |
+| InvitaciÃ³n | Solo si `estado = 'pendiente'` |
 | Necesidad | Solo si `estado = 'abierta'` |
-| Colaboración | Solo si `estado = 'pendiente'` |
+| ColaboraciÃ³n | Solo si `estado = 'pendiente'` |
 
 ---
 
-### 5.4 Relación hora_inicio < hora_fin
+### 5.4 RelaciÃ³n hora_inicio < hora_fin
 
 ```typescript
-// Validación en actividadesService
+// ValidaciÃ³n en actividadesService
 if (hora_fin <= hora_inicio) {
   throw "La hora de fin debe ser mayor a la hora de inicio";
 }
 ```
 
-Se valida en el **service**, no en el schema Zod. El frontend debe replicar esta validación con `.refine()`:
+Se valida en el **service**, no en el schema Zod. El frontend debe replicar esta validaciÃ³n con `.refine()`:
 
 ```typescript
 // Ejemplo para frontend
@@ -518,18 +517,18 @@ const ActividadSchema = z.object({
 
 ```
 cantidad_cubierta <= cantidad_requerida           (siempre)
-cantidad_ofrecida <= cantidad_faltante             (al crear colaboración)
+cantidad_ofrecida <= cantidad_faltante             (al crear colaboraciÃ³n)
 cantidad_faltante = cantidad_requerida - cantidad_cubierta
 ```
 
-- Al **aceptar** una colaboración, se suma `cantidad_ofrecida` a `cantidad_cubierta` automáticamente.
+- Al **aceptar** una colaboraciÃ³n, se suma `cantidad_ofrecida` a `cantidad_cubierta` automÃ¡ticamente.
 - Se valida que la suma no exceda `cantidad_requerida`.
 
 ---
 
 ### 5.6 Motivo Obligatorio Condicionalmente
 
-Hay dos schemas con `.refine()` que exigen motivo según el estado:
+Hay dos schemas con `.refine()` que exigen motivo segÃºn el estado:
 
 **Cancelar actividad:**
 
@@ -543,7 +542,7 @@ const PatchEstadoSchema = z.object({
 );
 ```
 
-**Rechazar invitación:**
+**Rechazar invitaciÃ³n:**
 
 ```typescript
 const PatchResponderSchema = z.object({
@@ -559,16 +558,12 @@ const PatchResponderSchema = z.object({
 
 ### 5.7 Estado Anterior Debe Coincidir
 
-En historiales, el `estado_anterior` / `rol_grupo_anterior` debe coincidir con el estado actual del registro:
+En historiales, el `estado_anterior` debe coincidir con el estado actual del registro:
 
 ```
 // Historial Estado
-estado_anterior enviado === miembro.estado_membresia actual   → ✅
-estado_anterior enviado !== miembro.estado_membresia actual   → ❌ 400
-
-// Historial Rol Grupo
-rol_grupo_anterior enviado === membresia.rol_grupo_id actual  → ✅
-rol_grupo_anterior enviado !== membresia.rol_grupo_id actual  → ❌ 400
+estado_anterior enviado === miembro.estado_membresia actual   â†’ âœ…
+estado_anterior enviado !== miembro.estado_membresia actual   â†’ âŒ 400
 ```
 
 Y el nuevo valor debe ser diferente al anterior (validado en Zod `.refine()`):
@@ -585,75 +580,75 @@ Y el nuevo valor debe ser diferente al anterior (validado en Zod `.refine()`):
 ### 5.8 Actividades Canceladas Son Inmutables
 
 ```
-actividad.estado === 'cancelada' → No se puede editar (PUT)
-actividad.estado === 'cancelada' → No se puede cambiar estado (PATCH)
+actividad.estado === 'cancelada' â†’ No se puede editar (PUT)
+actividad.estado === 'cancelada' â†’ No se puede cambiar estado (PATCH)
 ```
 
 ---
 
 ### 5.9 Scoring de Candidatos
 
-El algoritmo de puntuación para sugerir candidatos:
+El algoritmo de puntuaciÃ³n para sugerir candidatos:
 
-| Criterio | Puntos | Condición |
+| Criterio | Puntos | CondiciÃ³n |
 |----------|--------|-----------|
-| **Experiencia** (0-30) | 30 | ≥10 veces en el rol |
-| | 20 | ≥5 veces |
-| | 10 | ≥1 vez |
+| **Experiencia** (0-30) | 30 | â‰¥10 veces en el rol |
+| | 20 | â‰¥5 veces |
+| | 10 | â‰¥1 vez |
 | | 0 | Sin experiencia |
-| **Antigüedad** (0-20) | 20 | ≥10 años + plena comunión |
-| | 15 | ≥5 años + plena comunión |
-| | 10 | ≥3 años + plena comunión |
-| | 5 | ≥1 año + plena comunión |
-| | 0 | Sin plena comunión |
-| **Asistencia** (0-30) | 30 | ≥90% |
-| | 20 | ≥75% |
-| | 10 | ≥50% |
+| **AntigÃ¼edad** (0-20) | 20 | â‰¥10 aÃ±os + plena comuniÃ³n |
+| | 15 | â‰¥5 aÃ±os + plena comuniÃ³n |
+| | 10 | â‰¥3 aÃ±os + plena comuniÃ³n |
+| | 5 | â‰¥1 aÃ±o + plena comuniÃ³n |
+| | 0 | Sin plena comuniÃ³n |
+| **Asistencia** (0-30) | 30 | â‰¥90% |
+| | 20 | â‰¥75% |
+| | 10 | â‰¥50% |
 | | 0 | <50% |
 | **Disponibilidad** (0-20) | 20 | Sin conflicto en la fecha |
 | | 0 | Tiene conflicto |
-| **Total máximo** | **100** | |
+| **Total mÃ¡ximo** | **100** | |
 
-**Manejo de división por 0 en asistencia:**
+**Manejo de divisiÃ³n por 0 en asistencia:**
 - Si el miembro no tiene invitaciones (total = 0), el porcentaje de asistencia se calcula como 0%.
-- No se produce error de división por cero.
+- No se produce error de divisiÃ³n por cero.
 
-**Límite de resultados:** Top 20 candidatos ordenados por `puntuacion_total` descendente.
+**LÃ­mite de resultados:** Top 20 candidatos ordenados por `puntuacion_total` descendente.
 
 ---
 
-### 5.10 Generación de Instancias desde Patrones
+### 5.10 GeneraciÃ³n de Instancias desde Patrones
 
 - Solo se generan desde patrones **activos**.
 - Si no hay patrones activos, retorna error.
-- Calcula fechas según `frecuencia` y `dia_semana`.
-- `hora_fin` se calcula automáticamente: `hora_inicio + duracion_minutos`.
+- Calcula fechas segÃºn `frecuencia` y `dia_semana`.
+- `hora_fin` se calcula automÃ¡ticamente: `hora_inicio + duracion_minutos`.
 - Se crean con `estado = 'programada'` y `patron_id` vinculado.
 
 ---
 
 ### 5.11 Token JWT
 
-| Campo | Descripción |
+| Campo | DescripciÃ³n |
 |-------|-------------|
 | `id` | ID del usuario |
 | `email` | Email del usuario |
 | `rol` | Rol del usuario |
 | `miembro_id` | ID del miembro vinculado (puede ser `null`) |
-| Expiración | Configurada por variable de entorno |
+| ExpiraciÃ³n | Configurada por variable de entorno |
 | Reset token | Expira en 1 hora, tipo `password_reset` |
 
 ---
 
-### 5.12 Calendario - Validación de Propiedad
+### 5.12 Calendario - ValidaciÃ³n de Propiedad
 
-`GET /api/calendario/mis-responsabilidades/:miembro_id` valida que el `miembro_id` del token coincida con el `:miembro_id` de la URL. Si no coincide → **403 Forbidden**.
+`GET /api/calendario/mis-responsabilidades/:miembro_id` valida que el `miembro_id` del token coincida con el `:miembro_id` de la URL. Si no coincide â†’ **403 Forbidden**.
 
 ---
 
-## 6. Validación Común de IDs (Params)
+## 6. ValidaciÃ³n ComÃºn de IDs (Params)
 
-Todos los endpoints con `:id` en la ruta usan esta validación:
+Todos los endpoints con `:id` en la ruta usan esta validaciÃ³n:
 
 ```typescript
 // commonValidation.ts
@@ -667,7 +662,7 @@ const IdParamSchema = z.object({
 
 ---
 
-## 7. Schemas Zod Completos por Módulo
+## 7. Schemas Zod Completos por MÃ³dulo
 
 ### 7.1 Auth
 
@@ -699,7 +694,7 @@ const ResetPasswordSchema = z.object({
 ### 7.2 Usuarios
 
 ```typescript
-const RolesEnum = z.enum(['administrador', 'lider', 'miembro']);
+const RolesEnum = z.enum(['administrador', 'usuario']);
 
 const CreateUsuarioSchema = z.object({
   email: z.string().email().max(100),
@@ -749,20 +744,16 @@ const PatchEstadoMiembroSchema = z.object({
 
 ```typescript
 const CreateGrupoSchema = z.object({
-  nombre: z.string().min(2).max(100),
-  lider_principal_id: z.number().int().positive(),
-  descripcion: z.string().optional().transform(v => v ?? null),
+  nombre: z.string().min(2).max(100),  descripcion: z.string().optional().transform(v => v ?? null),
   fecha_creacion: z.string().date().optional(),
 });
 
 const UpdateGrupoSchema = z.object({
-  nombre: z.string().min(2).max(100).optional(),
-  lider_principal_id: z.number().int().positive().optional(),
-  descripcion: z.string().optional().transform(v => v ?? null),
+  nombre: z.string().min(2).max(100).optional(),  descripcion: z.string().optional().transform(v => v ?? null),
 });
 ```
 
-### 7.5 Membresía Grupo
+### 7.5 MembresÃ­a Grupo
 
 ```typescript
 const VincularSchema = z.object({
@@ -868,7 +859,7 @@ const PatchAsistenciaSchema = z.object({
 });
 ```
 
-### 7.9 Necesidades Logísticas
+### 7.9 Necesidades LogÃ­sticas
 
 ```typescript
 const EstadoNecesidadEnum = z.enum(['abierta', 'cubierta', 'cerrada']);
@@ -993,47 +984,30 @@ const CreateHistorialEstadoSchema = z.object({
 );
 ```
 
-### 7.18 Historial Rol Grupo
-
-```typescript
-const CreateHistorialRolGrupoSchema = z.object({
-  miembro_grupo_id: z.number().int().positive(),
-  rol_grupo_anterior: z.number().int().positive(),
-  rol_grupo_nuevo: z.number().int().positive(),
-  motivo: z.string().min(10).max(1000),
-  usuario_id: z.number().int().positive(),
-}).refine(
-  (data) => data.rol_grupo_nuevo !== data.rol_grupo_anterior,
-  { message: "El rol nuevo debe ser diferente al anterior" }
-);
-```
-
----
-
-## 8. Datos Semilla (Catálogos por Defecto)
+## 8. Datos Semilla (CatÃ¡logos por Defecto)
 
 ### Tipos de Actividad
 
 | ID | Nombre | Color |
 |----|--------|-------|
-| 1 | Culto | — |
-| 2 | Escuela Dominical | — |
-| 3 | Reunión de Oración | — |
-| 4 | Ensayo de Coro | — |
-| 5 | Reunión General Mensual | — |
-| 6 | Predicación en Locales | — |
-| 7 | Confraternidad | — |
-| 8 | Retiro Espiritual | — |
-| 9 | Santa Cena | — |
-| 10 | Pedestre | — |
+| 1 | Culto | â€” |
+| 2 | Escuela Dominical | â€” |
+| 3 | ReuniÃ³n de OraciÃ³n | â€” |
+| 4 | Ensayo de Coro | â€” |
+| 5 | ReuniÃ³n General Mensual | â€” |
+| 6 | PredicaciÃ³n en Locales | â€” |
+| 7 | Confraternidad | â€” |
+| 8 | Retiro Espiritual | â€” |
+| 9 | Santa Cena | â€” |
+| 10 | Pedestre | â€” |
 
 ### Roles de Actividad
 
 | ID | Nombre |
 |----|--------|
 | 1 | Predicador |
-| 2 | Líder de Alabanza |
-| 3 | Músico |
+| 2 | LÃ­der de Alabanza |
+| 3 | MÃºsico |
 | 4 | Corista |
 | 5 | Profesor Escuela Dominical |
 | 6 | Portero |
@@ -1043,11 +1017,11 @@ const CreateHistorialRolGrupoSchema = z.object({
 
 ### Roles de Grupo
 
-| ID | Nombre | Requiere Plena Comunión |
+| ID | Nombre | Requiere Plena ComuniÃ³n |
 |----|--------|------------------------|
-| 1 | Líder | Sí |
-| 2 | Secretario | Sí |
-| 3 | Tesorero | Sí |
+| 1 | LÃ­der | SÃ­ |
+| 2 | Secretario | SÃ­ |
+| 3 | Tesorero | SÃ­ |
 | 4 | Vocal | No |
 | 5 | Miembro | No |
 
@@ -1056,9 +1030,11 @@ const CreateHistorialRolGrupoSchema = z.object({
 | ID | Nombre |
 |----|--------|
 | 1 | Transporte |
-| 2 | Alimentación |
+| 2 | AlimentaciÃ³n |
 | 3 | Hospedaje |
 | 4 | Materiales |
 | 5 | Equipos |
-| 6 | Decoración |
+| 6 | DecoraciÃ³n |
 | 7 | Aseo y Ornato |
+
+

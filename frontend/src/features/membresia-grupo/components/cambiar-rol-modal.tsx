@@ -76,9 +76,7 @@ export function CambiarRolModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cambiar Rol</DialogTitle>
-          <DialogDescription>
-            Cambiar el rol de {nombreMiembro} en el grupo.
-          </DialogDescription>
+          <DialogDescription>Cambiar el rol de {nombreMiembro} en el grupo.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <div>
