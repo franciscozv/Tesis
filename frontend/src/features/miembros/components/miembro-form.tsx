@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +29,8 @@ interface MiembroFormProps {
   isPending: boolean;
   submitLabel?: string;
   disableRut?: boolean;
-  allowEstadoMembresia?: boolean;
+  allowEstadoComunion?: boolean;
+  apiErrors?: Partial<Record<keyof CreateMiembroFormData, string>>;
 }
 
 export function MiembroForm({
@@ -37,7 +39,8 @@ export function MiembroForm({
   isPending,
   submitLabel = 'Guardar',
   disableRut = false,
-  allowEstadoMembresia = true,
+  allowEstadoComunion = true,
+  apiErrors,
 }: MiembroFormProps) {
   const form = useForm<CreateMiembroFormData>({
     resolver: zodResolver(createMiembroSchema),
@@ -50,12 +53,18 @@ export function MiembroForm({
       fecha_nacimiento: '',
       direccion: '',
       genero: '',
-      bautizado: false,
-      estado_membresia: 'sin_membresia',
+      estado_comunion: 'asistente',
       fecha_ingreso: new Date().toISOString().split('T')[0],
       ...defaultValues,
     },
   });
+
+  useEffect(() => {
+    if (!apiErrors) return;
+    for (const [field, message] of Object.entries(apiErrors)) {
+      form.setError(field as keyof CreateMiembroFormData, { message });
+    }
+  }, [apiErrors, form]);
 
   return (
     <Form {...form}>
@@ -132,7 +141,7 @@ export function MiembroForm({
             <FormItem>
               <FormLabel>Fecha de Nacimiento</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" max={new Date().toISOString().split('T')[0]} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -172,10 +181,10 @@ export function MiembroForm({
             </FormItem>
           )}
         />
-        {allowEstadoMembresia && (
+        {allowEstadoComunion && (
           <FormField
             control={form.control}
-            name="estado_membresia"
+            name="estado_comunion"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Estado Membresía *</FormLabel>
@@ -186,7 +195,7 @@ export function MiembroForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="sin_membresia">Sin Membresía</SelectItem>
+                    <SelectItem value="asistente">Asistente</SelectItem>
                     <SelectItem value="probando">Probando</SelectItem>
                     <SelectItem value="plena_comunion">Plena Comunión</SelectItem>
                   </SelectContent>
@@ -203,26 +212,8 @@ export function MiembroForm({
             <FormItem>
               <FormLabel>Fecha de Ingreso *</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" max={new Date().toISOString().split('T')[0]} {...field} />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bautizado"
-          render={({ field }) => (
-            <FormItem className="flex items-center gap-3 space-y-0 pt-6">
-              <FormControl>
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
-                  className="size-4 rounded border"
-                />
-              </FormControl>
-              <FormLabel className="font-normal">Bautizado</FormLabel>
               <FormMessage />
             </FormItem>
           )}

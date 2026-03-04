@@ -19,21 +19,21 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useHistorialEstado } from '@/features/historial-estado/hooks/use-historial-estado';
-import { useDesvincularMiembro } from '@/features/membresia-grupo/hooks/use-desvincular-miembro';
-import { useMembresiaseMiembro } from '@/features/membresia-grupo/hooks/use-membresias-miembro';
+import { useDesvincularMiembro } from '@/features/integrantes-cuerpo/hooks/use-desvincular-miembro';
+import { useAsignacionesMiembro } from '@/features/integrantes-cuerpo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
-import type { EstadoMembresia } from '@/features/miembros/types';
+import type { EstadoComunion } from '@/features/miembros/types';
 
-const estadoLabels: Record<EstadoMembresia, string> = {
-  sin_membresia: 'Sin Membresía',
+const estadoLabels: Record<EstadoComunion, string> = {
+  asistente: 'Asistente',
   probando: 'Probando',
   plena_comunion: 'Plena Comunión',
 };
 
-const estadoVariant: Record<EstadoMembresia, 'default' | 'secondary' | 'outline'> = {
+const estadoVariant: Record<EstadoComunion, 'default' | 'secondary' | 'outline'> = {
   plena_comunion: 'default',
   probando: 'secondary',
-  sin_membresia: 'outline',
+  asistente: 'outline',
 };
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
@@ -49,13 +49,13 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const miembroId = Number(id);
   const { data: miembro, isLoading } = useMiembro(miembroId);
-  const { data: membresias, isLoading: loadingMembresias } = useMembresiaseMiembro(miembroId);
+  const { data: comunions, isLoading: loadingcomunions } = useAsignacionesMiembro(miembroId);
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
 
   const { data: historial, isLoading: loadingHistorial } = useHistorialEstado(miembroId);
   const desvincularMutation = useDesvincularMiembro();
-  const todas = membresias ?? [];
+  const todas = comunions ?? [];
 
   const historialOrdenado = historial
     ? [...historial].sort(
@@ -63,8 +63,8 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
       )
     : [];
 
-  function handleDesvincular(membresiaId: number) {
-    desvincularMutation.mutate(membresiaId, {
+  function handleDesvincular(comunionId: number) {
+    desvincularMutation.mutate(comunionId, {
       onSuccess: () => toast.success('Desvinculado del grupo exitosamente'),
       onError: () => toast.error('Error al desvincular'),
     });
@@ -150,15 +150,13 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
             <div className="grid grid-cols-3 gap-2 py-2">
               <span className="text-muted-foreground text-sm">Estado</span>
               <span className="col-span-2">
-                <Badge variant={estadoVariant[miembro.estado_membresia]}>
-                  {estadoLabels[miembro.estado_membresia]}
+                <Badge variant={estadoVariant[miembro.estado_comunion]}>
+                  {estadoLabels[miembro.estado_comunion]}
                 </Badge>
               </span>
             </div>
             <Separator />
             <InfoRow label="Fecha Ingreso" value={miembro.fecha_ingreso} />
-            <Separator />
-            <InfoRow label="Bautizado" value={miembro.bautizado ? 'Sí' : 'No'} />
             <Separator />
             <InfoRow label="Activo" value={miembro.activo ? 'Sí' : 'No'} />
             <Separator />
@@ -183,7 +181,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadingMembresias ? (
+          {loadingcomunions ? (
             <div className="grid gap-2">
               {['a', 'b', 'c'].map((key) => (
                 <Skeleton key={key} className="h-8 w-full" />

@@ -5,13 +5,12 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GrupoForm } from '@/features/grupos-ministeriales/components/grupo-form';
 import { useCreateGrupo } from '@/features/grupos-ministeriales/hooks/use-create-grupo';
-import type { CreateGrupoFormData } from '@/features/grupos-ministeriales/schemas';
 
 export default function NuevoGrupoPage() {
   const router = useRouter();
   const mutation = useCreateGrupo();
 
-  function onSubmit(data: CreateGrupoFormData) {
+  function onSubmit(data: any) {
     mutation.mutate(
       { ...data, descripcion: data.descripcion || null },
       {

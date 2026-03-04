@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Libre_Baskerville, Lora } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';

@@ -5,7 +5,7 @@ import { z } from 'zod';
 dayjs.extend(isSameOrBefore);
 
 const fechaCreacionValidation = z
-  .string({ required_error: 'La fecha de creación es obligatoria.' })
+  .string()
   .min(1, 'La fecha de creación es obligatoria.')
   .refine((fecha) => dayjs(fecha).isValid(), { message: 'Debe ser una fecha válida (YYYY-MM-DD).' })
   .refine((fecha) => dayjs(fecha).isSameOrBefore(dayjs(), 'day'), {

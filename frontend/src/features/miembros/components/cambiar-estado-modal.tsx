@@ -45,7 +45,7 @@ export function CambiarEstadoModal({ miembro, open, onOpenChange }: CambiarEstad
   const form = useForm<CambiarEstadoFormData>({
     resolver: zodResolver(cambiarEstadoSchema),
     defaultValues: {
-      estado_nuevo: 'sin_membresia',
+      estado_nuevo: 'asistente',
       motivo: '',
     },
   });
@@ -53,7 +53,7 @@ export function CambiarEstadoModal({ miembro, open, onOpenChange }: CambiarEstad
   useEffect(() => {
     if (open && miembro) {
       form.reset({
-        estado_nuevo: miembro.estado_membresia,
+        estado_nuevo: miembro.estado_comunion,
         motivo: '',
       });
     }
@@ -99,7 +99,7 @@ export function CambiarEstadoModal({ miembro, open, onOpenChange }: CambiarEstad
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="sin_membresia">Sin Membresía</SelectItem>
+                      <SelectItem value="asistente">Asistente</SelectItem>
                       <SelectItem value="probando">Probando</SelectItem>
                       <SelectItem value="plena_comunion">Plena Comunión</SelectItem>
                     </SelectContent>

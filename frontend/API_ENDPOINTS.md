@@ -1,14 +1,14 @@
-﻿# API Endpoints - IEP Santa Juana
+# API Endpoints - IEP Santa Juana
 
-## InformaciÃ³n Base
+## Información Base
 
 | Campo | Valor |
 |-------|-------|
 | **Base URL** | `http://localhost:4000/api` |
-| **AutenticaciÃ³n** | Bearer Token (JWT) en header `Authorization` |
+| **Autenticación** | Bearer Token (JWT) en header `Authorization` |
 | **Content-Type** | `application/json` |
 
-### Header de autenticaciÃ³n
+### Header de autenticación
 
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -19,7 +19,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "success": true,
-  "message": "OperaciÃ³n exitosa",
+  "message": "Operación exitosa",
   "responseObject": { ... },
   "statusCode": 200
 }
@@ -30,7 +30,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "success": false,
-  "message": "DescripciÃ³n del error",
+  "message": "Descripción del error",
   "responseObject": null,
   "statusCode": 400
 }
@@ -38,30 +38,30 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### Roles del sistema
 
-| Rol | DescripciÃ³n |
+| Rol | Descripción |
 |-----|-------------|
 | `administrador` | Acceso total al sistema |
-| `lider` | GestiÃ³n de grupos y actividades |
-| `miembro` | Acceso bÃ¡sico de lectura y respuesta a invitaciones |
+| `lider` | Gestión de grupos y actividades |
+| `miembro` | Acceso básico de lectura y respuesta a invitaciones |
 
 ### Credenciales por defecto (desarrollo)
 
 | Rol | Email | Password |
 |-----|-------|----------|
 | Administrador | `admin@iepsantajuana.cl` | `Admin123!` |
-| LÃ­der | `lider@iepsantajuana.cl` | `Lider123!` |
+| Líder | `lider@iepsantajuana.cl` | `Lider123!` |
 | Miembro | `miembro1@test.cl` | `Miembro123!` |
 
 ---
 
-## 1. AutenticaciÃ³n (`/api/auth`)
+## 1. Autenticación (`/api/auth`)
 
 ### POST `/api/auth/login`
 
-Iniciar sesiÃ³n y obtener token JWT.
+Iniciar sesión y obtener token JWT.
 
-- **AutenticaciÃ³n:** No requerida
-- **Roles:** PÃºblico
+- **Autenticación:** No requerida
+- **Roles:** Público
 
 **Request Body:**
 
@@ -93,18 +93,18 @@ Iniciar sesiÃ³n y obtener token JWT.
 
 **Errores posibles:**
 
-| CÃ³digo | Mensaje |
+| Código | Mensaje |
 |--------|---------|
-| 401 | Credenciales invÃ¡lidas |
+| 401 | Credenciales inválidas |
 | 403 | Usuario desactivado |
 
 ---
 
 ### POST `/api/auth/recuperar-password`
 
-Solicitar email de recuperaciÃ³n de contraseÃ±a.
+Solicitar email de recuperación de contraseña.
 
-- **AutenticaciÃ³n:** No requerida
+- **Autenticación:** No requerida
 
 **Request Body:**
 
@@ -119,7 +119,7 @@ Solicitar email de recuperaciÃ³n de contraseÃ±a.
 ```json
 {
   "success": true,
-  "message": "Se enviÃ³ un correo con instrucciones para recuperar la contraseÃ±a",
+  "message": "Se envió un correo con instrucciones para recuperar la contraseña",
   "responseObject": null,
   "statusCode": 200
 }
@@ -129,9 +129,9 @@ Solicitar email de recuperaciÃ³n de contraseÃ±a.
 
 ### POST `/api/auth/reset-password`
 
-Restablecer contraseÃ±a usando token de recuperaciÃ³n.
+Restablecer contraseña usando token de recuperación.
 
-- **AutenticaciÃ³n:** No requerida
+- **Autenticación:** No requerida
 
 **Request Body:**
 
@@ -147,7 +147,7 @@ Restablecer contraseÃ±a usando token de recuperaciÃ³n.
 ```json
 {
   "success": true,
-  "message": "ContraseÃ±a actualizada exitosamente",
+  "message": "Contraseña actualizada exitosamente",
   "responseObject": null,
   "statusCode": 200
 }
@@ -155,17 +155,17 @@ Restablecer contraseÃ±a usando token de recuperaciÃ³n.
 
 **Errores posibles:**
 
-| CÃ³digo | Mensaje |
+| Código | Mensaje |
 |--------|---------|
-| 400 | Token invÃ¡lido o expirado |
+| 400 | Token inválido o expirado |
 
 ---
 
 ### PATCH `/api/auth/cambiar-password`
 
-Cambiar contraseÃ±a del usuario autenticado.
+Cambiar contraseña del usuario autenticado.
 
-- **AutenticaciÃ³n:** SÃ­ (Bearer Token)
+- **Autenticación:** Sí (Bearer Token)
 - **Roles:** Todos
 
 **Request Body:**
@@ -182,7 +182,7 @@ Cambiar contraseÃ±a del usuario autenticado.
 ```json
 {
   "success": true,
-  "message": "ContraseÃ±a cambiada exitosamente",
+  "message": "Contraseña cambiada exitosamente",
   "responseObject": null,
   "statusCode": 200
 }
@@ -190,9 +190,9 @@ Cambiar contraseÃ±a del usuario autenticado.
 
 **Errores posibles:**
 
-| CÃ³digo | Mensaje |
+| Código | Mensaje |
 |--------|---------|
-| 401 | ContraseÃ±a actual incorrecta |
+| 401 | Contraseña actual incorrecta |
 
 ---
 
@@ -230,9 +230,9 @@ Listar todos los usuarios del sistema.
 
 Obtener usuario por ID.
 
-**ParÃ¡metros de ruta:**
+**Parámetros de ruta:**
 
-| Param | Tipo | DescripciÃ³n |
+| Param | Tipo | Descripción |
 |-------|------|-------------|
 | `id` | number | ID del usuario |
 
@@ -256,7 +256,7 @@ Obtener usuario por ID.
 
 **Errores posibles:**
 
-| CÃ³digo | Mensaje |
+| Código | Mensaje |
 |--------|---------|
 | 404 | Usuario no encontrado |
 
@@ -264,7 +264,7 @@ Obtener usuario por ID.
 
 ### POST `/api/usuarios`
 
-Crear nuevo usuario (la contraseÃ±a se hashea con bcrypt).
+Crear nuevo usuario (la contraseña se hashea con bcrypt).
 
 **Request Body:**
 
@@ -277,11 +277,11 @@ Crear nuevo usuario (la contraseÃ±a se hashea con bcrypt).
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `email` | string | SÃ­ | Email Ãºnico del usuario |
-| `password` | string | SÃ­ | ContraseÃ±a (se hashea) |
-| `rol` | string | SÃ­ | `administrador` \| `lider` \| `miembro` |
+| `email` | string | Sí | Email único del usuario |
+| `password` | string | Sí | Contraseña (se hashea) |
+| `rol` | string | Sí | `administrador` \| `lider` \| `miembro` |
 | `miembro_id` | number \| null | No | ID del miembro vinculado |
 
 **Response 201:**
@@ -316,7 +316,7 @@ Actualizar email y/o rol de un usuario.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `email` | string | No | Nuevo email |
 | `rol` | string | No | `administrador` \| `lider` \| `miembro` |
@@ -357,14 +357,14 @@ Listar todos los miembros activos.
       "id": 1,
       "rut": "12345678-9",
       "nombre": "Juan",
-      "apellido": "PÃ©rez",
+      "apellido": "Pérez",
       "email": "juan@email.com",
       "telefono": "+56912345678",
       "fecha_nacimiento": "1990-05-15",
       "direccion": "Calle Principal 123",
       "genero": "masculino",
       "bautizado": true,
-      "estado_membresia": "plena_comunion",
+      "estado_comunion": "plena_comunion",
       "fecha_ingreso": "2024-01-15",
       "activo": true,
       "created_at": "2024-01-15T10:00:00.000Z",
@@ -397,31 +397,31 @@ Registrar nuevo miembro. *(RF_01)*
 {
   "rut": "12345678-9",
   "nombre": "Juan",
-  "apellido": "PÃ©rez",
+  "apellido": "Pérez",
   "email": "juan@email.com",
   "telefono": "+56912345678",
   "fecha_nacimiento": "1990-05-15",
   "direccion": "Calle Principal 123",
   "genero": "masculino",
   "bautizado": false,
-  "estado_membresia": "sin_membresia",
+  "estado_comunion": "asistente",
   "fecha_ingreso": "2024-01-15"
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `rut` | string | SÃ­ | RUT formato `12345678-9` |
-| `nombre` | string | SÃ­ | Nombre del miembro |
-| `apellido` | string | SÃ­ | Apellido del miembro |
+| `rut` | string | Sí | RUT formato `12345678-9` |
+| `nombre` | string | Sí | Nombre del miembro |
+| `apellido` | string | Sí | Apellido del miembro |
 | `email` | string | No | Email de contacto |
-| `telefono` | string | No | TelÃ©fono de contacto |
+| `telefono` | string | No | Teléfono de contacto |
 | `fecha_nacimiento` | string | No | Formato `YYYY-MM-DD` |
-| `direccion` | string | No | DirecciÃ³n fÃ­sica |
+| `direccion` | string | No | Dirección física |
 | `genero` | string | No | `masculino` \| `femenino` |
-| `bautizado` | boolean | SÃ­ | Indica si estÃ¡ bautizado |
-| `estado_membresia` | string | SÃ­ | `sin_membresia` \| `probando` \| `plena_comunion` |
-| `fecha_ingreso` | string | SÃ­ | Formato `YYYY-MM-DD` |
+| `bautizado` | boolean | Sí | Indica si está bautizado |
+| `estado_comunion` | string | Sí | `asistente` \| `probando` \| `plena_comunion` |
+| `fecha_ingreso` | string | Sí | Formato `YYYY-MM-DD` |
 
 **Response 201:**
 
@@ -433,7 +433,7 @@ Registrar nuevo miembro. *(RF_01)*
     "id": 10,
     "rut": "12345678-9",
     "nombre": "Juan",
-    "apellido": "PÃ©rez",
+    "apellido": "Pérez",
     "activo": true
   },
   "statusCode": 201
@@ -444,7 +444,7 @@ Registrar nuevo miembro. *(RF_01)*
 
 ### PUT `/api/miembros/:id`
 
-Actualizar informaciÃ³n del miembro. *(RF_03)*
+Actualizar información del miembro. *(RF_03)*
 
 - **Roles:** `administrador`
 
@@ -454,7 +454,7 @@ Actualizar informaciÃ³n del miembro. *(RF_03)*
 
 ### DELETE `/api/miembros/:id`
 
-EliminaciÃ³n lÃ³gica (soft delete).
+Eliminación lógica (soft delete).
 
 - **Roles:** `administrador`
 
@@ -473,7 +473,7 @@ EliminaciÃ³n lÃ³gica (soft delete).
 
 ### PATCH `/api/miembros/:id/estado`
 
-Cambiar estado de membresÃ­a. *(RF_05)*
+Cambiar estado de membresía. *(RF_05)*
 
 - **Roles:** `administrador`
 
@@ -481,15 +481,15 @@ Cambiar estado de membresÃ­a. *(RF_05)*
 
 ```json
 {
-  "estado_membresia": "plena_comunion"
+  "estado_comunion": "plena_comunion"
 }
 ```
 
-| Valor | DescripciÃ³n |
+| Valor | Descripción |
 |-------|-------------|
-| `sin_membresia` | Sin membresÃ­a activa |
-| `probando` | En perÃ­odo de prueba |
-| `plena_comunion` | Miembro en plena comuniÃ³n |
+| `asistente` | Sin membresía activa |
+| `probando` | En período de prueba |
+| `plena_comunion` | Miembro en plena comunión |
 
 ---
 
@@ -547,11 +547,11 @@ Crear nuevo grupo ministerial.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `nombre` | string | SÃ­ | Nombre del grupo |
-| `descripcion` | string | No | DescripciÃ³n del grupo |
-| `fecha_creacion` | string | SÃ­ | Formato `YYYY-MM-DD` |
+| `nombre` | string | Sí | Nombre del grupo |
+| `descripcion` | string | No | Descripción del grupo |
+| `fecha_creacion` | string | Sí | Formato `YYYY-MM-DD` |
 
 ---
 
@@ -567,17 +567,17 @@ Actualizar grupo ministerial.
 
 ### DELETE `/api/grupos-ministeriales/:id`
 
-EliminaciÃ³n lÃ³gica (soft delete).
+Eliminación lógica (soft delete).
 
 - **Roles:** `administrador`
 
 ---
 
-## 5. MembresÃ­a Grupo (`/api/membresia-grupo`)
+## 5. Membresía Grupo (`/api/comunion-grupo`)
 
 > Todos requieren `Bearer Token`.
 
-### POST `/api/membresia-grupo`
+### POST `/api/comunion-grupo`
 
 Vincular miembro a grupo. *(RF_06)*
 
@@ -594,12 +594,12 @@ Vincular miembro a grupo. *(RF_06)*
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `miembro_id` | number | SÃ­ | ID del miembro |
-| `grupo_id` | number | SÃ­ | ID del grupo |
-| `rol_grupo_id` | number | SÃ­ | ID del rol dentro del grupo |
-| `fecha_vinculacion` | string | SÃ­ | Fecha ISO 8601 |
+| `miembro_id` | number | Sí | ID del miembro |
+| `grupo_id` | number | Sí | ID del grupo |
+| `rol_grupo_id` | number | Sí | ID del rol dentro del grupo |
+| `fecha_vinculacion` | string | Sí | Fecha ISO 8601 |
 
 **Response 201:**
 
@@ -608,7 +608,7 @@ Vincular miembro a grupo. *(RF_06)*
   "success": true,
   "message": "Miembro vinculado al grupo exitosamente",
   "responseObject": {
-    "id_membresia": 10,
+    "id_integrante": 10,
     "miembro_id": 5,
     "grupo_id": 2,
     "rol_grupo_id": 3,
@@ -621,7 +621,7 @@ Vincular miembro a grupo. *(RF_06)*
 
 ---
 
-### PATCH `/api/membresia-grupo/:id/desvincular`
+### PATCH `/api/comunion-grupo/:id/desvincular`
 
 Desvincular miembro del grupo. *(RF_07)*
 
@@ -637,7 +637,7 @@ Desvincular miembro del grupo. *(RF_07)*
 
 ---
 
-### GET `/api/membresia-grupo/miembro/:miembro_id`
+### GET `/api/comunion-grupo/miembro/:miembro_id`
 
 Obtener todos los grupos de un miembro.
 
@@ -650,7 +650,7 @@ Obtener todos los grupos de un miembro.
   "success": true,
   "responseObject": [
     {
-      "id_membresia": 1,
+      "id_integrante": 1,
       "miembro_id": 5,
       "grupo_id": 2,
       "rol_grupo_id": 3,
@@ -664,7 +664,7 @@ Obtener todos los grupos de un miembro.
 
 ---
 
-### GET `/api/membresia-grupo/grupo/:grupo_id`
+### GET `/api/comunion-grupo/grupo/:grupo_id`
 
 Obtener todos los miembros de un grupo.
 
@@ -676,9 +676,9 @@ Obtener todos los miembros de un grupo.
 
 ### GET `/api/actividades/publicas`
 
-Obtener actividades pÃºblicas programadas futuras.
+Obtener actividades públicas programadas futuras.
 
-- **AutenticaciÃ³n:** No requerida
+- **Autenticación:** No requerida
 
 **Response 200:**
 
@@ -713,15 +713,15 @@ Obtener actividades pÃºblicas programadas futuras.
 
 Listar actividades con filtros opcionales.
 
-- **AutenticaciÃ³n:** SÃ­
+- **Autenticación:** Sí
 - **Roles:** Todos los autenticados
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `mes` | number | No | Mes (1-12) |
-| `anio` | number | No | AÃ±o (YYYY) |
+| `anio` | number | No | Año (YYYY) |
 | `estado` | string | No | `programada` \| `realizada` \| `cancelada` |
 | `es_publica` | string | No | `true` \| `false` |
 
@@ -750,7 +750,7 @@ Crear nueva actividad.
   "patron_id": null,
   "tipo_actividad_id": 1,
   "nombre": "Culto especial de Navidad",
-  "descripcion": "CelebraciÃ³n navideÃ±a",
+  "descripcion": "Celebración navideña",
   "fecha": "2025-12-25",
   "hora_inicio": "10:00",
   "hora_fin": "12:00",
@@ -760,18 +760,18 @@ Crear nueva actividad.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `patron_id` | number \| null | No | PatrÃ³n del que se generÃ³ |
-| `tipo_actividad_id` | number | SÃ­ | Tipo de actividad |
-| `nombre` | string | SÃ­ | Nombre de la actividad |
-| `descripcion` | string | No | DescripciÃ³n |
-| `fecha` | string | SÃ­ | Formato `YYYY-MM-DD` |
-| `hora_inicio` | string | SÃ­ | Formato `HH:MM` |
-| `hora_fin` | string | SÃ­ | Formato `HH:MM` |
+| `patron_id` | number \| null | No | Patrón del que se generó |
+| `tipo_actividad_id` | number | Sí | Tipo de actividad |
+| `nombre` | string | Sí | Nombre de la actividad |
+| `descripcion` | string | No | Descripción |
+| `fecha` | string | Sí | Formato `YYYY-MM-DD` |
+| `hora_inicio` | string | Sí | Formato `HH:MM` |
+| `hora_fin` | string | Sí | Formato `HH:MM` |
 | `grupo_id` | number \| null | No | Grupo organizador |
-| `es_publica` | boolean | SÃ­ | Visible pÃºblicamente |
-| `creador_id` | number | SÃ­ | ID del usuario creador |
+| `es_publica` | boolean | Sí | Visible públicamente |
+| `creador_id` | number | Sí | ID del usuario creador |
 
 ---
 
@@ -808,7 +808,7 @@ Cambiar estado de la actividad (requiere `motivo_cancelacion` si se cancela).
 }
 ```
 
-| Estado | DescripciÃ³n |
+| Estado | Descripción |
 |--------|-------------|
 | `programada` | Actividad planificada |
 | `realizada` | Actividad completada |
@@ -855,7 +855,7 @@ Listar todos los patrones activos.
 
 ### GET `/api/patrones/:id`
 
-Obtener patrÃ³n por ID.
+Obtener patrón por ID.
 
 - **Roles:** Todos los autenticados
 
@@ -863,7 +863,7 @@ Obtener patrÃ³n por ID.
 
 ### POST `/api/patrones`
 
-Crear nuevo patrÃ³n de actividad.
+Crear nuevo patrón de actividad.
 
 - **Roles:** `administrador`
 
@@ -883,21 +883,21 @@ Crear nuevo patrÃ³n de actividad.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `nombre` | string | SÃ­ | Nombre del patrÃ³n |
-| `tipo_actividad_id` | number | SÃ­ | Tipo de actividad |
-| `frecuencia` | string | SÃ­ | Ver tabla de frecuencias |
-| `dia_semana` | number | SÃ­ | 1=lunes ... 7=domingo |
-| `hora_inicio` | string | SÃ­ | Formato `HH:MM` |
-| `duracion_minutos` | number | SÃ­ | DuraciÃ³n en minutos |
+| `nombre` | string | Sí | Nombre del patrón |
+| `tipo_actividad_id` | number | Sí | Tipo de actividad |
+| `frecuencia` | string | Sí | Ver tabla de frecuencias |
+| `dia_semana` | number | Sí | 1=lunes ... 7=domingo |
+| `hora_inicio` | string | Sí | Formato `HH:MM` |
+| `duracion_minutos` | number | Sí | Duración en minutos |
 | `lugar` | string | No | Lugar de la actividad |
 | `grupo_id` | number \| null | No | Grupo organizador |
-| `es_publica` | boolean | SÃ­ | Visible pÃºblicamente |
+| `es_publica` | boolean | Sí | Visible públicamente |
 
 **Frecuencias disponibles:**
 
-| Valor | DescripciÃ³n |
+| Valor | Descripción |
 |-------|-------------|
 | `semanal` | Todas las semanas |
 | `primera_semana` | Solo la primera semana del mes |
@@ -909,7 +909,7 @@ Crear nuevo patrÃ³n de actividad.
 
 ### PUT `/api/patrones/:id`
 
-Actualizar patrÃ³n.
+Actualizar patrón.
 
 - **Roles:** `administrador`
 
@@ -917,7 +917,7 @@ Actualizar patrÃ³n.
 
 ### PATCH `/api/patrones/:id/estado`
 
-Activar/desactivar patrÃ³n.
+Activar/desactivar patrón.
 
 - **Roles:** `administrador`
 
@@ -933,7 +933,7 @@ Activar/desactivar patrÃ³n.
 
 ### POST `/api/patrones/generar-instancias`
 
-Generar actividades desde todos los patrones activos para un mes/aÃ±o.
+Generar actividades desde todos los patrones activos para un mes/año.
 
 - **Roles:** `administrador`
 
@@ -963,7 +963,7 @@ Generar actividades desde todos los patrones activos para un mes/aÃ±o.
       },
       {
         "patron_id": 2,
-        "patron_nombre": "ReuniÃ³n de oraciÃ³n miÃ©rcoles",
+        "patron_nombre": "Reunión de oración miércoles",
         "actividades_creadas": 4
       }
     ]
@@ -986,7 +986,7 @@ Listar invitaciones con filtros opcionales.
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `actividad_id` | number | No | Filtrar por actividad |
 | `miembro_id` | number | No | Filtrar por miembro |
@@ -1020,7 +1020,7 @@ Listar invitaciones con filtros opcionales.
 
 ### GET `/api/invitados/:id`
 
-Obtener invitaciÃ³n por ID.
+Obtener invitación por ID.
 
 - **Roles:** Todos los autenticados
 
@@ -1028,7 +1028,7 @@ Obtener invitaciÃ³n por ID.
 
 ### POST `/api/invitados`
 
-Crear invitaciÃ³n para un miembro a una actividad.
+Crear invitación para un miembro a una actividad.
 
 - **Roles:** `administrador`, `lider`
 
@@ -1042,17 +1042,17 @@ Crear invitaciÃ³n para un miembro a una actividad.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `actividad_id` | number | SÃ­ | ID de la actividad |
-| `miembro_id` | number | SÃ­ | ID del miembro invitado |
-| `rol_id` | number | SÃ­ | ID del rol de actividad asignado |
+| `actividad_id` | number | Sí | ID de la actividad |
+| `miembro_id` | number | Sí | ID del miembro invitado |
+| `rol_id` | number | Sí | ID del rol de actividad asignado |
 
 ---
 
 ### PATCH `/api/invitados/:id/responder`
 
-Confirmar o rechazar invitaciÃ³n (requiere `motivo_rechazo` si se rechaza).
+Confirmar o rechazar invitación (requiere `motivo_rechazo` si se rechaza).
 
 - **Roles:** Todos los autenticados
 
@@ -1093,25 +1093,25 @@ Marcar asistencia real del invitado.
 
 ### DELETE `/api/invitados/:id`
 
-Eliminar invitaciÃ³n (solo si estÃ¡ pendiente).
+Eliminar invitación (solo si está pendiente).
 
 - **Roles:** `administrador`, `lider`
 
 **Errores posibles:**
 
-| CÃ³digo | Mensaje |
+| Código | Mensaje |
 |--------|---------|
 | 400 | Solo se pueden eliminar invitaciones pendientes |
 
 ---
 
-## 9. Necesidades LogÃ­sticas (`/api/necesidades`)
+## 9. Necesidades Logísticas (`/api/necesidades`)
 
 > Todos requieren `Bearer Token`.
 
 ### GET `/api/necesidades/abiertas`
 
-Obtener necesidades abiertas para actividades en los prÃ³ximos 60 dÃ­as.
+Obtener necesidades abiertas para actividades en los próximos 60 días.
 
 - **Roles:** Todos los autenticados
 
@@ -1125,7 +1125,7 @@ Listar necesidades con filtros opcionales.
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `estado` | string | No | `abierta` \| `cubierta` \| `cerrada` |
 | `actividad_id` | number | No | Filtrar por actividad |
@@ -1142,7 +1142,7 @@ Obtener necesidad por ID.
 
 ### POST `/api/necesidades`
 
-Crear nueva necesidad logÃ­stica.
+Crear nueva necesidad logística.
 
 - **Roles:** `administrador`, `lider`
 
@@ -1159,13 +1159,13 @@ Crear nueva necesidad logÃ­stica.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `actividad_id` | number | SÃ­ | ID de la actividad |
-| `tipo_necesidad_id` | number | SÃ­ | ID del tipo de necesidad |
-| `descripcion` | string | SÃ­ | DescripciÃ³n de la necesidad |
-| `cantidad_requerida` | number | SÃ­ | Cantidad total necesaria |
-| `unidad_medida` | string | SÃ­ | Unidad (ej: `unidades`, `litros`, `kg`) |
+| `actividad_id` | number | Sí | ID de la actividad |
+| `tipo_necesidad_id` | number | Sí | ID del tipo de necesidad |
+| `descripcion` | string | Sí | Descripción de la necesidad |
+| `cantidad_requerida` | number | Sí | Cantidad total necesaria |
+| `unidad_medida` | string | Sí | Unidad (ej: `unidades`, `litros`, `kg`) |
 | `cantidad_cubierta` | number | No | Cantidad ya cubierta (default: 0) |
 
 **Response 201:**
@@ -1192,7 +1192,7 @@ Crear nueva necesidad logÃ­stica.
 
 ### PUT `/api/necesidades/:id`
 
-Actualizar necesidad logÃ­stica.
+Actualizar necesidad logística.
 
 - **Roles:** `administrador`, `lider`
 
@@ -1212,9 +1212,9 @@ Cambiar estado de la necesidad.
 }
 ```
 
-| Estado | DescripciÃ³n |
+| Estado | Descripción |
 |--------|-------------|
-| `abierta` | AÃºn falta cubrir |
+| `abierta` | Aún falta cubrir |
 | `cubierta` | Completamente cubierta |
 | `cerrada` | Cerrada manualmente |
 
@@ -1222,7 +1222,7 @@ Cambiar estado de la necesidad.
 
 ### DELETE `/api/necesidades/:id`
 
-Eliminar necesidad (solo si estÃ¡ abierta).
+Eliminar necesidad (solo si está abierta).
 
 - **Roles:** `administrador`, `lider`
 
@@ -1240,7 +1240,7 @@ Listar colaboraciones con filtros opcionales.
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `necesidad_id` | number | No | Filtrar por necesidad |
 | `miembro_id` | number | No | Filtrar por miembro |
@@ -1250,7 +1250,7 @@ Listar colaboraciones con filtros opcionales.
 
 ### GET `/api/colaboradores/:id`
 
-Obtener colaboraciÃ³n por ID.
+Obtener colaboración por ID.
 
 - **Roles:** Todos los autenticados
 
@@ -1258,7 +1258,7 @@ Obtener colaboraciÃ³n por ID.
 
 ### POST `/api/colaboradores`
 
-Registrar oferta de colaboraciÃ³n voluntaria.
+Registrar oferta de colaboración voluntaria.
 
 - **Roles:** Todos los autenticados
 
@@ -1273,18 +1273,18 @@ Registrar oferta de colaboraciÃ³n voluntaria.
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `necesidad_id` | number | SÃ­ | ID de la necesidad |
-| `miembro_id` | number | SÃ­ | ID del miembro colaborador |
-| `cantidad_ofrecida` | number | SÃ­ | Cantidad que ofrece |
+| `necesidad_id` | number | Sí | ID de la necesidad |
+| `miembro_id` | number | Sí | ID del miembro colaborador |
+| `cantidad_ofrecida` | number | Sí | Cantidad que ofrece |
 | `observaciones` | string | No | Observaciones adicionales |
 
 ---
 
 ### PATCH `/api/colaboradores/:id/decision`
 
-Aceptar o rechazar oferta de colaboraciÃ³n.
+Aceptar o rechazar oferta de colaboración.
 
 - **Roles:** `administrador`, `lider`
 
@@ -1300,7 +1300,7 @@ Aceptar o rechazar oferta de colaboraciÃ³n.
 
 ### DELETE `/api/colaboradores/:id`
 
-Eliminar colaboraciÃ³n (solo si estÃ¡ pendiente).
+Eliminar colaboración (solo si está pendiente).
 
 - **Roles:** Todos los autenticados
 
@@ -1312,7 +1312,7 @@ Eliminar colaboraciÃ³n (solo si estÃ¡ pendiente).
 
 ### POST `/api/candidatos/sugerir-rol`
 
-Sugerir candidatos ideales para un rol de actividad (scoring automÃ¡tico).
+Sugerir candidatos ideales para un rol de actividad (scoring automático).
 
 **Request Body:**
 
@@ -1323,10 +1323,10 @@ Sugerir candidatos ideales para un rol de actividad (scoring automÃ¡tico).
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `rol_id` | number | SÃ­ | ID del rol de actividad |
-| `fecha` | string | SÃ­ | Fecha de la actividad `YYYY-MM-DD` |
+| `rol_id` | number | Sí | ID del rol de actividad |
+| `fecha` | string | Sí | Fecha de la actividad `YYYY-MM-DD` |
 
 **Response 200:**
 
@@ -1336,7 +1336,7 @@ Sugerir candidatos ideales para un rol de actividad (scoring automÃ¡tico).
   "responseObject": [
     {
       "miembro_id": 5,
-      "nombre_completo": "Juan PÃ©rez",
+      "nombre_completo": "Juan Pérez",
       "puntuacion_total": 87,
       "desglose": {
         "experiencia": 25,
@@ -1350,7 +1350,7 @@ Sugerir candidatos ideales para un rol de actividad (scoring automÃ¡tico).
     },
     {
       "miembro_id": 3,
-      "nombre_completo": "MarÃ­a LÃ³pez",
+      "nombre_completo": "María López",
       "puntuacion_total": 72,
       "desglose": {
         "experiencia": 15,
@@ -1371,7 +1371,7 @@ Sugerir candidatos ideales para un rol de actividad (scoring automÃ¡tico).
 
 ### POST `/api/candidatos/sugerir-cargo`
 
-Sugerir candidatos ideales para un cargo de grupo (scoring automÃ¡tico).
+Sugerir candidatos ideales para un cargo de grupo (scoring automático).
 
 **Request Body:**
 
@@ -1382,10 +1382,10 @@ Sugerir candidatos ideales para un cargo de grupo (scoring automÃ¡tico).
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `cargo_id` | number | SÃ­ | ID del rol de grupo |
-| `fecha` | string | SÃ­ | Fecha de referencia `YYYY-MM-DD` |
+| `cargo_id` | number | Sí | ID del rol de grupo |
+| `fecha` | string | Sí | Fecha de referencia `YYYY-MM-DD` |
 
 **Response 200:** Mismo formato que `sugerir-rol`.
 
@@ -1395,16 +1395,16 @@ Sugerir candidatos ideales para un cargo de grupo (scoring automÃ¡tico).
 
 ### GET `/api/calendario/publico`
 
-Obtener calendario pÃºblico de actividades.
+Obtener calendario público de actividades.
 
-- **AutenticaciÃ³n:** No requerida
+- **Autenticación:** No requerida
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `mes` | number | SÃ­ | Mes (1-12) |
-| `anio` | number | SÃ­ | AÃ±o (YYYY) |
+| `mes` | number | Sí | Mes (1-12) |
+| `anio` | number | Sí | Año (YYYY) |
 
 **Ejemplo:** `GET /api/calendario/publico?mes=3&anio=2025`
 
@@ -1441,15 +1441,15 @@ Obtener calendario pÃºblico de actividades.
 
 Obtener calendario consolidado con todas las actividades programadas.
 
-- **AutenticaciÃ³n:** SÃ­
+- **Autenticación:** Sí
 - **Roles:** Todos los autenticados
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `mes` | number | SÃ­ | Mes (1-12) |
-| `anio` | number | SÃ­ | AÃ±o (YYYY) |
+| `mes` | number | Sí | Mes (1-12) |
+| `anio` | number | Sí | Año (YYYY) |
 
 ---
 
@@ -1457,7 +1457,7 @@ Obtener calendario consolidado con todas las actividades programadas.
 
 Obtener responsabilidades futuras confirmadas de un miembro.
 
-- **AutenticaciÃ³n:** SÃ­
+- **Autenticación:** Sí
 - **Roles:** Todos los autenticados (valida que el token corresponda al miembro)
 
 **Response 200:**
@@ -1477,7 +1477,7 @@ Obtener responsabilidades futuras confirmadas de un miembro.
       },
       "rol_asignado": {
         "id": 2,
-        "nombre": "MÃºsico"
+        "nombre": "Músico"
       },
       "fecha_invitacion": "2025-03-01T10:00:00.000Z",
       "estado": "confirmado"
@@ -1489,26 +1489,26 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 ---
 
-## 13. CatÃ¡logos
+## 13. Catálogos
 
 ### 13.1 Roles de Grupo (`/api/roles-grupo`)
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
-| MÃ©todo | Ruta | Roles | DescripciÃ³n |
+| Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
 | GET | `/api/roles-grupo` | Todos | Listar roles de grupo activos |
 | GET | `/api/roles-grupo/:id` | Todos | Obtener rol por ID |
 | POST | `/api/roles-grupo` | Admin | Crear rol de grupo |
 | PUT | `/api/roles-grupo/:id` | Admin | Actualizar rol de grupo |
-| DELETE | `/api/roles-grupo/:id` | Admin | EliminaciÃ³n lÃ³gica |
+| DELETE | `/api/roles-grupo/:id` | Admin | Eliminación lógica |
 
 **Schema RolGrupo:**
 
 ```json
 {
   "id_rol_grupo": 1,
-  "nombre": "LÃ­der",
+  "nombre": "Líder",
   "requiere_plena_comunion": true,
   "activo": true,
   "created_at": "2024-01-15T10:00:00.000Z",
@@ -1520,7 +1520,7 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 ```json
 {
-  "nombre": "LÃ­der",
+  "nombre": "Líder",
   "requiere_plena_comunion": true
 }
 ```
@@ -1531,13 +1531,13 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
-| MÃ©todo | Ruta | Roles | DescripciÃ³n |
+| Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
 | GET | `/api/roles-actividad` | Todos | Listar roles de actividad activos |
 | GET | `/api/roles-actividad/:id` | Todos | Obtener rol por ID |
 | POST | `/api/roles-actividad` | Admin | Crear rol de actividad |
 | PUT | `/api/roles-actividad/:id` | Admin | Actualizar rol de actividad |
-| DELETE | `/api/roles-actividad/:id` | Admin | EliminaciÃ³n lÃ³gica |
+| DELETE | `/api/roles-actividad/:id` | Admin | Eliminación lógica |
 
 **Schema RolActividad:**
 
@@ -1567,13 +1567,13 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
-| MÃ©todo | Ruta | Roles | DescripciÃ³n |
+| Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
 | GET | `/api/tipos-actividad` | Todos | Listar tipos de actividad activos |
 | GET | `/api/tipos-actividad/:id` | Todos | Obtener tipo por ID |
 | POST | `/api/tipos-actividad` | Admin | Crear tipo de actividad |
 | PUT | `/api/tipos-actividad/:id` | Admin | Actualizar tipo de actividad |
-| DELETE | `/api/tipos-actividad/:id` | Admin | EliminaciÃ³n lÃ³gica |
+| DELETE | `/api/tipos-actividad/:id` | Admin | Eliminación lógica |
 
 **Schema TipoActividad:**
 
@@ -1605,13 +1605,13 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
-| MÃ©todo | Ruta | Roles | DescripciÃ³n |
+| Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
 | GET | `/api/tipos-necesidad` | Todos | Listar tipos de necesidad activos |
 | GET | `/api/tipos-necesidad/:id` | Todos | Obtener tipo por ID |
 | POST | `/api/tipos-necesidad` | Admin | Crear tipo de necesidad |
 | PUT | `/api/tipos-necesidad/:id` | Admin | Actualizar tipo de necesidad |
-| DELETE | `/api/tipos-necesidad/:id` | Admin | EliminaciÃ³n lÃ³gica |
+| DELETE | `/api/tipos-necesidad/:id` | Admin | Eliminación lógica |
 
 **Schema TipoNecesidad:**
 
@@ -1641,17 +1641,17 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 ## 14. Historiales
 
-### 14.1 Historial de Estado de MembresÃ­a (`/api/historial-estado`)
+### 14.1 Historial de Estado de Membresía (`/api/historial-estado`)
 
 > Todos requieren `Bearer Token` + rol `administrador`.
 
 ### GET `/api/historial-estado`
 
-Listar cambios de estado de membresÃ­a.
+Listar cambios de estado de membresía.
 
 **Query Params:**
 
-| Param | Tipo | Requerido | DescripciÃ³n |
+| Param | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `miembro_id` | number | No | Filtrar por miembro |
 
@@ -1664,7 +1664,7 @@ Listar cambios de estado de membresÃ­a.
     {
       "id": 1,
       "miembro_id": 5,
-      "estado_anterior": "sin_membresia",
+      "estado_anterior": "asistente",
       "estado_nuevo": "probando",
       "motivo": "El miembro ha completado el periodo de prueba",
       "usuario_id": 1,
@@ -1685,27 +1685,27 @@ Obtener registro de historial por ID.
 
 ### POST `/api/historial-estado`
 
-Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
+Registrar cambio de estado (actualiza automáticamente el miembro).
 
 **Request Body:**
 
 ```json
 {
   "miembro_id": 5,
-  "estado_anterior": "sin_membresia",
+  "estado_anterior": "asistente",
   "estado_nuevo": "probando",
   "motivo": "El miembro ha completado el periodo de prueba satisfactoriamente",
   "usuario_id": 1
 }
 ```
 
-| Campo | Tipo | Requerido | DescripciÃ³n |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `miembro_id` | number | SÃ­ | ID del miembro |
-| `estado_anterior` | string | SÃ­ | Estado actual del miembro |
-| `estado_nuevo` | string | SÃ­ | Nuevo estado |
-| `motivo` | string | SÃ­ | Motivo del cambio |
-| `usuario_id` | number | SÃ­ | ID del usuario que registra |
+| `miembro_id` | number | Sí | ID del miembro |
+| `estado_anterior` | string | Sí | Estado actual del miembro |
+| `estado_nuevo` | string | Sí | Nuevo estado |
+| `motivo` | string | Sí | Motivo del cambio |
+| `usuario_id` | number | Sí | ID del usuario que registra |
 
 ---
 
@@ -1716,7 +1716,7 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
 ```
 1. POST /api/auth/login
    Body: { "email": "admin@iepsantajuana.cl", "password": "Admin123!" }
-   â†’ Obtener token del response
+   → Obtener token del response
 
 2. Usar en todas las peticiones siguientes:
    Header: Authorization: Bearer <token>
@@ -1729,20 +1729,20 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
    Body: {
      "rut": "12345678-9",
      "nombre": "Juan",
-     "apellido": "PÃ©rez",
+     "apellido": "Pérez",
      "bautizado": true,
-     "estado_membresia": "plena_comunion",
+     "estado_comunion": "plena_comunion",
      "fecha_ingreso": "2025-01-15"
    }
-   â†’ Obtener miembro.id (ej: 10)
+   → Obtener miembro.id (ej: 10)
 
 2. GET /api/grupos-ministeriales
-   â†’ Obtener id_grupo del grupo deseado (ej: 2)
+   → Obtener id_grupo del grupo deseado (ej: 2)
 
 3. GET /api/roles-grupo
-   â†’ Obtener id_rol_grupo del rol deseado (ej: 3)
+   → Obtener id_rol_grupo del rol deseado (ej: 3)
 
-4. POST /api/membresia-grupo
+4. POST /api/comunion-grupo
    Body: {
      "miembro_id": 10,
      "grupo_id": 2,
@@ -1755,7 +1755,7 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
 
 ```
 1. GET /api/tipos-actividad
-   â†’ Obtener id_tipo de la actividad (ej: 1)
+   → Obtener id_tipo de la actividad (ej: 1)
 
 2. POST /api/actividades
    Body: {
@@ -1767,14 +1767,14 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
      "es_publica": true,
      "creador_id": 1
    }
-   â†’ Obtener actividad.id (ej: 20)
+   → Obtener actividad.id (ej: 20)
 
 3. GET /api/roles-actividad
-   â†’ Obtener id_rol del rol a asignar (ej: 2)
+   → Obtener id_rol del rol a asignar (ej: 2)
 
 4. POST /api/candidatos/sugerir-rol
    Body: { "rol_id": 2, "fecha": "2025-03-15" }
-   â†’ Ver candidatos sugeridos con scoring
+   → Ver candidatos sugeridos con scoring
 
 5. POST /api/invitados
    Body: {
@@ -1787,7 +1787,7 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
    PATCH /api/invitados/:id/responder
    Body: { "estado": "confirmado" }
 
-7. (DespuÃ©s de la actividad, marcar asistencia)
+7. (Después de la actividad, marcar asistencia)
    PATCH /api/invitados/:id/asistencia
    Body: { "asistio": true }
 ```
@@ -1806,17 +1806,17 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
      "lugar": "Templo principal",
      "es_publica": false
    }
-   â†’ PatrÃ³n creado
+   → Patrón creado
 
 2. POST /api/patrones/generar-instancias
    Body: { "mes": 4, "anio": 2025 }
-   â†’ Se crean actividades automÃ¡ticamente para cada domingo de abril
+   → Se crean actividades automáticamente para cada domingo de abril
 
 3. GET /api/actividades?mes=4&anio=2025
-   â†’ Ver todas las actividades generadas
+   → Ver todas las actividades generadas
 ```
 
-### Flujo 5: Gestionar necesidades logÃ­sticas
+### Flujo 5: Gestionar necesidades logísticas
 
 ```
 1. POST /api/necesidades
@@ -1827,10 +1827,10 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
      "cantidad_requerida": 50,
      "unidad_medida": "unidades"
    }
-   â†’ Necesidad creada (id: 5)
+   → Necesidad creada (id: 5)
 
 2. GET /api/necesidades/abiertas
-   â†’ Miembros ven necesidades disponibles
+   → Miembros ven necesidades disponibles
 
 3. POST /api/colaboradores
    Body: {
@@ -1851,19 +1851,19 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
 
 ## 16. Resumen de Endpoints
 
-| MÃ³dulo | Prefijo | Endpoints | Auth |
+| Módulo | Prefijo | Endpoints | Auth |
 |--------|---------|-----------|------|
-| AutenticaciÃ³n | `/api/auth` | 4 | Mixto |
+| Autenticación | `/api/auth` | 4 | Mixto |
 | Usuarios | `/api/usuarios` | 5 | Admin |
 | Miembros | `/api/miembros` | 6 | Token + Admin(write) |
 | Grupos Ministeriales | `/api/grupos-ministeriales` | 5 | Token + Admin(write) |
-| MembresÃ­a Grupo | `/api/membresia-grupo` | 4 | Token + Admin/LÃ­der(write) |
+| Membresía Grupo | `/api/comunion-grupo` | 4 | Token + Admin/Líder(write) |
 | Actividades | `/api/actividades` | 6 | Mixto |
 | Patrones | `/api/patrones` | 6 | Token + Admin(write) |
-| Invitados | `/api/invitados` | 6 | Token + Admin/LÃ­der(write) |
-| Necesidades | `/api/necesidades` | 7 | Token + Admin/LÃ­der(write) |
+| Invitados | `/api/invitados` | 6 | Token + Admin/Líder(write) |
+| Necesidades | `/api/necesidades` | 7 | Token + Admin/Líder(write) |
 | Colaboradores | `/api/colaboradores` | 5 | Token |
-| Candidatos | `/api/candidatos` | 2 | Admin/LÃ­der |
+| Candidatos | `/api/candidatos` | 2 | Admin/Líder |
 | Calendario | `/api/calendario` | 3 | Mixto |
 | Roles Grupo | `/api/roles-grupo` | 5 | Token + Admin(write) |
 | Roles Actividad | `/api/roles-actividad` | 5 | Token + Admin(write) |
@@ -1874,15 +1874,15 @@ Registrar cambio de estado (actualiza automÃ¡ticamente el miembro).
 
 ---
 
-## 17. Endpoints PÃºblicos (sin autenticaciÃ³n)
+## 17. Endpoints Públicos (sin autenticación)
 
-| MÃ©todo | Ruta | DescripciÃ³n |
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/api/auth/login` | Iniciar sesiÃ³n |
-| POST | `/api/auth/recuperar-password` | Solicitar recuperaciÃ³n |
-| POST | `/api/auth/reset-password` | Restablecer contraseÃ±a |
-| GET | `/api/actividades/publicas` | Actividades pÃºblicas futuras |
-| GET | `/api/calendario/publico` | Calendario pÃºblico mensual |
+| POST | `/api/auth/login` | Iniciar sesión |
+| POST | `/api/auth/recuperar-password` | Solicitar recuperación |
+| POST | `/api/auth/reset-password` | Restablecer contraseña |
+| GET | `/api/actividades/publicas` | Actividades públicas futuras |
+| GET | `/api/calendario/publico` | Calendario público mensual |
 
 
 

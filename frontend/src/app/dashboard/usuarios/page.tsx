@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useMiembros } from '@/features/miembros/hooks/use-miembros';
+import { useMiembrosPaginated } from '@/features/miembros/hooks/use-miembros';
 import { UsuarioFormModal } from '@/features/usuarios/components/usuario-form-modal';
 import {
   useCambiarEstadoUsuario,
@@ -48,7 +48,8 @@ const rolVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
 
 export default function UsuariosPage() {
   const { data: usuarios, isLoading } = useUsuarios();
-  const { data: miembros } = useMiembros();
+  const { data: miembrosData } = useMiembrosPaginated({ page: 1, limit: 100 });
+  const miembros = miembrosData?.data;
   const createMutation = useCreateUsuario();
   const updateMutation = useUpdateUsuario();
   const estadoMutation = useCambiarEstadoUsuario();

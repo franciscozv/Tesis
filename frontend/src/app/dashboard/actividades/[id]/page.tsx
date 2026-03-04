@@ -295,16 +295,18 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
             <p className="text-sm text-muted-foreground">{formatFecha(actividad.fecha)}</p>
           </div>
         </div>
-        {canManageGestion && !isCancelada && (
+        {((canManageGestion && !isCancelada) || (isAdmin && isCancelada)) && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setEstadoOpen(true)}>
               <RefreshCw className="size-4" />
               Cambiar Estado
             </Button>
-            <Button variant="outline" onClick={() => setFormOpen(true)}>
-              <Pencil className="size-4" />
-              Editar
-            </Button>
+            {!isCancelada && (
+              <Button variant="outline" onClick={() => setFormOpen(true)}>
+                <Pencil className="size-4" />
+                Editar
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -563,13 +565,15 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         miembros={miembros}
         rolesActividad={rolesActividad}
         defaultValues={invitarDefaults}
-        excludeMiembroId={usuario?.miembro_id}
+        excludeMiembroId={usuario?.miembro_id ?? undefined}
       />
 
       <SugerirCandidatoModal
         open={sugerirOpen}
         onOpenChange={setSugerirOpen}
         defaultFecha={actividad?.fecha ?? ''}
+        actividadId={actividadId}
+        isAdmin={isAdmin}
         rolesActividad={rolesActividad}
         sugerirMutation={sugerirMutation}
         onInvitar={handleInvitarFromCandidato}

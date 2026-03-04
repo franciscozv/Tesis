@@ -120,11 +120,6 @@ export default function GruposPage() {
                     {grupo.descripcion ?? '—'}
                   </TableCell>
                   <TableCell>
-                    {grupo.encargado_actual
-                      ? `${grupo.encargado_actual.nombre} ${grupo.encargado_actual.apellido}`
-                      : 'Sin encargado'}
-                  </TableCell>
-                  <TableCell>
                     <Badge variant={grupo.activo ? 'default' : 'secondary'}>
                       {grupo.activo ? 'Activo' : 'Inactivo'}
                     </Badge>

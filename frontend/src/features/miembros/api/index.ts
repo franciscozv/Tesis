@@ -4,13 +4,27 @@ import type {
   CambiarEstadoInput,
   CreateMiembroInput,
   Miembro,
+  MiembrosQueryParams,
+  PaginatedMiembrosResponse,
   UpdateMiembroInput,
   UpdateMiPerfilInput,
 } from '../types';
 
 export const miembrosApi = {
   getAll: async () => {
-    const { data } = await apiClient.get<ApiResponse<Miembro[]>>('/miembros');
+    const { data } = await apiClient.get<ApiResponse<PaginatedMiembrosResponse>>('/miembros', {
+      params: { page: 1, limit: 100 },
+    });
+    return data.responseObject?.data ?? [];
+  },
+
+  getAllPaginated: async (params: MiembrosQueryParams) => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== '' && v !== undefined),
+    );
+    const { data } = await apiClient.get<ApiResponse<PaginatedMiembrosResponse>>('/miembros', {
+      params: cleanParams,
+    });
     return data.responseObject;
   },
 

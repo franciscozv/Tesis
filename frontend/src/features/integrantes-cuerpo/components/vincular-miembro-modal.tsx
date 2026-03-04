@@ -1,9 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { BadgeCheck, Info, Loader2, ShieldCheck, UserCheck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,8 +31,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { ApiResponse } from '@/features/auth/types';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
-import { useMembresiasGrupo } from '../hooks/use-membresias-grupo';
+import { useIntegrantesGrupo } from '../hooks/use-integrantes-grupo';
 import { useRolesGrupo } from '../hooks/use-roles-grupo';
 import { useVincularMiembro } from '../hooks/use-vincular-miembro';
 import { type VincularMiembroFormData, vincularMiembroSchema } from '../schemas';
@@ -42,17 +45,20 @@ interface VincularMiembroModalProps {
 }
 
 export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMiembroModalProps) {
+  const { usuario } = useAuth();
   const { data: miembros } = useMiembros();
-  const { data: miembrosGrupo } = useMembresiasGrupo(grupoId);
+  const { data: miembrosGrupo } = useIntegrantesGrupo(grupoId);
   const { data: roles } = useRolesGrupo();
   const mutation = useVincularMiembro();
 
+  const esAdmin = usuario?.rol === 'administrador';
   const miembrosYaEnGrupo = new Set((miembrosGrupo ?? []).map((m) => m.miembro_id));
   const miembrosActivos = (miembros?.filter((m) => m.activo) ?? []).filter(
     (m) => !miembrosYaEnGrupo.has(m.id),
   );
-  const rolesActivos =
-    roles?.filter((r) => r.activo && r.nombre?.toLowerCase() !== 'encargado') ?? [];
+  const rolesActivos = (roles?.filter((r) => r.activo) ?? []).filter(
+    (r) => esAdmin || !r.es_directiva,
+  );
 
   const form = useForm<VincularMiembroFormData>({
     resolver: zodResolver(vincularMiembroSchema),
@@ -62,6 +68,17 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
       fecha_vinculacion: new Date().toISOString().split('T')[0],
     },
   });
+
+  const selectedMiembroId = form.watch('miembro_id');
+  const selectedRolId = form.watch('rol_grupo_id');
+
+  const selectedMiembro = miembrosActivos.find((m) => m.id === selectedMiembroId);
+  const selectedRol = rolesActivos.find((r) => r.id_rol_grupo === selectedRolId);
+
+  const mostrarAdvertenciaPlenaComunion =
+    selectedRol?.requiere_plena_comunion &&
+    selectedMiembro &&
+    selectedMiembro.estado_comunion !== 'plena_comunion';
 
   function onSubmit(data: VincularMiembroFormData) {
     mutation.mutate(
@@ -86,7 +103,7 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Vincular Miembro al Grupo</DialogTitle>
           <DialogDescription>
@@ -95,6 +112,25 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            {!esAdmin && (
+              <Alert className="py-2 px-3 border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200">
+                <ShieldCheck className="size-4 text-blue-600 dark:text-blue-400" />
+                <AlertTitle className="text-sm font-semibold">Cargos de Directiva</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Los cargos de directiva están reservados para la administración general.
+                </AlertDescription>
+              </Alert>
+            )}
+            {mostrarAdvertenciaPlenaComunion && (
+              <Alert variant="destructive" className="py-2 px-3 border-amber-500 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
+                <Info className="size-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="text-sm font-semibold">Aviso de Requisito</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Este rol requiere que el miembro tenga <strong>Plena Comunión</strong>.
+                  El miembro seleccionado actualmente es <strong>{selectedMiembro?.estado_comunion.replace('_', ' ')}</strong>.
+                </AlertDescription>
+              </Alert>
+            )}
             <FormField
               control={form.control}
               name="miembro_id"
@@ -118,7 +154,12 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
                       )}
                       {miembrosActivos.map((m) => (
                         <SelectItem key={m.id} value={String(m.id)}>
-                          {m.nombre} {m.apellido}
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <span>{m.nombre} {m.apellido}</span>
+                            <Badge variant="outline" className="text-[10px] h-4 py-0 font-normal">
+                              {m.estado_comunion.replace('_', ' ')}
+                            </Badge>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -145,7 +186,29 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
                     <SelectContent>
                       {rolesActivos.map((r) => (
                         <SelectItem key={r.id_rol_grupo} value={String(r.id_rol_grupo)}>
-                          {r.nombre}
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-medium text-sm">{r.nombre}</span>
+                            <div className="flex flex-wrap gap-1">
+                              {r.es_directiva && (
+                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none">
+                                  <ShieldCheck className="size-2.5" />
+                                  Directiva
+                                </Badge>
+                              )}
+                              {r.es_unico && (
+                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none">
+                                  <UserCheck className="size-2.5" />
+                                  Único
+                                </Badge>
+                              )}
+                              {r.requiere_plena_comunion && (
+                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none">
+                                  <BadgeCheck className="size-2.5" />
+                                  Plena Comunión
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

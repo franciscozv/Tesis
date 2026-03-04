@@ -49,6 +49,8 @@ import { useDeleteNecesidad } from '@/features/necesidades/hooks/use-delete-nece
 import { useNecesidades } from '@/features/necesidades/hooks/use-necesidades';
 import { useUpdateNecesidad } from '@/features/necesidades/hooks/use-update-necesidad';
 import type { EstadoNecesidad, NecesidadLogistica } from '@/features/necesidades/types';
+import { cn } from '@/lib/utils';
+import dayjs from 'dayjs';
 import { NecesidadFormModal } from './necesidad-form-modal';
 
 const necesidadEstadoLabels: Record<EstadoNecesidad, string> = {
@@ -388,13 +390,24 @@ interface OfertasTableProps {
 }
 
 function OfertasTable({ colaboradores, isLoading, onDecidir, isPending }: OfertasTableProps) {
+  const isActividadPasada = (col: Colaborador) => {
+    if (!col.necesidad?.actividad) return false;
+    const { fecha, hora_fin, estado } = col.necesidad.actividad;
+
+    if (estado === 'cancelada') return true;
+
+    // Si no hay hora_fin, asumimos las 23:59:59 del día de la fecha
+    const endStr = hora_fin ? `${fecha}T${hora_fin}` : `${fecha}T23:59:59`;
+    return dayjs(endStr).isBefore(dayjs());
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Miembro</TableHead>
-            <TableHead>Necesidad</TableHead>
+            <TableHead>Necesidad / Actividad</TableHead>
             <TableHead>Cantidad</TableHead>
             <TableHead className="hidden md:table-cell">Observaciones</TableHead>
             <TableHead>Estado</TableHead>
@@ -417,55 +430,74 @@ function OfertasTable({ colaboradores, isLoading, onDecidir, isPending }: Oferta
               </TableCell>
             </TableRow>
           ) : (
-            colaboradores.map((col) => (
-              <TableRow key={col.id}>
-                <TableCell className="font-medium">
-                  {col.miembro
-                    ? `${col.miembro.nombre} ${col.miembro.apellido}`
-                    : `Miembro #${col.miembro_id}`}
-                </TableCell>
-                <TableCell>
-                  {col.necesidad?.descripcion ?? `Necesidad #${col.necesidad_id}`}
-                </TableCell>
-                <TableCell>{col.cantidad_ofrecida}</TableCell>
-                <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                  {col.observaciones ?? '—'}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={colaboradorEstadoVariant[col.estado]}>
-                    {colaboradorEstadoLabels[col.estado]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {col.estado === 'pendiente' && (
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onDecidir(col, 'aceptada')}
-                        disabled={isPending}
-                        title="Aceptar"
-                      >
-                        {isPending ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Check className="size-4 text-green-600" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onDecidir(col, 'rechazada')}
-                        disabled={isPending}
-                        title="Rechazar"
-                      >
-                        <X className="size-4 text-destructive" />
-                      </Button>
+            colaboradores.map((col) => {
+              const expirada = isActividadPasada(col);
+              return (
+                <TableRow key={col.id}>
+                  <TableCell className="font-medium">
+                    {col.miembro
+                      ? `${col.miembro.nombre} ${col.miembro.apellido}`
+                      : `Miembro #${col.miembro_id}`}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">
+                        {col.necesidad?.descripcion ?? `Necesidad #${col.necesidad_id}`}
+                      </span>
+                      {col.necesidad?.actividad && (
+                        <span className="text-xs text-muted-foreground">
+                          {col.necesidad.actividad.nombre} ({dayjs(col.necesidad.actividad.fecha).format('DD/MM/YYYY')})
+                        </span>
+                      )}
                     </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                  <TableCell>{col.cantidad_ofrecida}</TableCell>
+                  <TableCell className="hidden max-w-[200px] truncate md:table-cell">
+                    {col.observaciones ?? '—'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <Badge variant={colaboradorEstadoVariant[col.estado]}>
+                        {colaboradorEstadoLabels[col.estado]}
+                      </Badge>
+                      {expirada && col.estado === 'pendiente' && (
+                        <span className="text-[10px] font-semibold text-destructive uppercase">
+                          Expirada
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {col.estado === 'pendiente' && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onDecidir(col, 'aceptada')}
+                          disabled={isPending || expirada}
+                          title={expirada ? 'Actividad ya finalizó' : 'Aceptar'}
+                        >
+                          {isPending ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Check className={cn('size-4 text-green-600', expirada && 'opacity-50')} />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onDecidir(col, 'rechazada')}
+                          disabled={isPending || expirada}
+                          title={expirada ? 'Actividad ya finalizó' : 'Rechazar'}
+                        >
+                          <X className={cn('size-4 text-destructive', expirada && 'opacity-50')} />
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

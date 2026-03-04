@@ -18,6 +18,13 @@ export interface Colaborador {
     id: number;
     descripcion: string;
     actividad_id: number;
+    actividad?: {
+      id: number;
+      nombre: string;
+      fecha: string;
+      hora_fin: string;
+      estado: string;
+    };
   };
 }
 

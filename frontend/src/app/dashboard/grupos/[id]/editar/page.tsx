@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { GrupoForm } from '@/features/grupos-ministeriales/components/grupo-form';
 import { useGrupo } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useUpdateGrupo } from '@/features/grupos-ministeriales/hooks/use-update-grupo';
-import type { CreateGrupoFormData } from '@/features/grupos-ministeriales/schemas';
+import type { CreateGrupoFormData, UpdateGrupoFormData } from '@/features/grupos-ministeriales/schemas';
 
 export default function EditarGrupoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -17,8 +17,8 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
   const { data: grupo, isLoading } = useGrupo(grupoId);
   const mutation = useUpdateGrupo();
 
-  function onSubmit(data: CreateGrupoFormData) {
-    const { fecha_creacion: _, ...input } = data;
+  function onSubmit(data: CreateGrupoFormData | UpdateGrupoFormData) {
+    const { fecha_creacion: _, ...input } = data as CreateGrupoFormData;
     mutation.mutate(
       { id: grupoId, input: { ...input, descripcion: input.descripcion || null } },
       {
@@ -64,6 +64,7 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
         </CardHeader>
         <CardContent>
           <GrupoForm
+            mode="edit"
             defaultValues={{
               nombre: grupo.nombre,
               descripcion: grupo.descripcion ?? '',

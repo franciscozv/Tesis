@@ -23,29 +23,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { authApi } from '@/features/auth/api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { type CambiarPasswordFormData, cambiarPasswordSchema } from '@/features/auth/schemas';
-import { useMembresiaseMiembro } from '@/features/membresia-grupo/hooks/use-membresias-miembro';
+import { useAsignacionesMiembro } from '@/features/integrantes-cuerpo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import { useUpdateMiPerfil } from '@/features/miembros/hooks/use-update-mi-perfil';
 import { type MiPerfilFormData, miPerfilSchema } from '@/features/miembros/schemas';
-import type { EstadoMembresia } from '@/features/miembros/types';
+import type { EstadoComunion } from '@/features/miembros/types';
 
-const estadoLabels: Record<EstadoMembresia, string> = {
-  sin_membresia: 'Sin Membresia',
+const estadoLabels: Record<EstadoComunion, string> = {
+  asistente: 'Asistente',
   probando: 'Probando',
   plena_comunion: 'Plena Comunion',
 };
 
-const estadoVariant: Record<EstadoMembresia, 'default' | 'secondary' | 'outline'> = {
+const estadoVariant: Record<EstadoComunion, 'default' | 'secondary' | 'outline'> = {
   plena_comunion: 'default',
   probando: 'secondary',
-  sin_membresia: 'outline',
+  asistente: 'outline',
 };
 
 export default function MiPerfilPage() {
   const { usuario } = useAuth();
   const miembroId = usuario?.miembro_id ?? 0;
   const { data: miembro, isLoading } = useMiembro(miembroId);
-  const { data: membresias } = useMembresiaseMiembro(miembroId);
+  const { data: comunions } = useAsignacionesMiembro(miembroId);
   const mutation = useUpdateMiPerfil();
 
   const form = useForm<MiPerfilFormData>({
@@ -128,7 +128,7 @@ export default function MiPerfilPage() {
     );
   }
 
-  const gruposActivos = membresias?.filter((m) => !m.fecha_desvinculacion) ?? [];
+  const gruposActivos = comunions?.filter((m) => !m.fecha_desvinculacion) ?? [];
 
   return (
     <div className="space-y-6">
@@ -149,10 +149,10 @@ export default function MiPerfilPage() {
             <InfoRow label="RUT" value={miembro.rut} />
             <Separator />
             <div className="grid grid-cols-3 gap-2 py-2">
-              <span className="text-muted-foreground text-sm">Estado membresia</span>
+              <span className="text-muted-foreground text-sm">Estado comunion</span>
               <div className="col-span-2">
-                <Badge variant={estadoVariant[miembro.estado_membresia]}>
-                  {estadoLabels[miembro.estado_membresia]}
+                <Badge variant={estadoVariant[miembro.estado_comunion]}>
+                  {estadoLabels[miembro.estado_comunion]}
                 </Badge>
               </div>
             </div>

@@ -31,6 +31,7 @@ export interface FieldConfig<T extends FieldValues> {
   label: string;
   type: 'text' | 'textarea' | 'checkbox' | 'color' | 'custom';
   placeholder?: string;
+  description?: string;
   customRender?: (field: { value: unknown; onChange: (v: unknown) => void }) => ReactNode;
 }
 
@@ -92,14 +93,21 @@ export function CatalogoFormModal<T extends FieldValues>({
                 render={({ field }) => (
                   <FormItem>
                     {fieldConfig.type === 'checkbox' ? (
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value as boolean}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0">{fieldConfig.label}</FormLabel>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value as boolean}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">{fieldConfig.label}</FormLabel>
+                        </div>
+                        {fieldConfig.description && (
+                          <p className="text-muted-foreground pl-6 text-xs">
+                            {fieldConfig.description}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <>

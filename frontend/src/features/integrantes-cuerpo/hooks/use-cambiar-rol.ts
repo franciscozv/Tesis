@@ -1,16 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { membresiaGrupoApi } from '../api';
+import { integranteCuerpoApi } from '../api';
 import type { CambiarRolInput } from '../types';
-import { MEMBRESIA_GRUPO_QUERY_KEY } from './use-membresias-grupo';
+import { INTEGRANTE_CUERPO_QUERY_KEY } from './use-integrantes-grupo';
 
 export function useCambiarRol() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: number; input: CambiarRolInput }) =>
-      membresiaGrupoApi.cambiarRol(id, input),
+      integranteCuerpoApi.cambiarRol(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MEMBRESIA_GRUPO_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [INTEGRANTE_CUERPO_QUERY_KEY] });
     },
   });
 }

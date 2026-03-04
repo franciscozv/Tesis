@@ -18,7 +18,7 @@ export default function EditarMiembroPage({ params }: { params: Promise<{ id: st
   const mutation = useUpdateMiembro();
 
   function onSubmit(data: CreateMiembroFormData) {
-    const { rut: _, estado_membresia: __, ...input } = data;
+    const { rut: _, estado_comunion: __, ...input } = data;
     const cleaned = {
       ...input,
       email: input.email || null,
@@ -83,14 +83,13 @@ export default function EditarMiembroPage({ params }: { params: Promise<{ id: st
               fecha_nacimiento: miembro.fecha_nacimiento ?? '',
               direccion: miembro.direccion ?? '',
               genero: miembro.genero ?? '',
-              bautizado: miembro.bautizado,
               fecha_ingreso: miembro.fecha_ingreso,
             }}
             onSubmit={onSubmit}
             isPending={mutation.isPending}
             submitLabel="Actualizar"
             disableRut
-            allowEstadoMembresia={false}
+            allowEstadoComunion={false}
           />
         </CardContent>
       </Card>

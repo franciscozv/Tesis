@@ -363,6 +363,7 @@ export default function CalendarioPage() {
         tipo={detalleTipo}
         grupoNombre={detalleGrupo?.nombre}
         canManageActividad={canManageDetalleActividad}
+        isAdmin={isAdmin}
         onEdit={openEdit}
         onCambiarEstado={openEstadoModal}
       />
@@ -461,6 +462,7 @@ interface DetalleRapidoModalProps {
   tipo: TipoActividad | undefined;
   grupoNombre: string | undefined;
   canManageActividad: boolean;
+  isAdmin: boolean;
   onEdit: (a: Actividad) => void;
   onCambiarEstado: (a: Actividad) => void;
 }
@@ -472,6 +474,7 @@ function DetalleRapidoModal({
   tipo,
   grupoNombre,
   canManageActividad,
+  isAdmin,
   onEdit,
   onCambiarEstado,
 }: DetalleRapidoModalProps) {
@@ -556,17 +559,18 @@ function DetalleRapidoModal({
             </Link>
           </Button>
           {canManageActividad && actividad.estado !== 'cancelada' && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => onEdit(actividad)}>
-                <Pencil className="size-4" />
-                Editar
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => onCambiarEstado(actividad)}>
-                <RefreshCw className="size-4" />
-                Estado
-              </Button>
-            </>
+            <Button variant="outline" size="sm" onClick={() => onEdit(actividad)}>
+              <Pencil className="size-4" />
+              Editar
+            </Button>
           )}
+          {(canManageActividad && actividad.estado !== 'cancelada') ||
+          (isAdmin && actividad.estado === 'cancelada') ? (
+            <Button variant="outline" size="sm" onClick={() => onCambiarEstado(actividad)}>
+              <RefreshCw className="size-4" />
+              Estado
+            </Button>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

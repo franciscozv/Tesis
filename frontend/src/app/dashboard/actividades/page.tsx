@@ -330,7 +330,7 @@ export default function ActividadesPage() {
                               Editar
                             </DropdownMenuItem>
                           )}
-                          {actividad.estado !== 'cancelada' && (
+                          {(actividad.estado !== 'cancelada' || isAdmin) && (
                             <DropdownMenuItem onClick={() => setEstadoModal(actividad)}>
                               <RefreshCw className="size-4" />
                               Cambiar estado

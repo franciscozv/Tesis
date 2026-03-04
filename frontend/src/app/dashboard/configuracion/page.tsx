@@ -169,12 +169,28 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
     toDefaults: (r) => ({
       nombre: r?.nombre ?? '',
       requiere_plena_comunion: r?.requiere_plena_comunion ?? true,
+      es_unico: r?.es_unico ?? false,
+      es_directiva: r?.es_directiva ?? false,
     }),
     entityName: 'Rol de grupo',
   });
 
   const columns: ColumnConfig<RolGrupo>[] = [
     { key: 'nombre', header: 'Nombre' },
+    {
+      key: 'es_directiva',
+      header: 'Directiva',
+      render: (r) => (
+        <BooleanBadge value={r.es_directiva} trueLabel="Sí" falseLabel="No" />
+      ),
+    },
+    {
+      key: 'es_unico',
+      header: 'Único',
+      render: (r) => (
+        <BooleanBadge value={r.es_unico} trueLabel="Sí" falseLabel="No" />
+      ),
+    },
     {
       key: 'requiere_plena_comunion',
       header: 'Requiere plena comunión',
@@ -186,7 +202,19 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
   ];
 
   const fields: FieldConfig<z.infer<typeof createRolGrupoSchema>>[] = [
-    { name: 'nombre', label: 'Nombre', type: 'text', placeholder: 'Ej: Líder' },
+    { name: 'nombre', label: 'Nombre', type: 'text', placeholder: 'Ej: Secretario' },
+    {
+      name: 'es_directiva',
+      label: 'Cargo de directiva',
+      type: 'checkbox',
+      description: 'Los miembros con este rol tienen privilegios de gestión sobre el grupo (actividades, invitados, etc.)',
+    },
+    {
+      name: 'es_unico',
+      label: 'Cargo único',
+      type: 'checkbox',
+      description: 'Solo puede haber un titular activo con este cargo por grupo',
+    },
     { name: 'requiere_plena_comunion', label: 'Requiere plena comunión', type: 'checkbox' },
   ];
 

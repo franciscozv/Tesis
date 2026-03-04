@@ -4,6 +4,8 @@ import { z } from 'zod';
 export const createRolGrupoSchema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres').max(50, 'Máximo 50 caracteres').trim(),
   requiere_plena_comunion: z.boolean().default(true),
+  es_unico: z.boolean().default(false),
+  es_directiva: z.boolean().default(false),
 });
 
 export const updateRolGrupoSchema = createRolGrupoSchema.partial();

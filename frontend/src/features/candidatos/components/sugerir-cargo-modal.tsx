@@ -1,9 +1,20 @@
 'use client';
 
-import { Info, Loader2, Search } from 'lucide-react';
-import { useState } from 'react';
+import {
+  BadgeCheck,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+  Search,
+  Settings2,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RolGrupo } from '@/features/catalogos/types';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { SugerirCargoInput, SugerirCargoResponse } from '../types';
 import { CandidatoCargoCard } from './candidato-cargo-card';
 
@@ -31,6 +44,38 @@ const PERIODOS = [
   { value: '12', label: '12 meses' },
   { value: '24', label: '24 meses' },
 ];
+
+const CRITERIOS_INFO = [
+  {
+    key: 'experiencia',
+    label: 'Experiencia en el cargo',
+    description: 'Más veces en el cargo → mejor',
+  },
+  {
+    key: 'carga_trabajo',
+    label: 'Carga de trabajo',
+    description: 'Menos grupos activos → mejor',
+  },
+  {
+    key: 'fidelidad',
+    label: 'Fidelidad (asistencia)',
+    description: 'Mayor % de asistencia → mejor',
+  },
+  {
+    key: 'antiguedad',
+    label: 'Antigüedad',
+    description: 'Más años en el cuerpo → mejor',
+  },
+] as const;
+
+const CRITERIO_LABELS: Record<string, string> = {
+  experiencia: 'Experiencia',
+  carga_trabajo: 'Carga de trabajo',
+  fidelidad: 'Fidelidad',
+  antiguedad: 'Antigüedad',
+};
+
+const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
 
 interface SugerirCargoModalProps {
   open: boolean;
@@ -47,32 +92,74 @@ export function SugerirCargoModal({
   sugerirMutation,
 }: SugerirCargoModalProps) {
   const { usuario } = useAuth();
-  const esAdmin = usuario?.rol === 'administrador';
-  // Encargado: tiene cuerpo_id en JWT; el backend lo aplica automáticamente
-  const esEncargado = !esAdmin && usuario?.cuerpo_id !== undefined;
+  const isAdmin = usuario?.rol === 'administrador';
 
-  // Lazy: React Query obtiene los grupos solo cuando el componente está montado
-  const { data: grupos } = useGrupos();
+  // Obtenemos ambos, pero usaremos uno según el rol
+  const { data: todosLosGrupos } = useGrupos();
+  const { data: misGrupos } = useMisGrupos();
+
+  const gruposAMostrar = isAdmin
+    ? todosLosGrupos
+    : misGrupos?.map((g) => ({ id_grupo: g.id_grupo, nombre: g.nombre }));
 
   const [cargoId, setCargoId] = useState<string>('');
   const [periodoMeses, setPeriodoMeses] = useState<string>('12');
   const [cuerpoId, setCuerpoId] = useState<string>('');
   const [respuesta, setRespuesta] = useState<SugerirCargoResponse | null>(null);
 
-  // El botón se habilita cuando hay cargo y (encargado, o admin con cuerpo elegido)
-  const puedeHaceQuery = Boolean(cargoId) && (!esAdmin || Boolean(cuerpoId));
+  // Auto-selección si solo hay un grupo disponible (común para directiva)
+  useEffect(() => {
+    if (open && gruposAMostrar?.length === 1 && !cuerpoId) {
+      setCuerpoId(String(gruposAMostrar[0].id_grupo));
+    }
+  }, [open, gruposAMostrar, cuerpoId]);
+
+  // Opciones avanzadas
+  const [showOpciones, setShowOpciones] = useState(false);
+  const [soloConExperiencia, setSoloConExperiencia] = useState(false);
+  const [prioridad, setPrioridad] = useState<string[]>(PRIORIDAD_DEFAULT);
+
+  // Criterios usados en la última búsqueda (para el banner de metadata)
+  const [usedCriterios, setUsedCriterios] = useState<string[]>([]);
+  const [usedSoloExp, setUsedSoloExp] = useState(false);
+
+  // El botón se habilita cuando hay cargo y cuerpo elegido
+  const puedeHaceQuery = Boolean(cargoId) && Boolean(cuerpoId);
+
+  function moverArriba(index: number) {
+    if (index === 0) return;
+    const next = [...prioridad];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    setPrioridad(next);
+  }
+
+  function moverAbajo(index: number) {
+    if (index === prioridad.length - 1) return;
+    const next = [...prioridad];
+    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+    setPrioridad(next);
+  }
 
   function handleBuscar() {
     if (!puedeHaceQuery) return;
 
+    const criteriosEfectivos = [...prioridad];
+    const soloExpEfectivo = soloConExperiencia;
+
     const body: SugerirCargoInput = {
       cargo_id: Number(cargoId),
       periodo_meses: Number(periodoMeses),
-      ...(esAdmin && cuerpoId ? { cuerpo_id: Number(cuerpoId) } : {}),
+      ...(cuerpoId ? { cuerpo_id: Number(cuerpoId) } : {}),
+      solo_con_experiencia: soloExpEfectivo,
+      criterios_prioridad: criteriosEfectivos,
     };
 
     sugerirMutation.mutate(body, {
-      onSuccess: (data: SugerirCargoResponse) => setRespuesta(data ?? null),
+      onSuccess: (data: SugerirCargoResponse) => {
+        setRespuesta(data ?? null);
+        setUsedCriterios(criteriosEfectivos);
+        setUsedSoloExp(soloExpEfectivo);
+      },
     });
   }
 
@@ -82,6 +169,11 @@ export function SugerirCargoModal({
       setPeriodoMeses('12');
       setCuerpoId('');
       setRespuesta(null);
+      setShowOpciones(false);
+      setSoloConExperiencia(false);
+      setPrioridad(PRIORIDAD_DEFAULT);
+      setUsedCriterios([]);
+      setUsedSoloExp(false);
     }
     onOpenChange(value);
   }
@@ -92,7 +184,9 @@ export function SugerirCargoModal({
         <DialogHeader>
           <DialogTitle>Sugerir Candidatos para Cargo</DialogTitle>
           <DialogDescription>
-            Candidatos del cuerpo ordenados por experiencia, carga actual, asistencia y antigüedad.
+            {isAdmin
+              ? 'Candidatos del cuerpo ordenados por experiencia, carga actual, asistencia y antigüedad.'
+              : 'Candidatos idóneos entre los miembros de tu grupo.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -108,7 +202,38 @@ export function SugerirCargoModal({
                 <SelectContent>
                   {rolesGrupo?.map((r) => (
                     <SelectItem key={r.id_rol_grupo} value={String(r.id_rol_grupo)}>
-                      {r.nombre}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-sm">{r.nombre}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {r.es_directiva && (
+                            <Badge
+                              variant="secondary"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none"
+                            >
+                              <ShieldCheck className="size-2.5" />
+                              Directiva
+                            </Badge>
+                          )}
+                          {r.es_unico && (
+                            <Badge
+                              variant="secondary"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                            >
+                              <UserCheck className="size-2.5" />
+                              Único
+                            </Badge>
+                          )}
+                          {r.requiere_plena_comunion && (
+                            <Badge
+                              variant="secondary"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                            >
+                              <BadgeCheck className="size-2.5" />
+                              Plena Comunión
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -141,39 +266,128 @@ export function SugerirCargoModal({
             </Button>
           </div>
 
-          {/* Admin: selector de cuerpo obligatorio */}
-          {esAdmin && (
-            <div>
-              <Label className="mb-1.5 block">
-                Cuerpo <span className="text-destructive">*</span>
-              </Label>
-              <Select value={cuerpoId} onValueChange={setCuerpoId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar cuerpo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {grupos?.map((g) => (
-                    <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
-                      {g.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Selector de cuerpo (obligatorio para filtrar) */}
+          <div>
+            <Label className="mb-1.5 block">
+              {isAdmin ? 'Cuerpo' : 'Grupo'} <span className="text-destructive">*</span>
+            </Label>
+            <Select value={cuerpoId} onValueChange={setCuerpoId}>
+              <SelectTrigger>
+                <SelectValue placeholder={isAdmin ? 'Seleccionar cuerpo' : 'Seleccionar grupo'} />
+              </SelectTrigger>
+              <SelectContent>
+                {gruposAMostrar?.map((g) => (
+                  <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
+                    {g.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Encargado: aviso informativo */}
-          {esEncargado && (
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Info className="size-3.5 shrink-0" />
-              Mostrando candidatos de tu grupo (aplicado automáticamente).
-            </p>
-          )}
+          {/* Opciones avanzadas (colapsable) */}
+          <div className="rounded-lg border">
+            <button
+              type="button"
+              onClick={() => setShowOpciones((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Settings2 className="size-4" />
+                Opciones avanzadas
+              </span>
+              {showOpciones ? (
+                <ChevronUp className="size-4" />
+              ) : (
+                <ChevronDown className="size-4" />
+              )}
+            </button>
+
+            {showOpciones && (
+              <div className="border-t px-4 py-4 grid gap-4">
+                {/* Filtro: solo con experiencia */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="solo-experiencia"
+                    checked={soloConExperiencia}
+                    onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
+                  />
+                  <Label
+                    htmlFor="solo-experiencia"
+                    className="cursor-pointer text-sm font-normal leading-none"
+                  >
+                    Solo con experiencia previa en este cargo
+                  </Label>
+                </div>
+
+                <Separator />
+
+                {/* Criterios de prioridad */}
+                <div>
+                  <p className="text-sm font-medium mb-1">Criterios de prioridad</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Ordena de mayor a menor importancia. En caso de empate en el primero, se aplica
+                    el siguiente.
+                  </p>
+                  <div className="grid gap-1.5">
+                    {prioridad.map((key, index) => {
+                      const criterio = CRITERIOS_INFO.find((c) => c.key === key);
+                      if (!criterio) return null;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2"
+                        >
+                          <span className="text-xs font-mono text-muted-foreground w-4 shrink-0 text-center">
+                            {index + 1}
+                          </span>
+                          <GripVertical className="size-4 text-muted-foreground/40 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium leading-none">{criterio.label}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {criterio.description}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-0.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => moverArriba(index)}
+                              disabled={index === 0}
+                              className="rounded p-0.5 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              aria-label="Subir criterio"
+                            >
+                              <ChevronUp className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moverAbajo(index)}
+                              disabled={index === prioridad.length - 1}
+                              className="rounded p-0.5 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              aria-label="Bajar criterio"
+                            >
+                              <ChevronDown className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPrioridad(PRIORIDAD_DEFAULT)}
+                    className="mt-2 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+                  >
+                    Restablecer orden por defecto
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Banner de metadata */}
         {respuesta && (
-          <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-1.5">
             <p className="font-medium">
               Sugerencias para el cuerpo{' '}
               <span className="text-foreground">#{respuesta.metadata.cuerpo_id_usado}</span>
@@ -181,12 +395,35 @@ export function SugerirCargoModal({
               últimos {respuesta.metadata.periodo_meses_usado} mes
               {respuesta.metadata.periodo_meses_usado !== 1 ? 'es' : ''}
             </p>
+
             {respuesta.metadata.requiere_plena_comunion && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Badge variant="secondary" className="text-xs">
                   Plena comunión requerida
                 </Badge>
                 Filtro aplicado automáticamente.
+              </p>
+            )}
+
+            {usedSoloExp && (
+              <p className="text-xs text-muted-foreground">
+                Filtrado: solo candidatos con experiencia previa en el cargo.
+              </p>
+            )}
+
+            {usedCriterios.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {'Orden de prioridad: '}
+                {usedCriterios.map((c, i) => (
+                  <span key={c}>
+                    <span className="font-medium text-foreground">
+                      {CRITERIO_LABELS[c] ?? c}
+                    </span>
+                    {i < usedCriterios.length - 1 && (
+                      <span className="mx-0.5 text-muted-foreground/60">→</span>
+                    )}
+                  </span>
+                ))}
               </p>
             )}
           </div>

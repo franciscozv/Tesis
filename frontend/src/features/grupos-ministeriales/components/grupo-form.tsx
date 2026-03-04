@@ -38,7 +38,7 @@ export function GrupoForm({
 }: GrupoFormProps) {
   const schema = mode === 'edit' ? updateGrupoSchema : createGrupoSchema;
 
-  const form = useForm<CreateGrupoFormData>({
+  const form = useForm<any>({
     resolver: zodResolver(schema),
     defaultValues: {
       nombre: '',

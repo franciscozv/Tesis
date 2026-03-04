@@ -10,6 +10,8 @@ interface CatalogoBase {
 export interface RolGrupo extends CatalogoBase {
   id_rol_grupo: number;
   requiere_plena_comunion: boolean;
+  es_unico: boolean;
+  es_directiva: boolean;
 }
 
 export interface CreateRolGrupoInput {
