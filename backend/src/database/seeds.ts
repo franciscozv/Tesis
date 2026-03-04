@@ -1,16 +1,16 @@
-﻿import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import dayjs from 'dayjs';
 import { supabase } from '@/common/utils/supabaseClient';
 
 const SALT_ROUNDS = 10;
 
-// â”€â”€â”€ Contadores para resumen final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Contadores para resumen final ───────────────────────────────────────────
 const resumen: Record<string, number> = {};
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Inserta registros solo si la tabla estÃ¡ vacÃ­a (idempotente).
+ * Inserta registros solo si la tabla está vacía (idempotente).
  * Retorna los IDs insertados o los existentes.
  */
 async function seedIfEmpty<T extends Record<string, unknown>>(
@@ -23,24 +23,24 @@ async function seedIfEmpty<T extends Record<string, unknown>>(
   if (checkError) throw new Error(`Error al verificar ${tableName}: ${checkError.message}`);
 
   if (existing && existing.length > 0) {
-    console.log(`  â­  ${tableName}: ya tiene ${existing.length} registros, omitiendo`);
+    console.log(`  ⏭  ${tableName}: ya tiene ${existing.length} registros, omitiendo`);
     resumen[tableName] = 0;
-    return existing.map((r: Record<string, unknown>) => r[idColumn] as number);
+    return existing.map((r: any) => r[idColumn] as number);
   }
 
   const { data, error } = await supabase.from(tableName).insert(records).select(idColumn);
 
   if (error) throw new Error(`Error al insertar en ${tableName}: ${error.message}`);
 
-  const ids = (data || []).map((r: Record<string, unknown>) => r[idColumn] as number);
-  console.log(`  âœ… ${tableName}: ${records.length} registros insertados`);
+  const ids = (data || []).map((r: any) => r[idColumn] as number);
+  console.log(`  ✅ ${tableName}: ${records.length} registros insertados`);
   resumen[tableName] = records.length;
   return ids;
 }
 
 /**
- * Inserta registros en una tabla sin verificar si estÃ¡ vacÃ­a.
- * Ãštil para tablas con dependencias complejas donde se verifica manualmente.
+ * Inserta registros en una tabla sin verificar si está vacía.
+ * Útil para tablas con dependencias complejas donde se verifica manualmente.
  */
 async function insertRecords<T extends Record<string, unknown>>(
   tableName: string,
@@ -51,8 +51,8 @@ async function insertRecords<T extends Record<string, unknown>>(
 
   if (error) throw new Error(`Error al insertar en ${tableName}: ${error.message}`);
 
-  const ids = (data || []).map((r: Record<string, unknown>) => r[idColumn] as number);
-  console.log(`  âœ… ${tableName}: ${records.length} registros insertados`);
+  const ids = (data || []).map((r: any) => r[idColumn] as number);
+  console.log(`  ✅ ${tableName}: ${records.length} registros insertados`);
   resumen[tableName] = (resumen[tableName] || 0) + records.length;
   return ids;
 }
@@ -70,13 +70,13 @@ async function tableHasData(tableName: string): Promise<boolean> {
 }
 
 /**
- * Genera fecha futura dentro de los prÃ³ximos N dÃ­as a partir de hoy
+ * Genera fecha futura dentro de los próximos N días a partir de hoy
  */
 function futureDate(daysFromNow: number): string {
   return dayjs().add(daysFromNow, 'day').format('YYYY-MM-DD');
 }
 
-// â”€â”€â”€ 1. CATÃLOGOS (sin FK) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 1. CATÁLOGOS (sin FK) ──────────────────────────────────────────────────
 
 async function seedTiposActividad(): Promise<number[]> {
   return seedIfEmpty(
@@ -85,37 +85,37 @@ async function seedTiposActividad(): Promise<number[]> {
       { nombre: 'Culto', descripcion: 'Servicio de culto regular', color: '#3B82F6', activo: true },
       {
         nombre: 'Escuela Dominical',
-        descripcion: 'EnseÃ±anza bÃ­blica dominical',
+        descripcion: 'Enseñanza bíblica dominical',
         color: '#10B981',
         activo: true,
       },
       {
-        nombre: 'ReuniÃ³n de OraciÃ³n',
-        descripcion: 'ReuniÃ³n de oraciÃ³n comunitaria',
+        nombre: 'Reunión de Oración',
+        descripcion: 'Reunión de oración comunitaria',
         color: '#8B5CF6',
         activo: true,
       },
       {
         nombre: 'Ensayo de Coro',
-        descripcion: 'PrÃ¡ctica del coro de la iglesia',
+        descripcion: 'Práctica del coro de la iglesia',
         color: '#F59E0B',
         activo: true,
       },
       {
-        nombre: 'ReuniÃ³n General Mensual',
-        descripcion: 'ReuniÃ³n administrativa mensual',
+        nombre: 'Reunión General Mensual',
+        descripcion: 'Reunión administrativa mensual',
         color: '#EF4444',
         activo: true,
       },
       {
-        nombre: 'PredicaciÃ³n en Locales',
-        descripcion: 'EvangelizaciÃ³n en locales',
+        nombre: 'Predicación en Locales',
+        descripcion: 'Evangelización en locales',
         color: '#06B6D4',
         activo: true,
       },
       {
         nombre: 'Confraternidad',
-        descripcion: 'Actividad de confraternizaciÃ³n',
+        descripcion: 'Actividad de confraternización',
         color: '#EC4899',
         activo: true,
       },
@@ -127,7 +127,7 @@ async function seedTiposActividad(): Promise<number[]> {
       },
       {
         nombre: 'Santa Cena',
-        descripcion: 'CelebraciÃ³n de la Santa Cena',
+        descripcion: 'Celebración de la Santa Cena',
         color: '#A855F7',
         activo: true,
       },
@@ -141,23 +141,23 @@ async function seedRolesActividad(): Promise<number[]> {
   return seedIfEmpty(
     'rol_actividad',
     [
-      { nombre: 'Predicador', descripcion: 'Encargado de la predicaciÃ³n', activo: true },
+      { nombre: 'Predicador', descripcion: 'Encargado de la predicación', activo: true },
       {
-        nombre: 'LÃ­der de Alabanza',
-        descripcion: 'Dirige la alabanza y adoraciÃ³n',
+        nombre: 'Líder de Alabanza',
+        descripcion: 'Dirige la alabanza y adoración',
         activo: true,
       },
-      { nombre: 'MÃºsico', descripcion: 'Ejecuta instrumento musical', activo: true },
+      { nombre: 'Músico', descripcion: 'Ejecuta instrumento musical', activo: true },
       { nombre: 'Corista', descripcion: 'Integrante del coro', activo: true },
       {
         nombre: 'Profesor Escuela Dominical',
-        descripcion: 'EnseÃ±anza en escuela dominical',
+        descripcion: 'Enseñanza en escuela dominical',
         activo: true,
       },
-      { nombre: 'Portero', descripcion: 'RecepciÃ³n y bienvenida', activo: true },
+      { nombre: 'Portero', descripcion: 'Recepción y bienvenida', activo: true },
       { nombre: 'Vigilante', descripcion: 'Vigilancia y seguridad', activo: true },
-      { nombre: 'Ofrendero', descripcion: 'RecolecciÃ³n de ofrendas', activo: true },
-      { nombre: 'Coordinador', descripcion: 'CoordinaciÃ³n general de la actividad', activo: true },
+      { nombre: 'Ofrendero', descripcion: 'Recolección de ofrendas', activo: true },
+      { nombre: 'Coordinador', descripcion: 'Coordinación general de la actividad', activo: true },
     ],
     'id_rol',
   );
@@ -167,11 +167,48 @@ async function seedRolesGrupo(): Promise<number[]> {
   return seedIfEmpty(
     'rol_grupo_ministerial',
     [
-      { nombre: 'LÃ­der', requiere_plena_comunion: true, activo: true },
-      { nombre: 'Secretario', requiere_plena_comunion: true, activo: true },
-      { nombre: 'Tesorero', requiere_plena_comunion: true, activo: true },
-      { nombre: 'Vocal', requiere_plena_comunion: false, activo: true },
-      { nombre: 'Miembro', requiere_plena_comunion: false, activo: true },
+      {
+        nombre: 'Primer Ayudante',
+        requiere_plena_comunion: true,
+        es_unico: true,
+        es_directiva: true,
+        activo: true,
+      },
+      {
+        nombre: 'Secretario',
+        requiere_plena_comunion: true,
+        es_unico: true,
+        es_directiva: true,
+        activo: true,
+      },
+      {
+        nombre: 'Tesorero',
+        requiere_plena_comunion: true,
+        es_unico: true,
+        es_directiva: true,
+        activo: true,
+      },
+      {
+        nombre: 'Vocal',
+        requiere_plena_comunion: false,
+        es_unico: false,
+        es_directiva: false,
+        activo: true,
+      },
+      {
+        nombre: 'Integrante',
+        requiere_plena_comunion: false,
+        es_unico: false,
+        es_directiva: false,
+        activo: true,
+      },
+      {
+        nombre: 'Segundo Ayudante',
+        requiere_plena_comunion: true,
+        es_unico: true,
+        es_directiva: true,
+        activo: true,
+      },
     ],
     'id_rol_grupo',
   );
@@ -183,13 +220,13 @@ async function seedTiposNecesidad(): Promise<number[]> {
     [
       {
         nombre: 'Transporte',
-        descripcion: 'Necesidad de transporte o vehÃ­culos',
+        descripcion: 'Necesidad de transporte o vehículos',
         requiere_asignacion_beneficiarios: false,
         activo: true,
       },
       {
-        nombre: 'AlimentaciÃ³n',
-        descripcion: 'ProvisiÃ³n de alimentos y bebidas',
+        nombre: 'Alimentación',
+        descripcion: 'Provisión de alimentos y bebidas',
         requiere_asignacion_beneficiarios: false,
         activo: true,
       },
@@ -207,19 +244,19 @@ async function seedTiposNecesidad(): Promise<number[]> {
       },
       {
         nombre: 'Equipos',
-        descripcion: 'Equipos tÃ©cnicos o audiovisuales',
+        descripcion: 'Equipos técnicos o audiovisuales',
         requiere_asignacion_beneficiarios: false,
         activo: true,
       },
       {
-        nombre: 'DecoraciÃ³n',
-        descripcion: 'DecoraciÃ³n del lugar',
+        nombre: 'Decoración',
+        descripcion: 'Decoración del lugar',
         requiere_asignacion_beneficiarios: false,
         activo: true,
       },
       {
         nombre: 'Aseo y Ornato',
-        descripcion: 'Limpieza y ornamentaciÃ³n',
+        descripcion: 'Limpieza y ornamentación',
         requiere_asignacion_beneficiarios: false,
         activo: true,
       },
@@ -228,35 +265,35 @@ async function seedTiposNecesidad(): Promise<number[]> {
   );
 }
 
-// â”€â”€â”€ 2. MIEMBROS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 2. MIEMBROS ─────────────────────────────────────────────────────────────
 
 async function seedMiembros(): Promise<number[]> {
   return seedIfEmpty('miembro', [
     {
       rut: '12345678-5',
       nombre: 'Carlos',
-      apellido: 'MuÃ±oz PÃ©rez',
+      apellido: 'Muñoz Pérez',
       email: 'carlos.munoz@email.cl',
       telefono: '+56912345678',
       fecha_nacimiento: '1980-03-15',
       direccion: 'Los Aromos 123, Santa Juana',
       genero: 'masculino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2020-01-15',
       activo: true,
     },
     {
       rut: '11234567-8',
-      nombre: 'MarÃ­a',
-      apellido: 'GonzÃ¡lez Rivas',
+      nombre: 'María',
+      apellido: 'González Rivas',
       email: 'maria.gonzalez@email.cl',
       telefono: '+56923456789',
       fecha_nacimiento: '1985-07-22',
       direccion: 'Av. Principal 456, Santa Juana',
       genero: 'femenino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2019-06-10',
       activo: true,
     },
@@ -269,8 +306,8 @@ async function seedMiembros(): Promise<number[]> {
       fecha_nacimiento: '1975-11-05',
       direccion: 'Pasaje Las Rosas 78, Santa Juana',
       genero: 'masculino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2018-03-20',
       activo: true,
     },
@@ -283,50 +320,50 @@ async function seedMiembros(): Promise<number[]> {
       fecha_nacimiento: '1992-01-30',
       direccion: 'Calle Nueva 90, Santa Juana',
       genero: 'femenino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2021-08-12',
       activo: true,
     },
     {
       rut: '15678901-2',
       nombre: 'Luis',
-      apellido: 'HernÃ¡ndez Bravo',
+      apellido: 'Hernández Bravo',
       email: 'luis.hernandez@email.cl',
       telefono: '+56956789012',
       fecha_nacimiento: '1998-05-18',
-      direccion: 'PoblaciÃ³n El Sol 34, Santa Juana',
+      direccion: 'Población El Sol 34, Santa Juana',
       genero: 'masculino',
-      bautizado: false,
-      estado_membresia: 'probando',
+
+      estado_comunion: 'probando',
       fecha_ingreso: '2024-02-01',
       activo: true,
     },
     {
       rut: '16789012-3',
       nombre: 'Daniela',
-      apellido: 'Fuentes SepÃºlveda',
+      apellido: 'Fuentes Sepúlveda',
       email: 'daniela.fuentes@email.cl',
       telefono: '+56967890123',
       fecha_nacimiento: '2000-09-12',
       direccion: 'Villa Los Pinos 56, Santa Juana',
       genero: 'femenino',
-      bautizado: false,
-      estado_membresia: 'probando',
+
+      estado_comunion: 'probando',
       fecha_ingreso: '2024-06-15',
       activo: true,
     },
     {
       rut: '17890123-4',
       nombre: 'Roberto',
-      apellido: 'Villalobos CÃ¡ceres',
+      apellido: 'Villalobos Cáceres',
       email: 'roberto.villalobos@email.cl',
       telefono: '+56978901234',
       fecha_nacimiento: '1988-12-03',
       direccion: 'Camino Real 200, Santa Juana',
       genero: 'masculino',
-      bautizado: false,
-      estado_membresia: 'sin_membresia',
+
+      estado_comunion: 'asistente',
       fecha_ingreso: '2025-01-10',
       activo: true,
     },
@@ -339,8 +376,8 @@ async function seedMiembros(): Promise<number[]> {
       fecha_nacimiento: '1970-04-25',
       direccion: 'Av. Libertad 310, Santa Juana',
       genero: 'femenino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2017-11-20',
       activo: true,
     },
@@ -353,8 +390,8 @@ async function seedMiembros(): Promise<number[]> {
       fecha_nacimiento: '1995-08-08',
       direccion: 'Los Copihues 45, Santa Juana',
       genero: 'masculino',
-      bautizado: true,
-      estado_membresia: 'plena_comunion',
+
+      estado_comunion: 'plena_comunion',
       fecha_ingreso: '2022-04-05',
       activo: true,
     },
@@ -367,19 +404,19 @@ async function seedMiembros(): Promise<number[]> {
       fecha_nacimiento: '2002-06-20',
       direccion: 'Pasaje Los Aromos 12, Santa Juana',
       genero: 'femenino',
-      bautizado: false,
-      estado_membresia: 'sin_membresia',
+
+      estado_comunion: 'asistente',
       fecha_ingreso: '2025-11-01',
       activo: true,
     },
   ]);
 }
 
-// â”€â”€â”€ 3. USUARIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 3. USUARIOS ─────────────────────────────────────────────────────────────
 
 async function seedUsuarios(miembroIds: number[]): Promise<number[]> {
   if (await tableHasData('usuario')) {
-    console.log('  â­  usuario: ya tiene registros, omitiendo');
+    console.log('  ⏭  usuario: ya tiene registros, omitiendo');
     const { data } = await supabase.from('usuario').select('id');
     resumen.usuario = 0;
     return (data || []).map((r) => r.id as number);
@@ -389,20 +426,20 @@ async function seedUsuarios(miembroIds: number[]): Promise<number[]> {
   const passwordLider = await bcrypt.hash('Lider123!', SALT_ROUNDS);
   const passwordMiembro = await bcrypt.hash('Miembro123!', SALT_ROUNDS);
 
-  // miembroIds[0]=Carlos (admin), [1]=MarÃ­a (lÃ­der), [2]=Pedro, [3]=Ana, [4]=Luis
+  // miembroIds[0]=Carlos (admin), [1]=María (líder), [2]=Pedro, [3]=Ana, [4]=Luis
   return insertRecords('usuario', [
     {
       email: 'admin@iepsantajuana.cl',
       password_hash: passwordAdmin,
       rol: 'administrador',
-      miembro_id: miembroIds[0], // Carlos MuÃ±oz
+      miembro_id: miembroIds[0], // Carlos Muñoz
       activo: true,
     },
     {
       email: 'lider@iepsantajuana.cl',
       password_hash: passwordLider,
       rol: 'usuario',
-      miembro_id: miembroIds[1], // MarÃ­a GonzÃ¡lez
+      miembro_id: miembroIds[1], // María González
       activo: true,
     },
     {
@@ -416,7 +453,7 @@ async function seedUsuarios(miembroIds: number[]): Promise<number[]> {
       email: 'miembro2@test.cl',
       password_hash: passwordMiembro,
       rol: 'usuario',
-      miembro_id: miembroIds[4], // Luis HernÃ¡ndez
+      miembro_id: miembroIds[4], // Luis Hernández
       activo: true,
     },
     {
@@ -429,10 +466,10 @@ async function seedUsuarios(miembroIds: number[]): Promise<number[]> {
   ]);
 }
 
-// â”€â”€â”€ 4. GRUPOS MINISTERIALES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 4. GRUPOS MINISTERIALES ─────────────────────────────────────────────────
 
 async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> {
-  // miembroIds: [0]=Carlos, [1]=MarÃ­a, [2]=Pedro, [3]=Ana, [7]=Patricia
+  // miembroIds: [0]=Carlos, [1]=María, [2]=Pedro, [3]=Ana, [7]=Patricia
   return seedIfEmpty(
     'grupo_ministerial',
     [
@@ -443,14 +480,14 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
         activo: true,
       },
       {
-        nombre: 'Grupo de JÃ³venes',
-        descripcion: 'Ministerio juvenil para edades entre 15 y 30 aÃ±os',
+        nombre: 'Grupo de Jóvenes',
+        descripcion: 'Ministerio juvenil para edades entre 15 y 30 años',
         fecha_creacion: '2021-03-10',
         activo: true,
       },
       {
-        nombre: 'Grupo de SeÃ±oritas',
-        descripcion: 'Ministerio de seÃ±oritas y mujeres jÃ³venes',
+        nombre: 'Grupo de Señoritas',
+        descripcion: 'Ministerio de señoritas y mujeres jóvenes',
         fecha_creacion: '2022-01-20',
         activo: true,
       },
@@ -465,24 +502,24 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
   );
 }
 
-// â”€â”€â”€ 5. MEMBRESÃA GRUPO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 5. INTEGRANTE CUERPO ──────────────────────────────────────────────────
 
-async function seedMembresiaGrupo(
+async function seedIntegranteCuerpo(
   miembroIds: number[],
   grupoIds: number[],
   rolesGrupoIds: number[],
 ): Promise<number[]> {
-  if (await tableHasData('membresia_grupo')) {
-    console.log('  â­  membresia_grupo: ya tiene registros, omitiendo');
-    const { data } = await supabase.from('membresia_grupo').select('id_membresia');
-    resumen.membresia_grupo = 0;
-    return (data || []).map((r) => r.id_membresia as number);
+  if (await tableHasData('integrante_cuerpo')) {
+    console.log('  ⏭  integrante_cuerpo: ya tiene registros, omitiendo');
+    const { data } = await supabase.from('integrante_cuerpo').select('id_integrante');
+    resumen.integrante_cuerpo = 0;
+    return (data || []).map((r) => r.id_integrante as number);
   }
 
-  // rolesGrupoIds: [0]=LÃ­der, [1]=Secretario, [2]=Tesorero, [3]=Vocal, [4]=Miembro
-  // grupoIds: [0]=Coro, [1]=JÃ³venes, [2]=SeÃ±oritas, [3]=Junta Oficiales
+  // rolesGrupoIds: [0]=Primer Ayudante, [1]=Secretario, [2]=Tesorero, [3]=Vocal, [4]=Integrante, [5]=Segundo Ayudante
+  // grupoIds: [0]=Coro, [1]=Jóvenes, [2]=Señoritas, [3]=Junta Oficiales
   return insertRecords(
-    'membresia_grupo',
+    'integrante_cuerpo',
     [
       // Coro Oficial
       {
@@ -510,7 +547,7 @@ async function seedMembresiaGrupo(
         fecha_vinculacion: '2024-08-01T00:00:00Z',
       },
 
-      // Grupo de JÃ³venes
+      // Grupo de Jóvenes
       {
         miembro_id: miembroIds[3],
         grupo_id: grupoIds[1],
@@ -542,7 +579,7 @@ async function seedMembresiaGrupo(
         fecha_vinculacion: '2025-11-15T00:00:00Z',
       },
 
-      // Grupo de SeÃ±oritas
+      // Grupo de Señoritas
       {
         miembro_id: miembroIds[3],
         grupo_id: grupoIds[2],
@@ -588,36 +625,36 @@ async function seedMembresiaGrupo(
         fecha_vinculacion: '2019-07-01T00:00:00Z',
       },
     ],
-    'id_membresia',
+    'id_integrante',
   );
 }
 
-// â”€â”€â”€ 6. HISTORIAL ROL GRUPO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 6. HISTORIAL ROL GRUPO ──────────────────────────────────────────────────
 
-// â”€â”€â”€ 7. HISTORIAL ESTADO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 7. HISTORIAL ESTADO ─────────────────────────────────────────────────────
 
 async function seedHistorialEstado(miembroIds: number[], usuarioIds: number[]): Promise<void> {
   if (await tableHasData('historial_estado')) {
-    console.log('  â­  historial_estado: ya tiene registros, omitiendo');
+    console.log('  ⏭  historial_estado: ya tiene registros, omitiendo');
     resumen.historial_estado = 0;
     return;
   }
 
   await insertRecords('historial_estado', [
     {
-      miembro_id: miembroIds[4], // Luis HernÃ¡ndez
-      estado_anterior: 'sin_membresia',
+      miembro_id: miembroIds[4], // Luis Hernández
+      estado_anterior: 'asistente',
       estado_nuevo: 'probando',
       motivo:
-        'El hermano Luis ha asistido regularmente durante 6 meses y desea iniciar su perÃ­odo de prueba',
+        'El hermano Luis ha asistido regularmente durante 6 meses y desea iniciar su período de prueba',
       usuario_id: usuarioIds[0], // admin
     },
     {
       miembro_id: miembroIds[5], // Daniela Fuentes
-      estado_anterior: 'sin_membresia',
+      estado_anterior: 'asistente',
       estado_nuevo: 'probando',
       motivo:
-        'La hermana Daniela ha participado activamente en el grupo de jÃ³venes y solicita iniciar perÃ­odo de prueba',
+        'La hermana Daniela ha participado activamente en el grupo de jóvenes y solicita iniciar período de prueba',
       usuario_id: usuarioIds[0], // admin
     },
     {
@@ -625,20 +662,20 @@ async function seedHistorialEstado(miembroIds: number[], usuarioIds: number[]): 
       estado_anterior: 'probando',
       estado_nuevo: 'plena_comunion',
       motivo:
-        'La hermana Ana completÃ³ satisfactoriamente su perÃ­odo de prueba y fue aprobada por la junta de oficiales',
+        'La hermana Ana completó satisfactoriamente su período de prueba y fue aprobada por la junta de oficiales',
       usuario_id: usuarioIds[0], // admin
     },
   ]);
 }
 
-// â”€â”€â”€ 7. PATRONES DE ACTIVIDAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 7. PATRONES DE ACTIVIDAD ────────────────────────────────────────────────
 
 async function seedPatronesActividad(
   tiposActividadIds: number[],
   grupoIds: number[],
 ): Promise<number[]> {
-  // tiposActividadIds: [0]=Culto, [1]=Esc.Dom., [2]=R.OraciÃ³n, [3]=Ensayo Coro, [4]=R.General
-  // grupoIds: [0]=Coro, [1]=JÃ³venes, [2]=SeÃ±oritas, [3]=Junta
+  // tiposActividadIds: [0]=Culto, [1]=Esc.Dom., [2]=R.Oración, [3]=Ensayo Coro, [4]=R.General
+  // grupoIds: [0]=Coro, [1]=Jóvenes, [2]=Señoritas, [3]=Junta
   return seedIfEmpty('patron_actividad', [
     {
       nombre: 'Culto Martes',
@@ -671,13 +708,13 @@ async function seedPatronesActividad(
       dia_semana: 7, // domingo
       hora_inicio: '09:00:00',
       duracion_minutos: 50,
-      lugar: 'SalÃ³n Educacional',
+      lugar: 'Salón Educacional',
       grupo_id: null,
       es_publica: false,
       activo: true,
     },
     {
-      nombre: 'ReuniÃ³n General Mensual',
+      nombre: 'Reunión General Mensual',
       tipo_actividad_id: tiposActividadIds[4],
       frecuencia: 'primera_semana',
       dia_semana: 5, // viernes
@@ -692,10 +729,10 @@ async function seedPatronesActividad(
       nombre: 'Ensayo de Coro Semanal',
       tipo_actividad_id: tiposActividadIds[3],
       frecuencia: 'semanal',
-      dia_semana: 6, // sÃ¡bado
+      dia_semana: 6, // sábado
       hora_inicio: '16:00:00',
       duracion_minutos: 90,
-      lugar: 'SalÃ³n Coro',
+      lugar: 'Salón Coro',
       grupo_id: grupoIds[0], // Coro Oficial
       es_publica: false,
       activo: true,
@@ -703,7 +740,7 @@ async function seedPatronesActividad(
   ]);
 }
 
-// â”€â”€â”€ 8. ACTIVIDADES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 8. ACTIVIDADES ──────────────────────────────────────────────────────────
 
 async function seedActividades(
   tiposActividadIds: number[],
@@ -712,7 +749,7 @@ async function seedActividades(
   usuarioIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('actividad')) {
-    console.log('  â­  actividad: ya tiene registros, omitiendo');
+    console.log('  ⏭  actividad: ya tiene registros, omitiendo');
     const { data } = await supabase.from('actividad').select('id');
     resumen.actividad = 0;
     return (data || []).map((r) => r.id as number);
@@ -720,10 +757,10 @@ async function seedActividades(
 
   const creadorId = usuarioIds[0]; // admin
 
-  // Generar actividades para los prÃ³ximos 60 dÃ­as
+  // Generar actividades para los próximos 60 días
   const actividades: Record<string, unknown>[] = [];
 
-  // Actividades desde patrones (prÃ³ximos martes y domingos)
+  // Actividades desde patrones (próximos martes y domingos)
   const hoy = dayjs();
   let dia = hoy.add(1, 'day');
 
@@ -741,7 +778,7 @@ async function seedActividades(
         patron_id: patronIds[0],
         tipo_actividad_id: tiposActividadIds[0],
         nombre: `Culto Martes ${dia.format('DD/MM/YYYY')}`,
-        descripcion: 'Servicio de culto regular del dÃ­a martes',
+        descripcion: 'Servicio de culto regular del día martes',
         fecha: dia.format('YYYY-MM-DD'),
         hora_inicio: '19:00:00',
         hora_fin: '21:00:00',
@@ -776,7 +813,7 @@ async function seedActividades(
           patron_id: patronIds[2],
           tipo_actividad_id: tiposActividadIds[1],
           nombre: `Escuela Dominical ${dia.format('DD/MM/YYYY')}`,
-          descripcion: 'Clase de enseÃ±anza bÃ­blica dominical',
+          descripcion: 'Clase de enseñanza bíblica dominical',
           fecha: dia.format('YYYY-MM-DD'),
           hora_inicio: '09:00:00',
           hora_fin: '09:50:00',
@@ -797,12 +834,12 @@ async function seedActividades(
     {
       patron_id: null,
       tipo_actividad_id: tiposActividadIds[6], // Confraternidad
-      nombre: 'Confraternidad de JÃ³venes',
+      nombre: 'Confraternidad de Jóvenes',
       descripcion: 'Confraternidad con iglesias vecinas, actividades recreativas y alabanza',
       fecha: futureDate(21),
       hora_inicio: '15:00:00',
       hora_fin: '20:00:00',
-      grupo_id: grupoIds[1], // JÃ³venes
+      grupo_id: grupoIds[1], // Jóvenes
       es_publica: true,
       estado: 'programada',
       creador_id: creadorId,
@@ -811,7 +848,7 @@ async function seedActividades(
       patron_id: null,
       tipo_actividad_id: tiposActividadIds[8], // Santa Cena
       nombre: 'Santa Cena Mensual',
-      descripcion: 'CelebraciÃ³n mensual de la Santa Cena',
+      descripcion: 'Celebración mensual de la Santa Cena',
       fecha: futureDate(14),
       hora_inicio: '19:00:00',
       hora_fin: '21:00:00',
@@ -822,9 +859,9 @@ async function seedActividades(
     },
     {
       patron_id: null,
-      tipo_actividad_id: tiposActividadIds[5], // PredicaciÃ³n en Locales
-      nombre: 'PredicaciÃ³n Sector Norte',
-      descripcion: 'EvangelizaciÃ³n puerta a puerta en sector norte de Santa Juana',
+      tipo_actividad_id: tiposActividadIds[5], // Predicación en Locales
+      nombre: 'Predicación Sector Norte',
+      descripcion: 'Evangelización puerta a puerta en sector norte de Santa Juana',
       fecha: futureDate(28),
       hora_inicio: '10:00:00',
       hora_fin: '13:00:00',
@@ -838,7 +875,7 @@ async function seedActividades(
   return insertRecords('actividad', actividades);
 }
 
-// â”€â”€â”€ 9. INVITADOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 9. INVITADOS ────────────────────────────────────────────────────────────
 
 async function seedInvitados(
   actividadIds: number[],
@@ -846,13 +883,13 @@ async function seedInvitados(
   rolesActividadIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('invitado')) {
-    console.log('  â­  invitado: ya tiene registros, omitiendo');
+    console.log('  ⏭  invitado: ya tiene registros, omitiendo');
     const { data } = await supabase.from('invitado').select('id');
     resumen.invitado = 0;
     return (data || []).map((r) => r.id as number);
   }
 
-  // rolesActividadIds: [0]=Predicador, [1]=L.Alabanza, [2]=MÃºsico, [3]=Corista,
+  // rolesActividadIds: [0]=Predicador, [1]=L.Alabanza, [2]=Músico, [3]=Corista,
   //                    [4]=Profesor E.D., [5]=Portero, [6]=Vigilante, [7]=Ofrendero, [8]=Coordinador
   const ahora = dayjs().toISOString();
   const ayer = dayjs().subtract(1, 'day').toISOString();
@@ -930,7 +967,7 @@ async function seedInvitados(
       miembro_id: miembroIds[4],
       rol_id: rolesActividadIds[6],
       estado: 'rechazado',
-      motivo_rechazo: 'Tengo turno de trabajo ese dÃ­a',
+      motivo_rechazo: 'Tengo turno de trabajo ese día',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
       fecha_respuesta: ayer,
@@ -985,7 +1022,7 @@ async function seedInvitados(
       fecha_respuesta: null,
     },
 
-    // Confraternidad de JÃ³venes (actividad extraordinaria, penÃºltima)
+    // Confraternidad de Jóvenes (actividad extraordinaria, penúltima)
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       miembro_id: miembroIds[3],
@@ -1023,7 +1060,7 @@ async function seedInvitados(
       fecha_respuesta: ayer,
     },
 
-    // Santa Cena (penÃºltima extraordinaria)
+    // Santa Cena (penúltima extraordinaria)
     {
       actividad_id: actividadIds[actividadIds.length - 2],
       miembro_id: miembroIds[0],
@@ -1054,36 +1091,36 @@ async function seedInvitados(
   ]);
 }
 
-// â”€â”€â”€ 10. NECESIDADES LOGÃSTICAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 10. NECESIDADES LOGÍSTICAS ──────────────────────────────────────────────
 
 async function seedNecesidadesLogisticas(
   actividadIds: number[],
   tiposNecesidadIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('necesidad_logistica')) {
-    console.log('  â­  necesidad_logistica: ya tiene registros, omitiendo');
+    console.log('  ⏭  necesidad_logistica: ya tiene registros, omitiendo');
     const { data } = await supabase.from('necesidad_logistica').select('id');
     resumen.necesidad_logistica = 0;
     return (data || []).map((r) => r.id as number);
   }
 
-  // tiposNecesidadIds: [0]=Transporte, [1]=AlimentaciÃ³n, [2]=Hospedaje, [3]=Materiales,
-  //                    [4]=Equipos, [5]=DecoraciÃ³n, [6]=Aseo y Ornato
+  // tiposNecesidadIds: [0]=Transporte, [1]=Alimentación, [2]=Hospedaje, [3]=Materiales,
+  //                    [4]=Equipos, [5]=Decoración, [6]=Aseo y Ornato
   return insertRecords('necesidad_logistica', [
-    // Confraternidad de JÃ³venes
+    // Confraternidad de Jóvenes
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       tipo_necesidad_id: tiposNecesidadIds[0], // Transporte
-      descripcion: 'Bus para trasladar jÃ³venes al gimnasio municipal',
+      descripcion: 'Bus para trasladar jóvenes al gimnasio municipal',
       cantidad_requerida: 1,
-      unidad_medida: 'vehÃ­culos',
+      unidad_medida: 'vehículos',
       cantidad_cubierta: 0,
       estado: 'abierta',
     },
     {
       actividad_id: actividadIds[actividadIds.length - 3],
-      tipo_necesidad_id: tiposNecesidadIds[1], // AlimentaciÃ³n
-      descripcion: 'Colaciones y bebidas para 40 jÃ³venes',
+      tipo_necesidad_id: tiposNecesidadIds[1], // Alimentación
+      descripcion: 'Colaciones y bebidas para 40 jóvenes',
       cantidad_requerida: 40,
       unidad_medida: 'porciones',
       cantidad_cubierta: 15,
@@ -1092,7 +1129,7 @@ async function seedNecesidadesLogisticas(
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       tipo_necesidad_id: tiposNecesidadIds[4], // Equipos
-      descripcion: 'Equipo de sonido portÃ¡til para alabanza',
+      descripcion: 'Equipo de sonido portátil para alabanza',
       cantidad_requerida: 1,
       unidad_medida: 'equipos',
       cantidad_cubierta: 1,
@@ -1101,7 +1138,7 @@ async function seedNecesidadesLogisticas(
     // Santa Cena
     {
       actividad_id: actividadIds[actividadIds.length - 2],
-      tipo_necesidad_id: tiposNecesidadIds[1], // AlimentaciÃ³n
+      tipo_necesidad_id: tiposNecesidadIds[1], // Alimentación
       descripcion: 'Pan sin levadura para la Santa Cena',
       cantidad_requerida: 5,
       unidad_medida: 'unidades',
@@ -1110,18 +1147,18 @@ async function seedNecesidadesLogisticas(
     },
     {
       actividad_id: actividadIds[actividadIds.length - 2],
-      tipo_necesidad_id: tiposNecesidadIds[1], // AlimentaciÃ³n
+      tipo_necesidad_id: tiposNecesidadIds[1], // Alimentación
       descripcion: 'Jugo de uva para la Santa Cena',
       cantidad_requerida: 3,
       unidad_medida: 'litros',
       cantidad_cubierta: 0,
       estado: 'abierta',
     },
-    // PredicaciÃ³n Sector Norte
+    // Predicación Sector Norte
     {
       actividad_id: actividadIds[actividadIds.length - 1],
       tipo_necesidad_id: tiposNecesidadIds[3], // Materiales
-      descripcion: 'Folletos evangelÃ­sticos para repartir',
+      descripcion: 'Folletos evangelísticos para repartir',
       cantidad_requerida: 200,
       unidad_medida: 'unidades',
       cantidad_cubierta: 200,
@@ -1130,20 +1167,20 @@ async function seedNecesidadesLogisticas(
     {
       actividad_id: actividadIds[actividadIds.length - 1],
       tipo_necesidad_id: tiposNecesidadIds[0], // Transporte
-      descripcion: 'VehÃ­culos para traslado del equipo evangelÃ­stico',
+      descripcion: 'Vehículos para traslado del equipo evangelístico',
       cantidad_requerida: 2,
-      unidad_medida: 'vehÃ­culos',
+      unidad_medida: 'vehículos',
       cantidad_cubierta: 1,
       estado: 'abierta',
     },
   ]);
 }
 
-// â”€â”€â”€ 11. COLABORADORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 11. COLABORADORES ───────────────────────────────────────────────────────
 
 async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): Promise<void> {
   if (await tableHasData('colaborador')) {
-    console.log('  â­  colaborador: ya tiene registros, omitiendo');
+    console.log('  ⏭  colaborador: ya tiene registros, omitiendo');
     resumen.colaborador = 0;
     return;
   }
@@ -1164,12 +1201,12 @@ async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): 
       fecha_decision: null,
     },
 
-    // Confraternidad - AlimentaciÃ³n (necesidadIds[1])
+    // Confraternidad - Alimentación (necesidadIds[1])
     {
       necesidad_id: necesidadIds[1],
       miembro_id: miembroIds[7],
       cantidad_ofrecida: 10,
-      observaciones: 'Puedo preparar 10 sÃ¡ndwiches',
+      observaciones: 'Puedo preparar 10 sándwiches',
       estado: 'aceptada',
       fecha_oferta: haceDosDias,
       fecha_decision: ayer,
@@ -1215,7 +1252,7 @@ async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): 
       fecha_decision: null,
     },
 
-    // PredicaciÃ³n - Transporte (necesidadIds[6])
+    // Predicación - Transporte (necesidadIds[6])
     {
       necesidad_id: necesidadIds[6],
       miembro_id: miembroIds[2],
@@ -1255,7 +1292,7 @@ async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): 
       fecha_decision: ayer,
     },
 
-    // MÃ¡s pendientes
+    // Más pendientes
     {
       necesidad_id: necesidadIds[3],
       miembro_id: miembroIds[3],
@@ -1277,11 +1314,11 @@ async function seedColaboradores(necesidadIds: number[], miembroIds: number[]): 
   ]);
 }
 
-// â”€â”€â”€ EJECUCIÃ“N PRINCIPAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── EJECUCIÓN PRINCIPAL ─────────────────────────────────────────────────────
 
 export async function runSeeds(): Promise<void> {
-  console.log('\n🌱 Iniciando seeds de base de datos...\n');
-  console.log('─── 1. Catálogos ───');
+  console.log('\n?? Iniciando seeds de base de datos...\n');
+  console.log('--- 1. Cat�logos ---');
 
   try {
     const tiposActividadIds = await seedTiposActividad();
@@ -1289,57 +1326,57 @@ export async function runSeeds(): Promise<void> {
     const rolesGrupoIds = await seedRolesGrupo();
     const tiposNecesidadIds = await seedTiposNecesidad();
 
-    console.log('\n─── 2. Miembros ───');
+    console.log('\n--- 2. Miembros ---');
     const miembroIds = await seedMiembros();
 
-    console.log('\n─── 3. Usuarios ───');
+    console.log('\n--- 3. Usuarios ---');
     const usuarioIds = await seedUsuarios(miembroIds);
 
-    console.log('\n─── 4. Grupos Ministeriales ───');
+    console.log('\n--- 4. Grupos Ministeriales ---');
     const grupoIds = await seedGruposMinisteriales(miembroIds);
 
-    console.log('\n─── 5. Membresía Grupo ───');
-    await seedMembresiaGrupo(miembroIds, grupoIds, rolesGrupoIds);
+    console.log('\n--- 5. Integrante Cuerpo ---');
+    await seedIntegranteCuerpo(miembroIds, grupoIds, rolesGrupoIds);
 
-    console.log('\n─── 6. Historial Estado ───');
+    console.log('\n--- 6. Historial Estado ---');
     await seedHistorialEstado(miembroIds, usuarioIds);
 
-    console.log('\n─── 7. Patrones de Actividad ───');
+    console.log('\n--- 7. Patrones de Actividad ---');
     const patronIds = await seedPatronesActividad(tiposActividadIds, grupoIds);
 
-    console.log('\n─── 8. Actividades ───');
+    console.log('\n--- 8. Actividades ---');
     const actividadIds = await seedActividades(tiposActividadIds, patronIds, grupoIds, usuarioIds);
 
-    console.log('\n─── 9. Invitados ───');
+    console.log('\n--- 9. Invitados ---');
     await seedInvitados(actividadIds, miembroIds, rolesActividadIds);
 
-    console.log('\n─── 10. Necesidades Logísticas ───');
+    console.log('\n--- 10. Necesidades Log�sticas ---');
     const necesidadIds = await seedNecesidadesLogisticas(actividadIds, tiposNecesidadIds);
 
-    console.log('\n─── 11. Colaboradores ───');
+    console.log('\n--- 11. Colaboradores ---');
     await seedColaboradores(necesidadIds, miembroIds);
 
     // Resumen final
-    console.log('\n══════════════════════════════════════════');
-    console.log('  📊 RESUMEN DE SEEDS');
-    console.log('══════════════════════════════════════════');
+    console.log('\n------------------------------------------');
+    console.log('  ?? RESUMEN DE SEEDS');
+    console.log('------------------------------------------');
     let totalInsertados = 0;
     for (const [tabla, count] of Object.entries(resumen)) {
       if (count > 0) {
-        console.log(`  ✅ ${tabla}: ${count} registros`);
+        console.log(`  ? ${tabla}: ${count} registros`);
         totalInsertados += count;
       } else {
-        console.log(`  ⏭  ${tabla}: omitido (ya existía)`);
+        console.log(`  ?  ${tabla}: omitido (ya exist�a)`);
       }
     }
-    console.log('──────────────────────────────────────────');
-    console.log(`  📦 Total insertados: ${totalInsertados} registros`);
-    console.log('══════════════════════════════════════════\n');
+    console.log('------------------------------------------');
+    console.log(`  ?? Total insertados: ${totalInsertados} registros`);
+    console.log('------------------------------------------\n');
   } catch (error) {
-    console.error(`\n❌ Error en seeds: ${(error as Error).message}\n`);
+    console.error(`\n? Error en seeds: ${(error as Error).message}\n`);
     process.exit(1);
   }
 }
 
-// Ejecución directa: pnpm seed
+// Ejecuci�n directa: pnpm seed
 runSeeds();

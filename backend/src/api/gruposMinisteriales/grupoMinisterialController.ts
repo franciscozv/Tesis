@@ -50,20 +50,6 @@ class GrupoMinisterialController {
   };
 
   /**
-   * PUT /grupos-ministeriales/:id/encargado - Asigna o cambia el encargado de un grupo
-   */
-  public asignarEncargado: RequestHandler = async (req: Request, res: Response) => {
-    const id = Number.parseInt(req.params.id as string, 10);
-    const { nuevo_miembro_id, fecha } = req.body;
-    const serviceResponse = await grupoMinisterialService.asignarEncargado(
-      id,
-      nuevo_miembro_id,
-      fecha,
-    );
-    res.status(serviceResponse.statusCode).send(serviceResponse);
-  };
-
-  /**
    * GET /grupos-ministeriales/mis-grupos - Obtiene los grupos que el usuario puede gestionar
    */
   public getMisGrupos: RequestHandler = async (req: Request, res: Response) => {

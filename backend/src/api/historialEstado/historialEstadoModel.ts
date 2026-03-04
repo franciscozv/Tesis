@@ -7,7 +7,7 @@ extendZodWithOpenApi(z);
 /**
  * Estados de membresía permitidos
  */
-export const ESTADOS_MEMBRESIA = ['sin_membresia', 'probando', 'plena_comunion'] as const;
+export const ESTADOS_COMUNION = ['asistente', 'probando', 'plena_comunion'] as const;
 
 /**
  * Schema para Historial de Estado de Membresía
@@ -15,8 +15,8 @@ export const ESTADOS_MEMBRESIA = ['sin_membresia', 'probando', 'plena_comunion']
 export const HistorialEstadoSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   miembro_id: z.number().openapi({ example: 5 }),
-  estado_anterior: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'sin_membresia' }),
-  estado_nuevo: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'probando' }),
+  estado_anterior: z.enum(ESTADOS_COMUNION).openapi({ example: 'asistente' }),
+  estado_nuevo: z.enum(ESTADOS_COMUNION).openapi({ example: 'probando' }),
   motivo: z
     .string()
     .openapi({ example: 'El miembro ha completado el periodo de prueba satisfactoriamente' }),
@@ -38,16 +38,16 @@ export const CreateHistorialEstadoSchema = z.object({
         .positive('Debe ser un ID válido')
         .openapi({ example: 5 }),
       estado_anterior: z
-        .enum(ESTADOS_MEMBRESIA, {
+        .enum(ESTADOS_COMUNION, {
           errorMap: () => ({
-            message: 'Estado debe ser: sin_membresia, probando o plena_comunion',
+            message: 'Estado debe ser: asistente, probando o plena_comunion',
           }),
         })
-        .openapi({ example: 'sin_membresia' }),
+        .openapi({ example: 'asistente' }),
       estado_nuevo: z
-        .enum(ESTADOS_MEMBRESIA, {
+        .enum(ESTADOS_COMUNION, {
           errorMap: () => ({
-            message: 'Estado debe ser: sin_membresia, probando o plena_comunion',
+            message: 'Estado debe ser: asistente, probando o plena_comunion',
           }),
         })
         .openapi({ example: 'probando' }),
@@ -81,8 +81,8 @@ export const GetHistorialEstadoSchema = z.object({
 export const HistorialEstadoConUsuarioSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   miembro_id: z.number().openapi({ example: 5 }),
-  estado_anterior: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'probando' }),
-  estado_nuevo: z.enum(ESTADOS_MEMBRESIA).openapi({ example: 'plena_comunion' }),
+  estado_anterior: z.enum(ESTADOS_COMUNION).openapi({ example: 'probando' }),
+  estado_nuevo: z.enum(ESTADOS_COMUNION).openapi({ example: 'plena_comunion' }),
   motivo: z.string().openapi({ example: 'Cumplió satisfactoriamente promesas de fidelidad' }),
   usuario: z
     .object({

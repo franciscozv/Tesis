@@ -11,6 +11,8 @@ export const RolGrupoSchema = z.object({
   id_rol_grupo: z.number(),
   nombre: z.string(),
   requiere_plena_comunion: z.boolean(),
+  es_unico: z.boolean(),
+  es_directiva: z.boolean(),
   activo: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
@@ -33,6 +35,14 @@ export const CreateRolGrupoSchema = z.object({
       .boolean()
       .default(true)
       .describe('Indica si el rol requiere que el miembro tenga plena comunión'),
+    es_unico: z
+      .boolean()
+      .default(false)
+      .describe('Indica si solo puede haber un titular activo con este rol por grupo'),
+    es_directiva: z
+      .boolean()
+      .default(false)
+      .describe('Indica si el rol otorga privilegios de directiva sobre el grupo'),
   }),
 });
 
@@ -52,6 +62,8 @@ export const UpdateRolGrupoSchema = z.object({
       .trim()
       .optional(),
     requiere_plena_comunion: z.boolean().optional(),
+    es_unico: z.boolean().optional(),
+    es_directiva: z.boolean().optional(),
   }),
 });
 

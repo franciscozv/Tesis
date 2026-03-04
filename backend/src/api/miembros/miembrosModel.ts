@@ -5,9 +5,9 @@ import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
 
-// Enum para estado de membresía
-export const EstadoMembresiaEnum = z.enum(['sin_membresia', 'probando', 'plena_comunion']);
-export type EstadoMembresia = z.infer<typeof EstadoMembresiaEnum>;
+// Enum para estado de comunión (anteriormente membresía)
+export const EstadoComunionEnum = z.enum(['asistente', 'probando', 'plena_comunion']);
+export type EstadoComunion = z.infer<typeof EstadoComunionEnum>;
 
 // Enum para género
 export const GeneroEnum = z.enum(['masculino', 'femenino']);
@@ -26,8 +26,7 @@ export const MiembroSchema = z.object({
   fecha_nacimiento: z.string().nullable(), // ISO date string
   direccion: z.string().nullable(),
   genero: GeneroEnum.nullable(),
-  bautizado: z.boolean(),
-  estado_membresia: EstadoMembresiaEnum,
+  estado_comunion: EstadoComunionEnum,
   fecha_ingreso: z.string(), // ISO date string
   activo: z.boolean(),
   created_at: z.string(),
@@ -70,15 +69,31 @@ export const CreateMiembroSchema = z.object({
       .string()
       .date('Fecha de nacimiento debe ser una fecha válida (YYYY-MM-DD)')
       .optional()
-      .transform((val) => val || null),
+      .transform((val) => val || null)
+      .refine((date) => {
+        if (!date) return true;
+        const [year, month, day] = date.split('-').map(Number);
+        const inputDate = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return inputDate <= today;
+      }, 'La fecha de nacimiento no puede ser futura'),
     direccion: z
       .string()
       .optional()
       .transform((val) => val || null),
     genero: GeneroEnum.optional().transform((val) => val || null),
-    bautizado: z.boolean().default(false),
-    estado_membresia: EstadoMembresiaEnum.default('sin_membresia'),
-    fecha_ingreso: z.string().date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)'),
+    estado_comunion: EstadoComunionEnum.default('asistente'),
+    fecha_ingreso: z
+      .string()
+      .date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)')
+      .refine((date) => {
+        const [year, month, day] = date.split('-').map(Number);
+        const inputDate = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return inputDate <= today;
+      }, 'La fecha de ingreso no puede ser futura'),
   }),
 });
 
@@ -111,17 +126,32 @@ export const UpdateMiembroSchema = z.object({
       .string()
       .date('Fecha de nacimiento debe ser una fecha válida (YYYY-MM-DD)')
       .optional()
-      .transform((val) => val || null),
+      .transform((val) => val || null)
+      .refine((date) => {
+        if (!date) return true;
+        const [year, month, day] = date.split('-').map(Number);
+        const inputDate = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return inputDate <= today;
+      }, 'La fecha de nacimiento no puede ser futura'),
     direccion: z
       .string()
       .optional()
       .transform((val) => val || null),
     genero: GeneroEnum.optional().transform((val) => val || null),
-    bautizado: z.boolean().optional(),
     fecha_ingreso: z
       .string()
       .date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)')
-      .optional(),
+      .optional()
+      .refine((date) => {
+        if (!date) return true;
+        const [year, month, day] = date.split('-').map(Number);
+        const inputDate = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return inputDate <= today;
+      }, 'La fecha de ingreso no puede ser futura'),
   }),
 });
 
@@ -153,12 +183,36 @@ export const UpdateMiPerfilSchema = z.object({
 });
 
 /**
- * Schema para cambiar el estado de membresía (RF_05)
+ * Schema para query params de listado paginado de miembros
  */
-export const ChangeEstadoMembresiaSchema = z.object({
+export const GetMiembrosQuerySchema = z.object({
+  query: z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    search: z.string().optional(),
+    estado_comunion: EstadoComunionEnum.optional(),
+  }),
+});
+
+export type GetMiembrosQuery = z.infer<typeof GetMiembrosQuerySchema>['query'];
+
+export interface PaginatedMiembrosResponse {
+  data: Miembro[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Schema para cambiar el estado de comunión (RF_05)
+ */
+export const ChangeEstadoComunionSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
-    estado_nuevo: EstadoMembresiaEnum,
+    estado_nuevo: EstadoComunionEnum,
     motivo: z.string().min(5, 'El motivo debe tener al menos 5 caracteres').max(500),
   }),
 });

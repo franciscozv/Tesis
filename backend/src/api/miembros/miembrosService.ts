@@ -1,6 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 import { historialEstadoService } from '@/api/historialEstado/historialEstadoService';
-import type { Miembro } from '@/api/miembros/miembrosModel';
+import type {
+  GetMiembrosQuery,
+  Miembro,
+  PaginatedMiembrosResponse,
+} from '@/api/miembros/miembrosModel';
 import { MiembrosRepository } from '@/api/miembros/miembrosRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
@@ -37,6 +41,36 @@ export class MiembrosService {
       return ServiceResponse.success<Miembro[]>('Miembros encontrados', miembros);
     } catch (ex) {
       const errorMessage = `Error al obtener miembros: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Ocurrió un error al obtener los miembros',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Obtiene miembros paginados con búsqueda y filtros opcionales
+   */
+  async findAllPaginated(
+    params: GetMiembrosQuery,
+  ): Promise<ServiceResponse<PaginatedMiembrosResponse | null>> {
+    try {
+      const { page, limit, search, estado_comunion } = params;
+      const { data, total } = await this.miembrosRepository.findAllPaginatedAsync({
+        page,
+        limit,
+        search,
+        estado_comunion,
+      });
+      const totalPages = Math.ceil(total / limit);
+      return ServiceResponse.success<PaginatedMiembrosResponse>('Miembros encontrados', {
+        data,
+        meta: { total, page, limit, totalPages },
+      });
+    } catch (ex) {
+      const errorMessage = `Error al obtener miembros paginados: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Ocurrió un error al obtener los miembros',
@@ -111,8 +145,8 @@ export class MiembrosService {
     miembroData: Partial<Miembro>,
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
-      // estado_membresia solo se modifica vía PATCH /:id/estado
-      const { estado_membresia: _, ...safeData } = miembroData as any;
+      // estado_comunion solo se modifica vía PATCH /:id/estado
+      const { estado_comunion: _, ...safeData } = miembroData as any;
       const miembro = await this.miembrosRepository.updateAsync(id, safeData);
 
       if (!miembro) {
@@ -211,7 +245,7 @@ export class MiembrosService {
    * Cambia el estado de membresía de un miembro (RF_05)
    * Registra automáticamente el cambio en el historial de estado
    */
-  async changeEstadoMembresia(
+  async changeEstadoComunion(
     id: number,
     estado_nuevo: string,
     motivo: string,
@@ -225,7 +259,7 @@ export class MiembrosService {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      const estado_anterior = miembroResponse.responseObject.estado_membresia;
+      const estado_anterior = miembroResponse.responseObject.estado_comunion;
 
       // Delegar al servicio de historial (registra historial + actualiza miembro)
       const historialResponse = await historialEstadoService.create({
@@ -247,15 +281,23 @@ export class MiembrosService {
       // Obtener el miembro actualizado para devolverlo
       const miembroActualizadoResponse = await this.findById(id);
 
+      if (!miembroActualizadoResponse.success || !miembroActualizadoResponse.responseObject) {
+        return ServiceResponse.failure(
+          'Estado actualizado pero error al recuperar datos del miembro',
+          null,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+
       return ServiceResponse.success<Miembro>(
-        'Estado de membresía actualizado exitosamente',
+        'Estado de comunión actualizado exitosamente',
         miembroActualizadoResponse.responseObject,
       );
     } catch (ex) {
-      const errorMessage = `Error al cambiar estado de membresía del miembro con id ${id}: ${(ex as Error).message}`;
+      const errorMessage = `Error al cambiar estado de comunión del miembro con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Ocurrió un error al cambiar el estado de membresía',
+        'Ocurrió un error al cambiar el estado de comunión',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

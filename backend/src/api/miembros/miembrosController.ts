@@ -1,5 +1,6 @@
 import type { Request, RequestHandler, Response } from 'express';
 
+import type { GetMiembrosQuery } from '@/api/miembros/miembrosModel';
 import { miembrosService } from '@/api/miembros/miembrosService';
 
 /**
@@ -7,10 +8,12 @@ import { miembrosService } from '@/api/miembros/miembrosService';
  */
 class MiembrosController {
   /**
-   * GET /miembros - Obtiene todos los miembros activos
+   * GET /miembros - Obtiene miembros paginados con búsqueda y filtros
    */
-  public getAll: RequestHandler = async (_req: Request, res: Response) => {
-    const serviceResponse = await miembrosService.findAll();
+  public getAll: RequestHandler = async (req: Request, res: Response) => {
+    const serviceResponse = await miembrosService.findAllPaginated(
+      req.query as unknown as GetMiembrosQuery,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -61,11 +64,11 @@ class MiembrosController {
   /**
    * PATCH /miembros/:id/estado - Cambia el estado de membresía (RF_05)
    */
-  public changeEstadoMembresia: RequestHandler = async (req: Request, res: Response) => {
+  public changeEstadoComunion: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
     const { estado_nuevo, motivo } = req.body;
     const usuario_id = req.usuario!.id; // Usuario autenticado del JWT
-    const serviceResponse = await miembrosService.changeEstadoMembresia(
+    const serviceResponse = await miembrosService.changeEstadoComunion(
       id,
       estado_nuevo,
       motivo,

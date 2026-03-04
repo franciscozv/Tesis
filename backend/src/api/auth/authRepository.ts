@@ -1,4 +1,3 @@
-﻿import { ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
@@ -14,11 +13,11 @@ export interface UsuarioAuth {
 }
 
 /**
- * Repositorio para operaciones de autenticaciÃ³n
+ * Repositorio para operaciones de autenticación
  */
 export class AuthRepository {
   /**
-   * Busca un usuario por email (incluye password_hash para verificaciÃ³n)
+   * Busca un usuario por email (incluye password_hash para verificación)
    */
   async findByEmailAsync(email: string): Promise<UsuarioAuth | null> {
     const { data, error } = await supabase
@@ -35,7 +34,7 @@ export class AuthRepository {
   }
 
   /**
-   * Busca un usuario por ID (incluye password_hash para cambio de contraseÃ±a)
+   * Busca un usuario por ID (incluye password_hash para cambio de contraseña)
    */
   async findByIdWithPasswordAsync(id: number): Promise<UsuarioAuth | null> {
     const { data, error } = await supabase
@@ -52,7 +51,7 @@ export class AuthRepository {
   }
 
   /**
-   * Actualiza el Ãºltimo acceso del usuario
+   * Actualiza el último acceso del usuario
    */
   async updateUltimoAccesoAsync(id: number): Promise<void> {
     const { error } = await supabase
@@ -61,24 +60,6 @@ export class AuthRepository {
       .eq('id', id);
 
     if (error) throw error;
-  }
-
-  /**
-   * Retorna el grupo_id donde el miembro es encargado activo, o null si no lo es.
-   * Usado durante el login para incluir cuerpo_id en el JWT.
-   */
-  async findCuerpoIdByMiembroAsync(miembroId: number): Promise<number | null> {
-    const { data, error } = await supabase
-      .from('membresia_grupo')
-      .select('grupo_id')
-      .eq('miembro_id', miembroId)
-      .eq('rol_grupo_id', ROL_ENCARGADO_ID)
-      .is('fecha_desvinculacion', null)
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data?.grupo_id ?? null;
   }
 
   /**

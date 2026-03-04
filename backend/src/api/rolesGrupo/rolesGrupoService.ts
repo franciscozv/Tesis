@@ -1,6 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
-import { ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type { RolGrupo } from './rolesGrupoModel';
 import { RolesGrupoRepository } from './rolesGrupoRepository';
@@ -78,6 +77,8 @@ export class RolesGrupoService {
   async create(
     nombre: string,
     requierePlenaComunion: boolean,
+    esUnico = false,
+    esDirectiva = false,
   ): Promise<ServiceResponse<RolGrupo | null>> {
     try {
       // Validar que el nombre no exista
@@ -91,7 +92,12 @@ export class RolesGrupoService {
         );
       }
 
-      const rol = await this.rolesGrupoRepository.createAsync(nombre, requierePlenaComunion);
+      const rol = await this.rolesGrupoRepository.createAsync(
+        nombre,
+        requierePlenaComunion,
+        esUnico,
+        esDirectiva,
+      );
 
       return ServiceResponse.success<RolGrupo>(
         'Rol de grupo creado exitosamente',
@@ -118,17 +124,14 @@ export class RolesGrupoService {
    */
   async update(
     id: number,
-    updates: { nombre?: string; requiere_plena_comunion?: boolean },
+    updates: {
+      nombre?: string;
+      requiere_plena_comunion?: boolean;
+      es_unico?: boolean;
+      es_directiva?: boolean;
+    },
   ): Promise<ServiceResponse<RolGrupo | null>> {
     try {
-      if (id === ROL_ENCARGADO_ID) {
-        return ServiceResponse.failure(
-          'Rol reservado del sistema, no se puede modificar.',
-          null,
-          StatusCodes.FORBIDDEN,
-        );
-      }
-
       // Verificar que el rol exista
       const rolExistente = await this.rolesGrupoRepository.findByIdAsync(id);
 
@@ -172,14 +175,6 @@ export class RolesGrupoService {
    */
   async toggleEstado(id: number): Promise<ServiceResponse<RolGrupo | null>> {
     try {
-      if (id === ROL_ENCARGADO_ID) {
-        return ServiceResponse.failure(
-          'Rol reservado del sistema, no se puede modificar.',
-          null,
-          StatusCodes.FORBIDDEN,
-        );
-      }
-
       const rol = await this.rolesGrupoRepository.toggleEstadoAsync(id);
 
       if (!rol) {
@@ -205,14 +200,6 @@ export class RolesGrupoService {
    */
   async delete(id: number): Promise<ServiceResponse<null>> {
     try {
-      if (id === ROL_ENCARGADO_ID) {
-        return ServiceResponse.failure(
-          'Rol reservado del sistema, no se puede modificar.',
-          null,
-          StatusCodes.FORBIDDEN,
-        );
-      }
-
       const rolExistente = await this.rolesGrupoRepository.findByIdAsync(id);
 
       if (!rolExistente) {

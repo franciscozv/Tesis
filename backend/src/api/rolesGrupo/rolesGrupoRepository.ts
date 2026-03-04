@@ -63,8 +63,8 @@ export class RolesGrupoRepository {
    */
   async estaEnUso(id: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('membresia_grupo')
-      .select('id_membresia')
+      .from('integrante_cuerpo')
+      .select('id_integrante')
       .eq('rol_grupo_id', id)
       .is('fecha_desvinculacion', null)
       .limit(1)
@@ -77,12 +77,19 @@ export class RolesGrupoRepository {
   /**
    * Crea un nuevo rol de grupo
    */
-  async createAsync(nombre: string, requierePlenaComunion: boolean): Promise<RolGrupo> {
+  async createAsync(
+    nombre: string,
+    requierePlenaComunion: boolean,
+    esUnico = false,
+    esDirectiva = false,
+  ): Promise<RolGrupo> {
     const { data, error } = await supabase
       .from('rol_grupo_ministerial')
       .insert({
         nombre,
         requiere_plena_comunion: requierePlenaComunion,
+        es_unico: esUnico,
+        es_directiva: esDirectiva,
         activo: true,
       })
       .select()
@@ -97,7 +104,12 @@ export class RolesGrupoRepository {
    */
   async updateAsync(
     id: number,
-    updates: { nombre?: string; requiere_plena_comunion?: boolean },
+    updates: {
+      nombre?: string;
+      requiere_plena_comunion?: boolean;
+      es_unico?: boolean;
+      es_directiva?: boolean;
+    },
   ): Promise<RolGrupo | null> {
     const { data, error } = await supabase
       .from('rol_grupo_ministerial')

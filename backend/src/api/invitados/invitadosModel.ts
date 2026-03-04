@@ -22,6 +22,19 @@ export const InvitadoSchema = z.object({
   asistio: z.boolean().openapi({ example: false }),
   fecha_invitacion: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
   fecha_respuesta: z.string().nullable().openapi({ example: null }),
+  miembro: z
+    .object({
+      id: z.number(),
+      nombre: z.string(),
+      apellido: z.string(),
+    })
+    .optional(),
+  rol: z
+    .object({
+      id_rol: z.number(),
+      nombre: z.string(),
+    })
+    .optional(),
 });
 
 export type Invitado = z.infer<typeof InvitadoSchema>;

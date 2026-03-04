@@ -1,4 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
+import { ColaboradoresRepository } from '@/api/colaboradores/colaboradoresRepository';
+import { NecesidadesLogisticasRepository } from '@/api/necesidadesLogisticas/necesidadesLogisticasRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { hoyCL, nowEnZona, parseActividadFin, parseActividadInicio } from '@/common/utils/dateTime';
 import { requireEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
@@ -11,9 +13,17 @@ import { ActividadesRepository } from './actividadesRepository';
  */
 export class ActividadesService {
   private actividadesRepository: ActividadesRepository;
+  private necesidadesRepository: NecesidadesLogisticasRepository;
+  private colaboradoresRepository: ColaboradoresRepository;
 
-  constructor(repository: ActividadesRepository = new ActividadesRepository()) {
+  constructor(
+    repository: ActividadesRepository = new ActividadesRepository(),
+    necesidadesRepository: NecesidadesLogisticasRepository = new NecesidadesLogisticasRepository(),
+    colaboradoresRepository: ColaboradoresRepository = new ColaboradoresRepository(),
+  ) {
     this.actividadesRepository = repository;
+    this.necesidadesRepository = necesidadesRepository;
+    this.colaboradoresRepository = colaboradoresRepository;
   }
 
   /**
@@ -178,7 +188,7 @@ export class ActividadesService {
       }
 
       // Validar permisos según rol
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
       if (usuario?.rol === 'usuario') {
         if (!actividadData.grupo_id) {
           return ServiceResponse.failure(
@@ -275,7 +285,7 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda modificar actividades de sus grupos
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
       if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
@@ -387,7 +397,7 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda cambiar el estado de actividades de sus grupos
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en membresia_grupo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
       if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
@@ -417,11 +427,34 @@ export class ActividadesService {
       }
 
       if (actividad.estado === 'cancelada') {
-        return ServiceResponse.failure(
-          'No se puede cambiar el estado de una actividad cancelada',
-          null,
-          StatusCodes.CONFLICT,
-        );
+        // Solo el administrador puede revertir una cancelación
+        if (usuario?.rol !== 'administrador') {
+          return ServiceResponse.failure(
+            'No se puede cambiar el estado de una actividad cancelada',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
+
+        const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
+        const now = nowEnZona();
+        const esFutura = finActividad.isAfter(now);
+
+        if (estado === 'programada' && !esFutura) {
+          return ServiceResponse.failure(
+            'Solo se puede reprogramar una actividad cancelada cuya fecha aún no ha pasado',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
+
+        if (estado === 'realizada' && esFutura) {
+          return ServiceResponse.failure(
+            'Solo se puede marcar como realizada una actividad cancelada cuya fecha ya pasó',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
       }
 
       if (actividad.estado === 'realizada' && estado === 'programada') {
@@ -454,6 +487,39 @@ export class ActividadesService {
           null,
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
+      }
+
+      // Al cancelar una actividad: cascada completa hacia necesidades y colaboradores.
+      if (estado === 'cancelada') {
+        try {
+          const { count: necesidadesCerradas, ids: necesidadIds } =
+            await this.necesidadesRepository.closeAllByActividadAsync(id);
+
+          if (necesidadesCerradas > 0) {
+            logger.info(
+              `Actividad ${id} cancelada: ${necesidadesCerradas} necesidad(es) logística(s) cerrada(s) automáticamente.`,
+            );
+          }
+
+          try {
+            const colaboradoresRechazados =
+              await this.colaboradoresRepository.rejectAllByNecesidadesAsync(necesidadIds);
+
+            if (colaboradoresRechazados > 0) {
+              logger.info(
+                `Actividad ${id} cancelada: ${colaboradoresRechazados} oferta(s) de colaboración rechazada(s) automáticamente.`,
+              );
+            }
+          } catch (colabError) {
+            logger.error(
+              `Actividad ${id} cancelada y necesidades cerradas, pero falló el rechazo de colaboradores: ${(colabError as Error).message}`,
+            );
+          }
+        } catch (needsError) {
+          logger.error(
+            `Actividad ${id} cancelada, pero falló el cierre de necesidades: ${(needsError as Error).message}`,
+          );
+        }
       }
 
       const mensajes: Record<string, string> = {

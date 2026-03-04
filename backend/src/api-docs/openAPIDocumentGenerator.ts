@@ -7,8 +7,8 @@ import { colaboradoresRegistry } from '@/api/colaboradores/colaboradoresRouter';
 import { gruposMinisterialesRegistry } from '@/api/gruposMinisteriales/grupoMinisterialRouter';
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { historialEstadoRegistry } from '@/api/historialEstado/historialEstadoRouter';
+import { integranteCuerpoRegistry } from '@/api/integranteCuerpo/integranteCuerpoRouter';
 import { invitadosRegistry } from '@/api/invitados/invitadosRouter';
-import { membresiaGrupoRegistry } from '@/api/membresiaGrupo/membresiaGrupoRouter';
 import { miembrosRegistry } from '@/api/miembros/miembrosRouter';
 import { misResponsabilidadesRegistry } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { necesidadesLogisticasRegistry } from '@/api/necesidadesLogisticas/necesidadesLogisticasRouter';
@@ -32,7 +32,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     gruposMinisterialesRegistry,
     historialEstadoRegistry,
     invitadosRegistry,
-    membresiaGrupoRegistry,
+    integranteCuerpoRegistry,
     misResponsabilidadesRegistry,
     miembrosRegistry,
     necesidadesLogisticasRegistry,

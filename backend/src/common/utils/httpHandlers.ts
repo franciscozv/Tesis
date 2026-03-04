@@ -7,7 +7,14 @@ import { ServiceResponse } from '@/common/models/serviceResponse';
 export const validateRequest =
   (schema: ZodSchema) => async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync({ body: req.body, query: req.query, params: req.params });
+      const parsed = await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      });
+      if (parsed.query) Object.assign(req.query, parsed.query);
+      if (parsed.params) Object.assign(req.params, parsed.params);
+      if (parsed.body) req.body = parsed.body;
       next();
     } catch (err) {
       const errors = (err as ZodError).errors.map((e) => {

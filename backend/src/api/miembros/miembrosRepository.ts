@@ -1,4 +1,4 @@
-import type { Miembro } from '@/api/miembros/miembrosModel';
+import type { EstadoComunion, Miembro } from '@/api/miembros/miembrosModel';
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
@@ -6,7 +6,7 @@ import { supabase } from '@/common/utils/supabaseClient';
  */
 export class MiembrosRepository {
   /**
-   * Obtiene todos los miembros activos
+   * Obtiene todos los miembros activos (sin paginación)
    */
   async findAllAsync(): Promise<Miembro[]> {
     const { data, error } = await supabase
@@ -17,6 +17,40 @@ export class MiembrosRepository {
 
     if (error) throw error;
     return (data as Miembro[]) || [];
+  }
+
+  /**
+   * Obtiene miembros activos con paginación, búsqueda y filtros
+   */
+  async findAllPaginatedAsync(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    estado_comunion?: EstadoComunion;
+  }): Promise<{ data: Miembro[]; total: number }> {
+    const { page, limit, search, estado_comunion } = params;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from('miembro')
+      .select('*', { count: 'exact' })
+      .eq('activo', true)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (search) {
+      query = query.or(`nombre.ilike.%${search}%,apellido.ilike.%${search}%,rut.ilike.%${search}%`);
+    }
+
+    if (estado_comunion) {
+      query = query.eq('estado_comunion', estado_comunion);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+    return { data: (data as Miembro[]) || [], total: count ?? 0 };
   }
 
   /**
@@ -109,10 +143,10 @@ export class MiembrosRepository {
   /**
    * Cambia el estado de membresía de un miembro (RF_05)
    */
-  async changeEstadoMembresiaAsync(id: number, estado_membresia: string): Promise<Miembro | null> {
+  async changeEstadoComunionAsync(id: number, estado_comunion: string): Promise<Miembro | null> {
     const { data, error } = await supabase
       .from('miembro')
-      .update({ estado_membresia })
+      .update({ estado_comunion })
       .eq('id', id)
       .eq('activo', true)
       .select()

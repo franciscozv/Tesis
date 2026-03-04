@@ -69,19 +69,19 @@ export class HistorialEstadoRepository {
    */
   async getMiembroInfoAsync(
     miembroId: number,
-  ): Promise<{ exists: boolean; estado_membresia: string | null }> {
+  ): Promise<{ exists: boolean; estado_comunion: string | null }> {
     const { data, error } = await supabase
       .from('miembro')
-      .select('id, estado_membresia')
+      .select('id, estado_comunion')
       .eq('id', miembroId)
       .eq('activo', true)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return { exists: false, estado_membresia: null };
+      if (error.code === 'PGRST116') return { exists: false, estado_comunion: null };
       throw error;
     }
-    return { exists: true, estado_membresia: data.estado_membresia };
+    return { exists: true, estado_comunion: data.estado_comunion };
   }
 
   /**
@@ -119,12 +119,12 @@ export class HistorialEstadoRepository {
   }
 
   /**
-   * Actualiza el estado_membresia en la tabla miembro
+   * Actualiza el estado_comunion en la tabla miembro
    */
   async updateEstadoMiembroAsync(miembroId: number, nuevoEstado: string): Promise<void> {
     const { error } = await supabase
       .from('miembro')
-      .update({ estado_membresia: nuevoEstado })
+      .update({ estado_comunion: nuevoEstado })
       .eq('id', miembroId);
 
     if (error) throw error;

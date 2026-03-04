@@ -12,8 +12,6 @@ export interface JwtPayload {
   email: string;
   rol: 'administrador' | 'usuario';
   miembro_id: number | null;
-  /** grupo_id del grupo donde el usuario es encargado activo (si aplica) */
-  cuerpo_id?: number;
 }
 
 /**

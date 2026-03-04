@@ -227,6 +227,31 @@ export class ColaboradoresService {
         );
       }
 
+      // Validar que la actividad no haya finalizado
+      const necesidadInfo = await this.colaboradoresRepository.getNecesidadConActividadAsync(
+        colaborador.necesidad_id,
+      );
+
+      if (necesidadInfo) {
+        const { actividad } = necesidadInfo;
+        if (actividad.estado === 'cancelada') {
+          return ServiceResponse.failure(
+            'No se puede decidir sobre una oferta de una actividad cancelada',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
+
+        const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
+        if (finActividad.isBefore(nowEnZona())) {
+          return ServiceResponse.failure(
+            'No se puede decidir sobre una oferta de una actividad que ya finalizó',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
+      }
+
       // Si se acepta, validar y actualizar cantidad_cubierta en la necesidad
       if (estado === 'aceptada') {
         const necesidad = await this.colaboradoresRepository.getNecesidadInfoAsync(

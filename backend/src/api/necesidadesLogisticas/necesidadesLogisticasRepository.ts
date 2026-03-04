@@ -1,4 +1,4 @@
-import { isEncargadoDeGrupo, ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
+import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { NecesidadAbierta, NecesidadLogistica } from './necesidadesLogisticasModel';
 
@@ -39,23 +39,23 @@ export class NecesidadesLogisticasRepository {
 
   /**
    * Obtiene necesidades logísticas que pertenecen a actividades de grupos
-   * donde el miembro tiene membresía vigente como encargado (ROL_ENCARGADO_ID).
+   * donde el miembro tiene membresía vigente con rol de directiva (es_directiva = true).
    */
   async findAllForEncargadoAsync(
     filters: NecesidadFilters = {},
     liderMiembroId: number,
   ): Promise<NecesidadLogistica[]> {
-    const { data: membresias, error: gruposError } = await supabase
-      .from('membresia_grupo')
-      .select('grupo_id')
+    const { data: comunions, error: gruposError } = await supabase
+      .from('integrante_cuerpo')
+      .select('grupo_id, rol_grupo_ministerial!inner(es_directiva)')
       .eq('miembro_id', liderMiembroId)
-      .eq('rol_grupo_id', ROL_ENCARGADO_ID)
+      .eq('rol_grupo_ministerial.es_directiva', true)
       .is('fecha_desvinculacion', null);
 
     if (gruposError) throw gruposError;
-    if (!membresias || membresias.length === 0) return [];
+    if (!comunions || comunions.length === 0) return [];
 
-    const grupoIds = membresias.map((m: { grupo_id: number }) => m.grupo_id);
+    const grupoIds = comunions.map((m: { grupo_id: number }) => m.grupo_id);
 
     const { data: actividades, error: actividadesError } = await supabase
       .from('actividad')
@@ -162,7 +162,7 @@ export class NecesidadesLogisticasRepository {
 
   /**
    * Verifica si un miembro es encargado vigente del grupo al que pertenece una actividad
-   * (membresia_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
     const { data: actividad, error: actError } = await supabase
@@ -266,6 +266,24 @@ export class NecesidadesLogisticasRepository {
     if (error) throw error;
     if (!data || data.length === 0) return 0;
     return data.reduce((sum, c) => sum + (c.cantidad_ofrecida as number), 0);
+  }
+
+  /**
+   * Cierra masivamente todas las necesidades no-cerradas de una actividad.
+   * Se usa cuando una actividad pasa a estado 'cancelada'.
+   * Retorna los IDs de las filas afectadas (y su conteo) para cascada hacia colaboradores.
+   */
+  async closeAllByActividadAsync(actividadId: number): Promise<{ count: number; ids: number[] }> {
+    const { data, error } = await supabase
+      .from('necesidad_logistica')
+      .update({ estado: 'cerrada' })
+      .eq('actividad_id', actividadId)
+      .neq('estado', 'cerrada')
+      .select('id');
+
+    if (error) throw error;
+    const ids = (data ?? []).map((row: { id: number }) => row.id);
+    return { count: ids.length, ids };
   }
 
   /**

@@ -24,10 +24,15 @@ export class CandidatosService {
     fecha: string,
     opciones: {
       tipoActividadId?: number;
+      actividadId?: number;
       periodoMeses: number;
       filtroPlenaComun?: boolean;
       cuerpoIdBody?: number;
       usuario?: JwtPayload;
+      soloConExperiencia?: boolean;
+      soloSinExperiencia?: boolean;
+      prioridad?: string[];
+      incluirConConflictos?: boolean;
     },
   ): Promise<ServiceResponse<Candidato[] | null>> {
     try {
@@ -42,19 +47,34 @@ export class CandidatosService {
 
       const nombreRol = await this.candidatosRepository.getRolActividadNombreAsync(rolId);
 
-      // ── Lógica hermética de cuerpo_id ─────────────────────────────────────────
-      // El token siempre gana: si el usuario tiene cuerpo_id en el JWT, se fuerza
-      // independientemente de lo que envíe en el body.
-      // El admin puede usar el cuerpo_id del body para filtrar, o dejarlo undefined (global).
-      let cuerpoIdEfectivo: number | undefined;
-      if (opciones.usuario?.cuerpo_id !== undefined) {
-        // ENCARGADO: usa obligatoriamente el cuerpo de su token
-        cuerpoIdEfectivo = opciones.usuario.cuerpo_id;
-      } else if (opciones.usuario?.rol === 'administrador' && opciones.cuerpoIdBody !== undefined) {
-        // ADMIN: puede filtrar por un cuerpo específico si lo desea
-        cuerpoIdEfectivo = opciones.cuerpoIdBody;
+      // ── Resolución del filtro de grupo ─────────────────────────────────────
+      // Si se recibe actividadId, obtenemos el grupo de esa actividad.
+      // - 'usuario' (directiva): sugerencia solo dentro del GRUPO de la actividad (contextual).
+      // - 'administrador': busca en todo el CUERPO si envía cuerpoIdBody, o busca en el
+      //    GRUPO de la actividad si solo envía actividadId. Si no envía ninguno, global.
+      let cuerpoIdEfectivo: number | undefined = opciones.cuerpoIdBody;
+      let grupoIdEfectivo: number | undefined;
+
+      if (opciones.actividadId) {
+        const grupoIdActividad = await this.candidatosRepository.getGrupoIdDeActividadAsync(
+          opciones.actividadId,
+        );
+
+        if (grupoIdActividad !== null) {
+          if (opciones.usuario?.rol === 'usuario') {
+            // Seguridad: directiva solo sugiere gente de SU GRUPO
+            grupoIdEfectivo = grupoIdActividad;
+            cuerpoIdEfectivo = undefined; // Forzamos búsqueda por grupo
+          } else {
+            // Admin: decide si quiere filtrar por cuerpo (cuerpoIdBody)
+            // o si quiere filtrar por grupo de actividad (grupoIdActividad).
+            // Prioridad al cuerpoIdBody si existe.
+            if (opciones.cuerpoIdBody === undefined) {
+              grupoIdEfectivo = grupoIdActividad;
+            }
+          }
+        }
       }
-      // Sin cuerpo_id en token y admin sin filtro → búsqueda global
 
       // Fecha de inicio del periodo para cálculo de asistencia
       const fechaFin = fecha;
@@ -62,10 +82,11 @@ export class CandidatosService {
         .subtract(opciones.periodoMeses, 'month')
         .format('YYYY-MM-DD');
 
-      // Obtener miembros con filtros efectivos
+      // Obtener miembros con filtros efectivos (incluyendo grupoIdEfectivo)
       const miembros = await this.candidatosRepository.findMiembrosActivosFiltradosAsync({
         plenaComun: opciones.filtroPlenaComun,
         cuerpoId: cuerpoIdEfectivo,
+        grupoId: grupoIdEfectivo,
       });
 
       if (!miembros || miembros.length === 0) {
@@ -75,25 +96,35 @@ export class CandidatosService {
       const miembroIds = miembros.map((m) => m.id);
 
       // Queries batch: una sola llamada por indicador para todos los miembros
-      const [expTotalMap, conflictosMap, asistenciaMap, expTipoMap] = await Promise.all([
-        this.candidatosRepository.getExperienciaRolBatchAsync(miembroIds, rolId),
-        this.candidatosRepository.getConflictosBatchAsync(miembroIds, fecha),
-        this.candidatosRepository.getAsistenciaBatchAsync(miembroIds, fechaInicio, fechaFin),
-        opciones.tipoActividadId !== undefined
-          ? this.candidatosRepository.getExperienciaRolEnTipoBatchAsync(
-              miembroIds,
-              rolId,
-              opciones.tipoActividadId,
-            )
-          : Promise.resolve(new Map<number, number>()),
-      ]);
+      const [expTotalMap, conflictosMap, asistenciaMap, expTipoMap, ultimoUsoMap, cargaSemanalMap] =
+        await Promise.all([
+          this.candidatosRepository.getExperienciaRolBatchAsync(miembroIds, rolId),
+          this.candidatosRepository.getConflictosBatchAsync(
+            miembroIds,
+            fecha,
+            opciones.actividadId,
+          ),
+          this.candidatosRepository.getAsistenciaBatchAsync(miembroIds, fechaInicio, fechaFin),
+          opciones.tipoActividadId !== undefined
+            ? this.candidatosRepository.getExperienciaRolEnTipoBatchAsync(
+                miembroIds,
+                rolId,
+                opciones.tipoActividadId,
+              )
+            : Promise.resolve(new Map<number, number>()),
+          this.candidatosRepository.getUltimoUsoRolBatchAsync(miembroIds, rolId),
+          this.candidatosRepository.getCargaSemanalBatchAsync(miembroIds, fecha),
+        ]);
 
       // Ensamblar candidatos con indicadores
       const candidatos: Candidato[] = miembros.map((miembro) => {
         const expTotal = expTotalMap.get(miembro.id) ?? 0;
-        const conflictos = conflictosMap.get(miembro.id) ?? 0;
+        const conflictosDetalle = conflictosMap.get(miembro.id) ?? [];
+        const conflictos = conflictosDetalle.length;
         const asistencia = asistenciaMap.get(miembro.id) ?? { confirmadas: 0, asistidas: 0 };
         const expTipo = expTipoMap.get(miembro.id) ?? 0;
+        const ultimoUso = ultimoUsoMap.get(miembro.id) ?? null;
+        const serviciosEstaSemana = cargaSemanalMap.get(miembro.id) ?? 0;
 
         const disponible = conflictos === 0;
         const asistenciaRatio =
@@ -101,13 +132,18 @@ export class CandidatosService {
             ? Math.round((asistencia.asistidas / asistencia.confirmadas) * 100) / 100
             : 0;
         const antiguedadAnios = dayjs(fecha).diff(dayjs(miembro.fecha_ingreso), 'year');
-        const plenaComun = miembro.estado_membresia === 'plena_comunion';
+        const plenaComun = miembro.estado_comunion === 'plena_comunion';
+        const diasDesdeUltimoUso =
+          ultimoUso !== null ? dayjs(fecha).diff(dayjs(ultimoUso), 'day') : null;
 
         const indicadores = {
           disponible_en_fecha: disponible,
           conflictos_en_fecha_count: conflictos,
+          conflictos_detalle: conflictosDetalle,
           experiencia_rol_total: expTotal,
           experiencia_rol_en_tipo: expTipo,
+          dias_desde_ultimo_uso: diasDesdeUltimoUso,
+          servicios_esta_semana: serviciosEstaSemana,
           asistencia_ratio_periodo: asistenciaRatio,
           antiguedad_anios: antiguedadAnios,
           plena_comunion: plenaComun,
@@ -127,25 +163,62 @@ export class CandidatosService {
         };
       });
 
-      // Ordenamiento multi-criterio (sin scoring subjetivo)
-      candidatos.sort((a, b) => {
-        const dispA = a.indicadores.disponible_en_fecha ? 1 : 0;
-        const dispB = b.indicadores.disponible_en_fecha ? 1 : 0;
-        if (dispB !== dispA) return dispB - dispA;
+      // ── Filtrado por experiencia ──────────────────────────────────────────────
+      let candidatosFiltrados = candidatos as Candidato[];
+      if (opciones.soloConExperiencia) {
+        candidatosFiltrados = candidatosFiltrados.filter(
+          (c) => c.indicadores.experiencia_rol_total > 0,
+        );
+      }
+      if (opciones.soloSinExperiencia) {
+        candidatosFiltrados = candidatosFiltrados.filter(
+          (c) => c.indicadores.experiencia_rol_total === 0,
+        );
+      }
 
-        if (b.indicadores.experiencia_rol_en_tipo !== a.indicadores.experiencia_rol_en_tipo)
-          return b.indicadores.experiencia_rol_en_tipo - a.indicadores.experiencia_rol_en_tipo;
+      // ── Filtrado por conflictos ───────────────────────────────────────────────
+      if (!opciones.incluirConConflictos) {
+        candidatosFiltrados = candidatosFiltrados.filter((c) => c.indicadores.disponible_en_fecha);
+      }
 
-        if (b.indicadores.experiencia_rol_total !== a.indicadores.experiencia_rol_total)
-          return b.indicadores.experiencia_rol_total - a.indicadores.experiencia_rol_total;
+      // ── Ordenamiento dinámico por criterios ───────────────────────────────────
+      const COMPARADORES: Record<string, (a: Candidato, b: Candidato) => number> = {
+        disponibilidad: (a, b) => {
+          const dispA = a.indicadores.disponible_en_fecha ? 1 : 0;
+          const dispB = b.indicadores.disponible_en_fecha ? 1 : 0;
+          return dispB - dispA;
+        },
+        experiencia_tipo: (a, b) =>
+          b.indicadores.experiencia_rol_en_tipo - a.indicadores.experiencia_rol_en_tipo,
+        rotacion: (a, b) => {
+          // DESC: el que más descansó va primero; null (nunca realizado) tiene máxima prioridad
+          const dA = a.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
+          const dB = b.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
+          return dB - dA;
+        },
+        carga: (a, b) => a.indicadores.servicios_esta_semana - b.indicadores.servicios_esta_semana,
+        fidelidad: (a, b) =>
+          b.indicadores.asistencia_ratio_periodo - a.indicadores.asistencia_ratio_periodo,
+      };
 
-        if (b.indicadores.asistencia_ratio_periodo !== a.indicadores.asistencia_ratio_periodo)
-          return b.indicadores.asistencia_ratio_periodo - a.indicadores.asistencia_ratio_periodo;
+      // Si prioridad se envía explícitamente, solo esos criterios rigen el orden.
+      // Si no se envía (undefined), se aplica el orden completo por defecto.
+      const criterios =
+        opciones.prioridad !== undefined
+          ? opciones.prioridad
+          : ['disponibilidad', 'experiencia_tipo', 'rotacion', 'carga', 'fidelidad'];
 
-        return b.indicadores.antiguedad_anios - a.indicadores.antiguedad_anios;
+      candidatosFiltrados.sort((a, b) => {
+        for (const criterio of criterios) {
+          const comparar = COMPARADORES[criterio];
+          if (!comparar) continue;
+          const resultado = comparar(a, b);
+          if (resultado !== 0) return resultado;
+        }
+        return 0;
       });
 
-      const topCandidatos = candidatos.slice(0, TOP_CANDIDATOS);
+      const topCandidatos = candidatosFiltrados.slice(0, TOP_CANDIDATOS);
 
       const mensaje =
         topCandidatos.length > 0
@@ -174,6 +247,8 @@ export class CandidatosService {
       periodoMeses: number;
       cuerpoIdBody?: number;
       usuario?: JwtPayload;
+      soloConExperiencia?: boolean;
+      criteriosPrioridad?: string[];
     },
   ): Promise<ServiceResponse<SugerirCargoResponse | null>> {
     try {
@@ -191,13 +266,8 @@ export class CandidatosService {
         );
       }
 
-      // ── Lógica hermética de cuerpo_id ────────────────────────────────────────
-      let cuerpoIdEfectivo: number | undefined;
-      if (opciones.usuario?.cuerpo_id !== undefined) {
-        cuerpoIdEfectivo = opciones.usuario.cuerpo_id;
-      } else if (opciones.usuario?.rol === 'administrador' && opciones.cuerpoIdBody !== undefined) {
-        cuerpoIdEfectivo = opciones.cuerpoIdBody;
-      }
+      // Usar cuerpo_id del body si se provee (cualquier rol puede filtrarlo)
+      const cuerpoIdEfectivo: number | undefined = opciones.cuerpoIdBody;
 
       if (cuerpoIdEfectivo === undefined) {
         return ServiceResponse.failure(
@@ -254,7 +324,7 @@ export class CandidatosService {
             ? Math.round((asistencia.asistidas / asistencia.confirmadas) * 100) / 100
             : 0;
         const antiguedadAnios = dayjs(fechaHoy).diff(dayjs(miembro.fecha_ingreso), 'year');
-        const plenaComun = miembro.estado_membresia === 'plena_comunion';
+        const plenaComun = miembro.estado_comunion === 'plena_comunion';
 
         const indicadores = {
           experiencia_cargo_en_cuerpo: experienciaCargo,
@@ -278,27 +348,42 @@ export class CandidatosService {
         };
       });
 
-      // ── Ordenamiento multi-criterio ───────────────────────────────────────────
-      // 1. experiencia_cargo_en_cuerpo DESC
-      // 2. grupos_activos_count ASC (menos ocupado tiene prioridad)
-      // 3. asistencia_ratio_periodo DESC
-      // 4. antiguedad_anios DESC
-      candidatos.sort((a, b) => {
-        if (b.indicadores.experiencia_cargo_en_cuerpo !== a.indicadores.experiencia_cargo_en_cuerpo)
-          return (
-            b.indicadores.experiencia_cargo_en_cuerpo - a.indicadores.experiencia_cargo_en_cuerpo
-          );
+      // ── Filtrado por experiencia ──────────────────────────────────────────────
+      const candidatosFiltrados = opciones.soloConExperiencia
+        ? candidatos.filter((c) => c.indicadores.experiencia_cargo_en_cuerpo > 0)
+        : candidatos;
 
-        if (a.indicadores.grupos_activos_count !== b.indicadores.grupos_activos_count)
-          return a.indicadores.grupos_activos_count - b.indicadores.grupos_activos_count;
+      // ── Ordenamiento dinámico por criterios ───────────────────────────────────
+      type CandidatoSinPosicion = Omit<CandidatoCargo, 'posicion'>;
+      const COMPARADORES: Record<
+        string,
+        (a: CandidatoSinPosicion, b: CandidatoSinPosicion) => number
+      > = {
+        experiencia: (a, b) =>
+          b.indicadores.experiencia_cargo_en_cuerpo - a.indicadores.experiencia_cargo_en_cuerpo,
+        carga_trabajo: (a, b) =>
+          a.indicadores.grupos_activos_count - b.indicadores.grupos_activos_count,
+        fidelidad: (a, b) =>
+          b.indicadores.asistencia_ratio_periodo - a.indicadores.asistencia_ratio_periodo,
+        antiguedad: (a, b) => b.indicadores.antiguedad_anios - a.indicadores.antiguedad_anios,
+      };
 
-        if (b.indicadores.asistencia_ratio_periodo !== a.indicadores.asistencia_ratio_periodo)
-          return b.indicadores.asistencia_ratio_periodo - a.indicadores.asistencia_ratio_periodo;
+      const criterios =
+        opciones.criteriosPrioridad && opciones.criteriosPrioridad.length > 0
+          ? opciones.criteriosPrioridad
+          : ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
 
-        return b.indicadores.antiguedad_anios - a.indicadores.antiguedad_anios;
+      candidatosFiltrados.sort((a, b) => {
+        for (const criterio of criterios) {
+          const comparar = COMPARADORES[criterio];
+          if (!comparar) continue;
+          const resultado = comparar(a, b);
+          if (resultado !== 0) return resultado;
+        }
+        return 0;
       });
 
-      const topCandidatos: CandidatoCargo[] = candidatos
+      const topCandidatos: CandidatoCargo[] = candidatosFiltrados
         .slice(0, TOP_CANDIDATOS)
         .map((c, i) => ({ ...c, posicion: i + 1 }));
 
@@ -329,8 +414,11 @@ export class CandidatosService {
     ind: {
       disponible_en_fecha: boolean;
       conflictos_en_fecha_count: number;
+      conflictos_detalle?: Array<{ actividad: string; rol: string }>;
       experiencia_rol_total: number;
       experiencia_rol_en_tipo: number;
+      dias_desde_ultimo_uso: number | null;
+      servicios_esta_semana: number;
       asistencia_ratio_periodo: number;
       antiguedad_anios: number;
       plena_comunion: boolean;
@@ -341,6 +429,9 @@ export class CandidatosService {
 
     if (ind.disponible_en_fecha) {
       partes.push('Disponible en la fecha');
+    } else if (ind.conflictos_detalle && ind.conflictos_detalle.length > 0) {
+      const detalles = ind.conflictos_detalle.map((c) => `${c.rol} en ${c.actividad}`).join(', ');
+      partes.push(`No disponible (Ocupado en: ${detalles})`);
     } else {
       const n = ind.conflictos_en_fecha_count;
       partes.push(`No disponible (${n} conflicto${n !== 1 ? 's' : ''})`);
@@ -352,6 +443,17 @@ export class CandidatosService {
       );
     } else {
       partes.push(`${nombreRol} realizado ${ind.experiencia_rol_total} veces`);
+    }
+
+    if (ind.dias_desde_ultimo_uso === null) {
+      partes.push('Nunca ha realizado este servicio');
+    } else {
+      partes.push(`No ha realizado este servicio en ${ind.dias_desde_ultimo_uso} días`);
+    }
+
+    if (ind.servicios_esta_semana > 0) {
+      const s = ind.servicios_esta_semana;
+      partes.push(`Tiene ${s} servicio${s !== 1 ? 's' : ''} esta semana`);
     }
 
     const pct = Math.round(ind.asistencia_ratio_periodo * 100);

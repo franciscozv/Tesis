@@ -170,7 +170,7 @@ export class ActividadesRepository {
 
   /**
    * Verifica si un miembro es encargado vigente de un grupo
-   * (membresia_grupo con rol ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_cuerpo con rol ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeGrupoAsync(grupoId: number, miembroId: number): Promise<boolean> {
     return isEncargadoDeGrupo(miembroId, grupoId);

@@ -71,8 +71,8 @@ export class CalendarioRepository {
     // Filtrar actividades programadas con fecha >= hoy (post-query por limitaciones de filtro en join)
     const resultado: Responsabilidad[] = [];
     for (const row of data || []) {
-      const actividad = row.actividad as Record<string, unknown> | null;
-      const rol = row.rol_asignado as Record<string, unknown> | null;
+      const actividad = (row as any).actividad;
+      const rol = (row as any).rol_asignado;
 
       if (!actividad || !rol) continue;
       if (actividad.estado !== 'programada') continue;

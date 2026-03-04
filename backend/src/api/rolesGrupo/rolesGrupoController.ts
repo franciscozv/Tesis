@@ -30,8 +30,13 @@ class RolesGrupoController {
    * POST /api/roles-grupo
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
-    const { nombre, requiere_plena_comunion } = req.body;
-    const serviceResponse = await rolesGrupoService.create(nombre, requiere_plena_comunion);
+    const { nombre, requiere_plena_comunion, es_unico, es_directiva } = req.body;
+    const serviceResponse = await rolesGrupoService.create(
+      nombre,
+      requiere_plena_comunion,
+      es_unico ?? false,
+      es_directiva ?? false,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

@@ -1,4 +1,4 @@
-import { isEncargadoDeGrupo, ROL_ENCARGADO_ID } from '@/common/utils/grupoPermissions';
+import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { Colaborador } from './colaboradoresModel';
 
@@ -43,7 +43,9 @@ export class ColaboradoresRepository {
   async findAllAsync(filters: ColaboradorFilters = {}): Promise<Colaborador[]> {
     let query = supabase
       .from('colaborador')
-      .select('*')
+      .select(
+        '*, miembro(id, nombre, apellido), necesidad:necesidad_id(id, descripcion, actividad:actividad_id(id, nombre, fecha, hora_fin, estado))',
+      )
       .order('fecha_oferta', { ascending: false });
 
     if (filters.necesidad_id) {
@@ -68,7 +70,13 @@ export class ColaboradoresRepository {
    * Obtiene un colaborador por ID
    */
   async findByIdAsync(id: number): Promise<Colaborador | null> {
-    const { data, error } = await supabase.from('colaborador').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+      .from('colaborador')
+      .select(
+        '*, miembro(id, nombre, apellido), necesidad:necesidad_id(id, descripcion, actividad:actividad_id(id, nombre, fecha, hora_fin, estado))',
+      )
+      .eq('id', id)
+      .single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
@@ -112,7 +120,7 @@ export class ColaboradoresRepository {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as NecesidadConActividadInfo;
+    return data as any as NecesidadConActividadInfo;
   }
 
   /**
@@ -232,25 +240,25 @@ export class ColaboradoresRepository {
   }
 
   /**
-   * Obtiene colaboradores cuya cadena necesidad→actividad→grupo pertenece al encargado
-   * (miembro con membresía vigente con ROL_ENCARGADO_ID en membresia_grupo).
+   * Obtiene colaboradores cuya cadena necesidad→actividad→grupo pertenece a la directiva
+   * (miembro con membresía vigente con rol es_directiva = true en integrante_cuerpo).
    */
   async findAllForEncargadoAsync(
     filters: ColaboradorFilters,
     liderMiembroId: number,
   ): Promise<Colaborador[]> {
-    // 1. Grupos donde el miembro es encargado vigente
-    const { data: membresias, error: gruposError } = await supabase
-      .from('membresia_grupo')
-      .select('grupo_id')
+    // 1. Grupos donde el miembro tiene rol de directiva vigente
+    const { data: comunions, error: gruposError } = await supabase
+      .from('integrante_cuerpo')
+      .select('grupo_id, rol_grupo_ministerial!inner(es_directiva)')
       .eq('miembro_id', liderMiembroId)
-      .eq('rol_grupo_id', ROL_ENCARGADO_ID)
+      .eq('rol_grupo_ministerial.es_directiva', true)
       .is('fecha_desvinculacion', null);
 
     if (gruposError) throw gruposError;
-    if (!membresias || membresias.length === 0) return [];
+    if (!comunions || comunions.length === 0) return [];
 
-    const grupoIds = membresias.map((m: { grupo_id: number }) => m.grupo_id);
+    const grupoIds = comunions.map((m: { grupo_id: number }) => m.grupo_id);
 
     // 2. Actividades de esos grupos
     const { data: actividades, error: actError } = await supabase
@@ -277,7 +285,9 @@ export class ColaboradoresRepository {
     // 4. Colaboradores de esas necesidades con filtros adicionales
     let query = supabase
       .from('colaborador')
-      .select('*')
+      .select(
+        '*, miembro(id, nombre, apellido), necesidad:necesidad_id(id, descripcion, actividad:actividad_id(id, nombre, fecha, hora_fin, estado))',
+      )
       .in('necesidad_id', necesidadIds)
       .order('fecha_oferta', { ascending: false });
 
@@ -298,7 +308,7 @@ export class ColaboradoresRepository {
 
   /**
    * Verifica si una necesidad pertenece a un grupo donde el miembro es encargado vigente
-   * (membresia_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async perteneceEncargadoAsync(necesidadId: number, liderMiembroId: number): Promise<boolean> {
     const { data: necesidad, error: necError } = await supabase
@@ -318,6 +328,46 @@ export class ColaboradoresRepository {
     if (actError || !actividad || actividad.grupo_id === null) return false;
 
     return isEncargadoDeGrupo(liderMiembroId, actividad.grupo_id);
+  }
+
+  /**
+   * Rechaza masivamente todas las ofertas 'pendiente' o 'aceptada' vinculadas
+   * a una lista de necesidades. Se usa en la cascada de cancelación de actividad.
+   * Concatena en 'observaciones' el motivo automático y establece fecha_decision.
+   * Retorna la cantidad de filas afectadas.
+   */
+  async rejectAllByNecesidadesAsync(necesidadIds: number[]): Promise<number> {
+    if (necesidadIds.length === 0) return 0;
+
+    // 1. Obtener los colaboradores afectados para conservar sus observaciones originales
+    const { data: colaboradores, error: fetchError } = await supabase
+      .from('colaborador')
+      .select('id, observaciones')
+      .in('necesidad_id', necesidadIds)
+      .in('estado', ['pendiente', 'aceptada']);
+
+    if (fetchError) throw fetchError;
+    if (!colaboradores || colaboradores.length === 0) return 0;
+
+    // 2. Actualizar cada uno individualmente concatenando la observación
+    const now = new Date().toISOString();
+    let affectedCount = 0;
+
+    for (const col of colaboradores) {
+      const originalObs = col.observaciones ? `${col.observaciones} | ` : '';
+      const { error: updateError } = await supabase
+        .from('colaborador')
+        .update({
+          estado: 'rechazada',
+          fecha_decision: now,
+          observaciones: `${originalObs}Cancelación de actividad`,
+        })
+        .eq('id', col.id);
+
+      if (!updateError) affectedCount++;
+    }
+
+    return affectedCount;
   }
 
   /**

@@ -22,7 +22,7 @@ candidatosRegistry.register('CandidatoCargo', CandidatoCargoSchema);
 candidatosRegistry.register('SugerirCargoResponse', SugerirCargoResponseSchema);
 
 // Todas las rutas requieren autenticación
-candidatosRouter.use(verificarToken, verificarRol('administrador', 'usuario'));
+candidatosRouter.use(verificarToken);
 
 // POST /api/candidatos/sugerir-rol
 candidatosRegistry.registerPath({
@@ -38,6 +38,7 @@ candidatosRegistry.registerPath({
     'el filtro de cuerpo se aplica automáticamente e ignora cualquier `cuerpo_id` del body. ',
     'Solo ADMIN puede enviar `cuerpo_id` en el body para filtrar un grupo concreto; ',
     'sin él, la búsqueda es global.',
+    'ACCESO: Administrador y Usuario.',
   ].join(''),
   request: {
     body: {
@@ -52,6 +53,7 @@ candidatosRegistry.registerPath({
 });
 candidatosRouter.post(
   '/sugerir-rol',
+  verificarRol('administrador', 'usuario'),
   validateRequest(SugerirRolSchema),
   candidatosController.sugerirRol,
 );
@@ -71,6 +73,7 @@ candidatosRegistry.registerPath({
     'de lo contrario se retorna error 400. ',
     'Si el cargo requiere plena comunión, el filtro duro se aplica automáticamente. ',
     'La respuesta incluye un objeto `metadata` con los parámetros efectivos usados.',
+    'ACCESO: Solo rol administrador.',
   ].join(''),
   request: {
     body: {
@@ -85,6 +88,7 @@ candidatosRegistry.registerPath({
 });
 candidatosRouter.post(
   '/sugerir-cargo',
+  verificarRol('administrador'),
   validateRequest(SugerirCargoSchema),
   candidatosController.sugerirCargo,
 );

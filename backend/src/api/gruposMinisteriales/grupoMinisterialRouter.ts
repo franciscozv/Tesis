@@ -3,10 +3,8 @@ import express, { type Router } from 'express';
 import { z } from 'zod';
 import { grupoMinisterialController } from '@/api/gruposMinisteriales/grupoMinisterialController';
 import {
-  AsignarEncargadoSchema,
   CreateGrupoMinisterialSchema,
   GetGrupoMinisterialSchema,
-  GrupoConEncargadoSchema,
   GrupoMinisterialSchema,
   UpdateGrupoMinisterialSchema,
 } from '@/api/gruposMinisteriales/grupoMinisterialModel';
@@ -19,7 +17,6 @@ export const gruposMinisterialesRouter: Router = express.Router();
 
 // Registrar schemas
 gruposMinisterialesRegistry.register('GrupoMinisterial', GrupoMinisterialSchema);
-gruposMinisterialesRegistry.register('GrupoConEncargado', GrupoConEncargadoSchema);
 
 // Todas las rutas requieren autenticación
 gruposMinisterialesRouter.use(verificarToken);
@@ -31,7 +28,7 @@ gruposMinisterialesRegistry.registerPath({
   method: 'get',
   path: '/api/grupos-ministeriales',
   tags: ['Grupos Ministeriales'],
-  responses: createApiResponse(z.array(GrupoConEncargadoSchema), 'Success'),
+  responses: createApiResponse(z.array(GrupoMinisterialSchema), 'Success'),
 });
 gruposMinisterialesRouter.get('/', grupoMinisterialController.getAll);
 
@@ -43,7 +40,7 @@ gruposMinisterialesRegistry.registerPath({
   path: '/api/grupos-ministeriales/mis-grupos',
   tags: ['Grupos Ministeriales'],
   responses: createApiResponse(
-    z.array(GrupoConEncargadoSchema),
+    z.array(GrupoMinisterialSchema),
     'Grupos que el usuario puede gestionar',
   ),
 });
@@ -57,7 +54,7 @@ gruposMinisterialesRegistry.registerPath({
   path: '/api/grupos-ministeriales/{id}',
   tags: ['Grupos Ministeriales'],
   request: { params: GetGrupoMinisterialSchema.shape.params },
-  responses: createApiResponse(GrupoConEncargadoSchema, 'Success'),
+  responses: createApiResponse(GrupoMinisterialSchema, 'Success'),
 });
 gruposMinisterialesRouter.get(
   '/:id',
@@ -121,32 +118,6 @@ gruposMinisterialesRouter.put(
   verificarRol('administrador'),
   validateRequest(UpdateGrupoMinisterialSchema),
   grupoMinisterialController.update,
-);
-
-/**
- * PUT /api/grupos-ministeriales/:id/encargado - Asigna o cambia el encargado (solo admin)
- */
-gruposMinisterialesRegistry.registerPath({
-  method: 'put',
-  path: '/api/grupos-ministeriales/{id}/encargado',
-  tags: ['Grupos Ministeriales'],
-  request: {
-    params: AsignarEncargadoSchema.shape.params,
-    body: {
-      content: {
-        'application/json': {
-          schema: AsignarEncargadoSchema.shape.body,
-        },
-      },
-    },
-  },
-  responses: createApiResponse(GrupoConEncargadoSchema, 'Encargado asignado exitosamente'),
-});
-gruposMinisterialesRouter.put(
-  '/:id/encargado',
-  verificarRol('administrador'),
-  validateRequest(AsignarEncargadoSchema),
-  grupoMinisterialController.asignarEncargado,
 );
 
 /**

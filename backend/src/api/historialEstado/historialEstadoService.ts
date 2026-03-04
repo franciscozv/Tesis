@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
 import type {
-  ESTADOS_MEMBRESIA,
+  ESTADOS_COMUNION,
   HistorialEstado,
   HistorialEstadoConUsuario,
 } from './historialEstadoModel';
@@ -128,8 +128,8 @@ export class HistorialEstadoService {
    */
   async create(historialData: {
     miembro_id: number;
-    estado_anterior: (typeof ESTADOS_MEMBRESIA)[number];
-    estado_nuevo: (typeof ESTADOS_MEMBRESIA)[number];
+    estado_anterior: (typeof ESTADOS_COMUNION)[number];
+    estado_nuevo: (typeof ESTADOS_COMUNION)[number];
     motivo: string;
     usuario_id: number;
   }): Promise<ServiceResponse<HistorialEstado | null>> {
@@ -145,9 +145,9 @@ export class HistorialEstadoService {
       }
 
       // Validar que el estado_anterior coincida con el estado actual del miembro
-      if (miembro.estado_membresia !== historialData.estado_anterior) {
+      if (miembro.estado_comunion !== historialData.estado_anterior) {
         return ServiceResponse.failure(
-          `El estado anterior indicado (${historialData.estado_anterior}) no coincide con el estado actual del miembro (${miembro.estado_membresia})`,
+          `El estado anterior indicado (${historialData.estado_anterior}) no coincide con el estado actual del miembro (${miembro.estado_comunion})`,
           null,
           StatusCodes.BAD_REQUEST,
         );

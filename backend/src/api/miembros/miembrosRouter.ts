@@ -3,9 +3,11 @@ import express, { type Router } from 'express';
 import { z } from 'zod';
 import { miembrosController } from '@/api/miembros/miembrosController';
 import {
-  ChangeEstadoMembresiaSchema,
+  ChangeEstadoComunionSchema,
   CreateMiembroSchema,
+  EstadoComunionEnum,
   GetMiembroSchema,
+  GetMiembrosQuerySchema,
   MiembroSchema,
   UpdateMiembroSchema,
   UpdateMiPerfilSchema,
@@ -48,15 +50,29 @@ miembrosRouter.patch(
 );
 
 /**
- * GET /api/miembros - Obtiene todos los miembros activos
+ * GET /api/miembros - Obtiene miembros paginados con búsqueda y filtros
  */
 miembrosRegistry.registerPath({
   method: 'get',
   path: '/api/miembros',
   tags: ['Miembros'],
-  responses: createApiResponse(z.array(MiembroSchema), 'Success'),
+  request: {
+    query: GetMiembrosQuerySchema.shape.query,
+  },
+  responses: createApiResponse(
+    z.object({
+      data: z.array(MiembroSchema),
+      meta: z.object({
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      }),
+    }),
+    'Success',
+  ),
 });
-miembrosRouter.get('/', miembrosController.getAll);
+miembrosRouter.get('/', validateRequest(GetMiembrosQuerySchema), miembrosController.getAll);
 
 /**
  * GET /api/miembros/:id - Obtiene un miembro por ID
@@ -146,11 +162,11 @@ miembrosRegistry.registerPath({
   path: '/api/miembros/{id}/estado',
   tags: ['Miembros'],
   request: {
-    params: ChangeEstadoMembresiaSchema.shape.params,
+    params: ChangeEstadoComunionSchema.shape.params,
     body: {
       content: {
         'application/json': {
-          schema: ChangeEstadoMembresiaSchema.shape.body,
+          schema: ChangeEstadoComunionSchema.shape.body,
         },
       },
     },
@@ -160,6 +176,6 @@ miembrosRegistry.registerPath({
 miembrosRouter.patch(
   '/:id/estado',
   verificarRol('administrador'),
-  validateRequest(ChangeEstadoMembresiaSchema),
-  miembrosController.changeEstadoMembresia,
+  validateRequest(ChangeEstadoComunionSchema),
+  miembrosController.changeEstadoComunion,
 );

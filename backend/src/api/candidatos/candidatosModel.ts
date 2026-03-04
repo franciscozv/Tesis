@@ -4,13 +4,33 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 /**
+ * Schema de detalle de un conflicto de horario
+ */
+export const ConflictoDetalleSchema = z.object({
+  actividad: z.string().openapi({ example: 'Culto de Jóvenes' }),
+  rol: z.string().openapi({ example: 'Sonido' }),
+});
+
+/**
  * Schema de indicadores crudos para candidato a rol de actividad (sin puntuación)
  */
 export const IndicadoresRolSchema = z.object({
   disponible_en_fecha: z.boolean().openapi({ example: true }),
   conflictos_en_fecha_count: z.number().int().openapi({ example: 0 }),
+  conflictos_detalle: z
+    .array(ConflictoDetalleSchema)
+    .optional()
+    .openapi({ example: [{ actividad: 'Culto de Jóvenes', rol: 'Sonido' }] }),
   experiencia_rol_total: z.number().int().openapi({ example: 24 }),
   experiencia_rol_en_tipo: z.number().int().openapi({ example: 10 }),
+  dias_desde_ultimo_uso: z.number().int().nullable().openapi({
+    example: 30,
+    description: 'Días desde el último uso del rol. Null si nunca lo ha realizado.',
+  }),
+  servicios_esta_semana: z.number().int().openapi({
+    example: 2,
+    description: 'Servicios confirmados en la semana de la fecha objetivo.',
+  }),
   asistencia_ratio_periodo: z.number().openapi({ example: 0.95 }),
   antiguedad_anios: z.number().int().openapi({ example: 8 }),
   plena_comunion: z.boolean().openapi({ example: true }),
@@ -102,6 +122,16 @@ export const SugerirRolSchema = z.object({
       .positive('Debe ser un ID válido')
       .optional()
       .openapi({ example: 1 }),
+    actividad_id: z
+      .number()
+      .int('Debe ser un número entero')
+      .positive('Debe ser un ID válido')
+      .optional()
+      .openapi({
+        description:
+          'ID de la actividad. Si se provee, los candidatos se filtran al grupo de esa actividad (obligatorio para rol "usuario").',
+        example: 10,
+      }),
     cuerpo_id: z
       .number()
       .int('Debe ser un número entero')
@@ -119,6 +149,28 @@ export const SugerirRolSchema = z.object({
       .default(12)
       .openapi({ example: 12 }),
     filtro_plena_comunion: z.boolean().optional().openapi({ example: false }),
+    solo_con_experiencia: z.boolean().optional().default(false).openapi({
+      description: 'Si es true, excluye candidatos sin experiencia previa en el rol',
+      example: false,
+    }),
+    solo_sin_experiencia: z.boolean().optional().default(false).openapi({
+      description:
+        'Si es true, excluye candidatos con experiencia previa (rotación/nuevos talentos)',
+      example: false,
+    }),
+    prioridad: z
+      .array(z.enum(['disponibilidad', 'experiencia_tipo', 'rotacion', 'carga', 'fidelidad']))
+      .optional()
+      .openapi({
+        description:
+          'Criterios de ordenamiento. Solo los criterios presentes en este array se evalúan. Si se omite, se aplica el orden completo por defecto.',
+        example: ['disponibilidad', 'rotacion'],
+      }),
+    incluir_con_conflictos: z.boolean().optional().default(false).openapi({
+      description:
+        'Si es true, incluye candidatos con conflicto de horario en los resultados (aparecen resaltados). Si es false (default), se excluyen del listado.',
+      example: false,
+    }),
   }),
 });
 
@@ -148,5 +200,17 @@ export const SugerirCargoSchema = z.object({
       .max(60, 'Máximo 60 meses')
       .default(12)
       .openapi({ example: 12 }),
+    solo_con_experiencia: z.boolean().optional().default(false).openapi({
+      description: 'Si es true, excluye candidatos sin experiencia previa en el cargo',
+      example: false,
+    }),
+    criterios_prioridad: z
+      .array(z.enum(['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad']))
+      .optional()
+      .openapi({
+        description:
+          'Orden de prioridad para el ranking. Si está vacío se aplica el orden por defecto.',
+        example: ['fidelidad', 'carga_trabajo'],
+      }),
   }),
 });

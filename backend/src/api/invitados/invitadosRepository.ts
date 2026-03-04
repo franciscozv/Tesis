@@ -21,7 +21,7 @@ export class InvitadosRepository {
   async findAllAsync(filters: InvitadoFilters = {}): Promise<Invitado[]> {
     let query = supabase
       .from('invitado')
-      .select('*')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
       .order('fecha_invitacion', { ascending: false });
 
     if (filters.actividad_id) {
@@ -46,7 +46,11 @@ export class InvitadosRepository {
    * Obtiene un invitado por ID
    */
   async findByIdAsync(id: number): Promise<Invitado | null> {
-    const { data, error } = await supabase.from('invitado').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+      .from('invitado')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .eq('id', id)
+      .single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
@@ -111,7 +115,7 @@ export class InvitadosRepository {
 
   /**
    * Verifica si un miembro es encargado vigente del grupo al que pertenece una actividad
-   * (membresia_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
     const { data: actividad, error: actError } = await supabase
@@ -187,7 +191,11 @@ export class InvitadosRepository {
       insertData.fecha_respuesta = new Date().toISOString();
     }
 
-    const { data, error } = await supabase.from('invitado').insert(insertData).select().single();
+    const { data, error } = await supabase
+      .from('invitado')
+      .insert(insertData)
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .single();
 
     if (error) throw error;
     return data as Invitado;
@@ -218,7 +226,7 @@ export class InvitadosRepository {
       .from('invitado')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
       .single();
 
     if (error) {
@@ -236,7 +244,7 @@ export class InvitadosRepository {
       .from('invitado')
       .update({ asistio })
       .eq('id', id)
-      .select()
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
       .single();
 
     if (error) {
