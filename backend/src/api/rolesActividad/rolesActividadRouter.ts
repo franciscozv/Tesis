@@ -4,126 +4,128 @@ import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
-import { rolesActividadController } from './rolesActividadController';
+import { responsabilidadesActividadController } from './rolesActividadController';
 import {
-  CreateRolActividadSchema,
-  GetRolActividadSchema,
-  RolActividadSchema,
-  ToggleEstadoRolActividadSchema,
-  UpdateRolActividadSchema,
+  CreateResponsabilidadActividadSchema,
+  GetResponsabilidadActividadSchema,
+  ResponsabilidadActividadSchema,
+  ToggleEstadoResponsabilidadActividadSchema,
+  UpdateResponsabilidadActividadSchema,
 } from './rolesActividadModel';
 
-export const rolesActividadRegistry = new OpenAPIRegistry();
-export const rolesActividadRouter: Router = express.Router();
+export const responsabilidadesActividadRegistry = new OpenAPIRegistry();
+export const responsabilidadesActividadRouter: Router = express.Router();
 
 // Registrar schema en OpenAPI
-rolesActividadRegistry.register('RolActividad', RolActividadSchema);
+responsabilidadesActividadRegistry.register('ResponsabilidadActividad', ResponsabilidadActividadSchema);
 
 // Todas las rutas requieren autenticación
-rolesActividadRouter.use(verificarToken);
+responsabilidadesActividadRouter.use(verificarToken);
 
-// GET /api/roles-actividad - Listar todos los roles activos
-rolesActividadRegistry.registerPath({
+// GET /api/responsabilidades-actividad - Listar todos los roles activos
+responsabilidadesActividadRegistry.registerPath({
   method: 'get',
-  path: '/api/roles-actividad',
-  tags: ['Roles de Actividad'],
-  summary: 'Obtener todos los roles de actividad activos',
-  responses: createApiResponse(z.array(RolActividadSchema), 'Success'),
+  path: '/api/responsabilidades-actividad',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Obtener todos los responsabilidades de actividad activos',
+  responses: createApiResponse(z.array(ResponsabilidadActividadSchema), 'Success'),
 });
-rolesActividadRouter.get('/', rolesActividadController.getAll);
+responsabilidadesActividadRouter.get('/', responsabilidadesActividadController.getAll);
 
-// GET /api/roles-actividad/:id - Obtener un rol por ID
-rolesActividadRegistry.registerPath({
+// GET /api/responsabilidades-actividad/:id - Obtener un rol por ID
+responsabilidadesActividadRegistry.registerPath({
   method: 'get',
-  path: '/api/roles-actividad/{id}',
-  tags: ['Roles de Actividad'],
-  summary: 'Obtener un rol de actividad por ID',
-  request: { params: GetRolActividadSchema.shape.params },
-  responses: createApiResponse(RolActividadSchema, 'Success'),
+  path: '/api/responsabilidades-actividad/{id}',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Obtener un responsabilidad de actividad por ID',
+  request: { params: GetResponsabilidadActividadSchema.shape.params },
+  responses: createApiResponse(ResponsabilidadActividadSchema, 'Success'),
 });
-rolesActividadRouter.get(
+responsabilidadesActividadRouter.get(
   '/:id',
-  validateRequest(GetRolActividadSchema),
-  rolesActividadController.getById,
+  validateRequest(GetResponsabilidadActividadSchema),
+  responsabilidadesActividadController.getById,
 );
 
-// POST /api/roles-actividad - Crear un nuevo rol
-rolesActividadRegistry.registerPath({
+// POST /api/responsabilidades-actividad - Crear un nuevo rol
+responsabilidadesActividadRegistry.registerPath({
   method: 'post',
-  path: '/api/roles-actividad',
-  tags: ['Roles de Actividad'],
-  summary: 'Crear un nuevo rol de actividad',
+  path: '/api/responsabilidades-actividad',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Crear un nuevo responsabilidad de actividad',
   request: {
     body: {
       content: {
         'application/json': {
-          schema: CreateRolActividadSchema.shape.body,
+          schema: CreateResponsabilidadActividadSchema.shape.body,
         },
       },
     },
   },
-  responses: createApiResponse(RolActividadSchema, 'Success'),
+  responses: createApiResponse(ResponsabilidadActividadSchema, 'Success'),
 });
-rolesActividadRouter.post(
+responsabilidadesActividadRouter.post(
   '/',
   verificarRol('administrador'),
-  validateRequest(CreateRolActividadSchema),
-  rolesActividadController.create,
+  validateRequest(CreateResponsabilidadActividadSchema),
+  responsabilidadesActividadController.create,
 );
 
-// PUT /api/roles-actividad/:id - Actualizar un rol
-rolesActividadRegistry.registerPath({
+// PUT /api/responsabilidades-actividad/:id - Actualizar un rol
+responsabilidadesActividadRegistry.registerPath({
   method: 'put',
-  path: '/api/roles-actividad/{id}',
-  tags: ['Roles de Actividad'],
-  summary: 'Actualizar un rol de actividad',
+  path: '/api/responsabilidades-actividad/{id}',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Actualizar un responsabilidad de actividad',
   request: {
-    params: UpdateRolActividadSchema.shape.params,
+    params: UpdateResponsabilidadActividadSchema.shape.params,
     body: {
       content: {
         'application/json': {
-          schema: UpdateRolActividadSchema.shape.body,
+          schema: UpdateResponsabilidadActividadSchema.shape.body,
         },
       },
     },
   },
-  responses: createApiResponse(RolActividadSchema, 'Success'),
+  responses: createApiResponse(ResponsabilidadActividadSchema, 'Success'),
 });
-rolesActividadRouter.put(
+responsabilidadesActividadRouter.put(
   '/:id',
   verificarRol('administrador'),
-  validateRequest(UpdateRolActividadSchema),
-  rolesActividadController.update,
+  validateRequest(UpdateResponsabilidadActividadSchema),
+  responsabilidadesActividadController.update,
 );
 
-// PATCH /api/roles-actividad/:id/toggle-estado - Cambiar estado activo/inactivo
-rolesActividadRegistry.registerPath({
+// PATCH /api/responsabilidades-actividad/:id/toggle-estado - Cambiar estado activo/inactivo
+responsabilidadesActividadRegistry.registerPath({
   method: 'patch',
-  path: '/api/roles-actividad/{id}/toggle-estado',
-  tags: ['Roles de Actividad'],
-  summary: 'Cambiar estado activo/inactivo de un rol de actividad',
-  request: { params: ToggleEstadoRolActividadSchema.shape.params },
-  responses: createApiResponse(RolActividadSchema, 'Estado cambiado exitosamente'),
+  path: '/api/responsabilidades-actividad/{id}/toggle-estado',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Cambiar estado activo/inactivo de un responsabilidad de actividad',
+  request: { params: ToggleEstadoResponsabilidadActividadSchema.shape.params },
+  responses: createApiResponse(ResponsabilidadActividadSchema, 'Estado cambiado exitosamente'),
 });
-rolesActividadRouter.patch(
+responsabilidadesActividadRouter.patch(
   '/:id/toggle-estado',
   verificarRol('administrador'),
-  validateRequest(ToggleEstadoRolActividadSchema),
-  rolesActividadController.toggleEstado,
+  validateRequest(ToggleEstadoResponsabilidadActividadSchema),
+  responsabilidadesActividadController.toggleEstado,
 );
 
-// DELETE /api/roles-actividad/:id - Eliminar un rol (soft delete)
-rolesActividadRegistry.registerPath({
+// DELETE /api/responsabilidades-actividad/:id - Eliminar un rol (soft delete)
+responsabilidadesActividadRegistry.registerPath({
   method: 'delete',
-  path: '/api/roles-actividad/{id}',
-  tags: ['Roles de Actividad'],
-  summary: 'Eliminar un rol de actividad (soft delete)',
-  request: { params: GetRolActividadSchema.shape.params },
+  path: '/api/responsabilidades-actividad/{id}',
+  tags: ['Responsabilidades de Actividad'],
+  summary: 'Eliminar un responsabilidad de actividad (soft delete)',
+  request: { params: GetResponsabilidadActividadSchema.shape.params },
   responses: createApiResponse(z.null(), 'Success'),
 });
-rolesActividadRouter.delete(
+responsabilidadesActividadRouter.delete(
   '/:id',
   verificarRol('administrador'),
-  validateRequest(GetRolActividadSchema),
-  rolesActividadController.delete,
+  validateRequest(GetResponsabilidadActividadSchema),
+  responsabilidadesActividadController.delete,
 );
+
+

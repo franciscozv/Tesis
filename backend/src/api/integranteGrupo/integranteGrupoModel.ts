@@ -5,9 +5,9 @@ import { commonValidations } from '@/common/utils/commonValidation';
 extendZodWithOpenApi(z);
 
 /**
- * Schema principal de Integrante en Cuerpo (anteriormente Membresía en Grupo)
+ * Schema principal de Integrante en Grupo (anteriormente Membresía en Grupo)
  */
-export const IntegranteCuerpoSchema = z.object({
+export const IntegranteGrupoSchema = z.object({
   id_integrante: z.number(),
   miembro_id: z.number(),
   grupo_id: z.number(),
@@ -16,12 +16,12 @@ export const IntegranteCuerpoSchema = z.object({
   fecha_desvinculacion: z.string().nullable(),
 });
 
-export type IntegranteCuerpo = z.infer<typeof IntegranteCuerpoSchema>;
+export type IntegranteGrupo = z.infer<typeof IntegranteGrupoSchema>;
 
 /**
  * Schema de integrante con nombres de grupo y rol (para consultas con JOIN)
  */
-export const IntegranteCuerpoConNombresSchema = z.object({
+export const IntegranteGrupoConNombresSchema = z.object({
   id: z.number(),
   miembro_id: z.number(),
   miembro: z
@@ -45,11 +45,11 @@ export const IntegranteCuerpoConNombresSchema = z.object({
   fecha_desvinculacion: z.string().nullable(),
 });
 
-export type IntegranteCuerpoConNombres = z.infer<typeof IntegranteCuerpoConNombresSchema>;
+export type IntegranteGrupoConNombres = z.infer<typeof IntegranteGrupoConNombresSchema>;
 
 /**
- * Schema para vincular un miembro a un cuerpo/grupo ministerial (RF_06)
- * POST /api/integrantes-cuerpo
+ * Schema para vincular un miembro a un grupo/grupo ministerial (RF_06)
+ * POST /api/integrantes-grupo
  */
 export const VincularMiembroSchema = z.object({
   body: z.object({
@@ -68,7 +68,7 @@ export const VincularMiembroSchema = z.object({
 
 /**
  * Schema para desvincular un miembro de un grupo (RF_07)
- * PATCH /api/integrantes-cuerpo/:id/desvincular
+ * PATCH /api/integrantes-grupo/:id/desvincular
  */
 export const DesvincularMiembroSchema = z.object({
   params: z.object({
@@ -81,7 +81,7 @@ export const DesvincularMiembroSchema = z.object({
 
 /**
  * Schema para obtener integraciones por miembro
- * GET /api/integrantes-cuerpo/miembro/:miembro_id
+ * GET /api/integrantes-grupo/miembro/:miembro_id
  */
 export const GetIntegrantesByMiembroSchema = z.object({
   params: z.object({
@@ -91,7 +91,7 @@ export const GetIntegrantesByMiembroSchema = z.object({
 
 /**
  * Schema para obtener integrantes por grupo
- * GET /api/integrantes-cuerpo/grupo/:grupo_id
+ * GET /api/integrantes-grupo/grupo/:grupo_id
  */
 export const GetIntegrantesByGrupoSchema = z.object({
   params: z.object({
@@ -101,7 +101,7 @@ export const GetIntegrantesByGrupoSchema = z.object({
 
 /**
  * Schema para obtener un integrante por ID
- * GET /api/integrantes-cuerpo/:id
+ * GET /api/integrantes-grupo/:id
  */
 export const GetIntegranteSchema = z.object({
   params: z.object({
@@ -111,7 +111,7 @@ export const GetIntegranteSchema = z.object({
 
 /**
  * Schema para cambiar el rol de una integración activa
- * PATCH /api/integrantes-cuerpo/:id/cambiar-rol
+ * PATCH /api/integrantes-grupo/:id/cambiar-rol
  */
 export const CambiarRolIntegranteSchema = z.object({
   params: z.object({

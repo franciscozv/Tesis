@@ -155,7 +155,7 @@ export class ActividadesRepository {
    */
   async grupoExistsAsync(grupoId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('id_grupo')
       .eq('id_grupo', grupoId)
       .eq('activo', true)
@@ -170,7 +170,7 @@ export class ActividadesRepository {
 
   /**
    * Verifica si un miembro es encargado vigente de un grupo
-   * (integrante_cuerpo con rol ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_grupo con rol ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeGrupoAsync(grupoId: number, miembroId: number): Promise<boolean> {
     return isEncargadoDeGrupo(miembroId, grupoId);

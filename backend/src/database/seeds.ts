@@ -137,9 +137,9 @@ async function seedTiposActividad(): Promise<number[]> {
   );
 }
 
-async function seedRolesActividad(): Promise<number[]> {
+async function seedResponsabilidadesActividad(): Promise<number[]> {
   return seedIfEmpty(
-    'rol_actividad',
+    'responsabilidad_actividad',
     [
       { nombre: 'Predicador', descripcion: 'Encargado de la predicación', activo: true },
       {
@@ -159,13 +159,13 @@ async function seedRolesActividad(): Promise<number[]> {
       { nombre: 'Ofrendero', descripcion: 'Recolección de ofrendas', activo: true },
       { nombre: 'Coordinador', descripcion: 'Coordinación general de la actividad', activo: true },
     ],
-    'id_rol',
+    'id_responsabilidad',
   );
 }
 
 async function seedRolesGrupo(): Promise<number[]> {
   return seedIfEmpty(
-    'rol_grupo_ministerial',
+    'rol_grupo',
     [
       {
         nombre: 'Primer Ayudante',
@@ -471,7 +471,7 @@ async function seedUsuarios(miembroIds: number[]): Promise<number[]> {
 async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> {
   // miembroIds: [0]=Carlos, [1]=María, [2]=Pedro, [3]=Ana, [7]=Patricia
   return seedIfEmpty(
-    'grupo_ministerial',
+    'grupo',
     [
       {
         nombre: 'Coro Oficial',
@@ -493,7 +493,7 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
       },
       {
         nombre: 'Junta de Oficiales',
-        descripcion: 'Cuerpo directivo y administrativo de la iglesia',
+        descripcion: 'Grupo directivo y administrativo de la iglesia',
         fecha_creacion: '2018-01-01',
         activo: true,
       },
@@ -504,22 +504,22 @@ async function seedGruposMinisteriales(miembroIds: number[]): Promise<number[]> 
 
 // ─── 5. INTEGRANTE CUERPO ──────────────────────────────────────────────────
 
-async function seedIntegranteCuerpo(
+async function seedIntegranteGrupo(
   miembroIds: number[],
   grupoIds: number[],
   rolesGrupoIds: number[],
 ): Promise<number[]> {
-  if (await tableHasData('integrante_cuerpo')) {
-    console.log('  ⏭  integrante_cuerpo: ya tiene registros, omitiendo');
-    const { data } = await supabase.from('integrante_cuerpo').select('id_integrante');
-    resumen.integrante_cuerpo = 0;
+  if (await tableHasData('integrante_grupo')) {
+    console.log('  ⏭  integrante_grupo: ya tiene registros, omitiendo');
+    const { data } = await supabase.from('integrante_grupo').select('id_integrante');
+    resumen.integrante_grupo = 0;
     return (data || []).map((r) => r.id_integrante as number);
   }
 
   // rolesGrupoIds: [0]=Primer Ayudante, [1]=Secretario, [2]=Tesorero, [3]=Vocal, [4]=Integrante, [5]=Segundo Ayudante
   // grupoIds: [0]=Coro, [1]=Jóvenes, [2]=Señoritas, [3]=Junta Oficiales
   return insertRecords(
-    'integrante_cuerpo',
+    'integrante_grupo',
     [
       // Coro Oficial
       {
@@ -880,7 +880,7 @@ async function seedActividades(
 async function seedInvitados(
   actividadIds: number[],
   miembroIds: number[],
-  rolesActividadIds: number[],
+  responsabilidadesActividadIds: number[],
 ): Promise<number[]> {
   if (await tableHasData('invitado')) {
     console.log('  ⏭  invitado: ya tiene registros, omitiendo');
@@ -889,7 +889,7 @@ async function seedInvitados(
     return (data || []).map((r) => r.id as number);
   }
 
-  // rolesActividadIds: [0]=Predicador, [1]=L.Alabanza, [2]=Músico, [3]=Corista,
+  // responsabilidadesActividadIds: [0]=Predicador, [1]=L.Alabanza, [2]=Músico, [3]=Corista,
   //                    [4]=Profesor E.D., [5]=Portero, [6]=Vigilante, [7]=Ofrendero, [8]=Coordinador
   const ahora = dayjs().toISOString();
   const ayer = dayjs().subtract(1, 'day').toISOString();
@@ -900,7 +900,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[0],
       miembro_id: miembroIds[2],
-      rol_id: rolesActividadIds[0],
+      responsabilidad_id: responsabilidadesActividadIds[0],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -909,7 +909,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[0],
       miembro_id: miembroIds[1],
-      rol_id: rolesActividadIds[1],
+      responsabilidad_id: responsabilidadesActividadIds[1],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -918,7 +918,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[0],
       miembro_id: miembroIds[8],
-      rol_id: rolesActividadIds[2],
+      responsabilidad_id: responsabilidadesActividadIds[2],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -927,7 +927,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[0],
       miembro_id: miembroIds[0],
-      rol_id: rolesActividadIds[7],
+      responsabilidad_id: responsabilidadesActividadIds[7],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -938,7 +938,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[1],
       miembro_id: miembroIds[2],
-      rol_id: rolesActividadIds[0],
+      responsabilidad_id: responsabilidadesActividadIds[0],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -947,7 +947,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[1],
       miembro_id: miembroIds[1],
-      rol_id: rolesActividadIds[1],
+      responsabilidad_id: responsabilidadesActividadIds[1],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -956,7 +956,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[1],
       miembro_id: miembroIds[3],
-      rol_id: rolesActividadIds[5],
+      responsabilidad_id: responsabilidadesActividadIds[5],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -965,7 +965,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[1],
       miembro_id: miembroIds[4],
-      rol_id: rolesActividadIds[6],
+      responsabilidad_id: responsabilidadesActividadIds[6],
       estado: 'rechazado',
       motivo_rechazo: 'Tengo turno de trabajo ese día',
       asistio: false,
@@ -977,7 +977,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[2],
       miembro_id: miembroIds[7],
-      rol_id: rolesActividadIds[4],
+      responsabilidad_id: responsabilidadesActividadIds[4],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -986,7 +986,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[2],
       miembro_id: miembroIds[3],
-      rol_id: rolesActividadIds[4],
+      responsabilidad_id: responsabilidadesActividadIds[4],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -997,7 +997,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[3],
       miembro_id: miembroIds[2],
-      rol_id: rolesActividadIds[0],
+      responsabilidad_id: responsabilidadesActividadIds[0],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -1006,7 +1006,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[3],
       miembro_id: miembroIds[1],
-      rol_id: rolesActividadIds[1],
+      responsabilidad_id: responsabilidadesActividadIds[1],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -1015,7 +1015,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[3],
       miembro_id: miembroIds[5],
-      rol_id: rolesActividadIds[3],
+      responsabilidad_id: responsabilidadesActividadIds[3],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -1026,7 +1026,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       miembro_id: miembroIds[3],
-      rol_id: rolesActividadIds[8],
+      responsabilidad_id: responsabilidadesActividadIds[8],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -1035,7 +1035,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       miembro_id: miembroIds[4],
-      rol_id: rolesActividadIds[2],
+      responsabilidad_id: responsabilidadesActividadIds[2],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -1044,7 +1044,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       miembro_id: miembroIds[5],
-      rol_id: rolesActividadIds[3],
+      responsabilidad_id: responsabilidadesActividadIds[3],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -1053,7 +1053,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 3],
       miembro_id: miembroIds[8],
-      rol_id: rolesActividadIds[2],
+      responsabilidad_id: responsabilidadesActividadIds[2],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -1064,7 +1064,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 2],
       miembro_id: miembroIds[0],
-      rol_id: rolesActividadIds[8],
+      responsabilidad_id: responsabilidadesActividadIds[8],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -1073,7 +1073,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 2],
       miembro_id: miembroIds[2],
-      rol_id: rolesActividadIds[0],
+      responsabilidad_id: responsabilidadesActividadIds[0],
       estado: 'confirmado',
       asistio: false,
       fecha_invitacion: haceUnaSemana,
@@ -1082,7 +1082,7 @@ async function seedInvitados(
     {
       actividad_id: actividadIds[actividadIds.length - 2],
       miembro_id: miembroIds[7],
-      rol_id: rolesActividadIds[7],
+      responsabilidad_id: responsabilidadesActividadIds[7],
       estado: 'pendiente',
       asistio: false,
       fecha_invitacion: ahora,
@@ -1322,7 +1322,7 @@ export async function runSeeds(): Promise<void> {
 
   try {
     const tiposActividadIds = await seedTiposActividad();
-    const rolesActividadIds = await seedRolesActividad();
+    const responsabilidadesActividadIds = await seedResponsabilidadesActividad();
     const rolesGrupoIds = await seedRolesGrupo();
     const tiposNecesidadIds = await seedTiposNecesidad();
 
@@ -1335,8 +1335,8 @@ export async function runSeeds(): Promise<void> {
     console.log('\n--- 4. Grupos Ministeriales ---');
     const grupoIds = await seedGruposMinisteriales(miembroIds);
 
-    console.log('\n--- 5. Integrante Cuerpo ---');
-    await seedIntegranteCuerpo(miembroIds, grupoIds, rolesGrupoIds);
+    console.log('\n--- 5. Integrante Grupo ---');
+    await seedIntegranteGrupo(miembroIds, grupoIds, rolesGrupoIds);
 
     console.log('\n--- 6. Historial Estado ---');
     await seedHistorialEstado(miembroIds, usuarioIds);
@@ -1348,7 +1348,7 @@ export async function runSeeds(): Promise<void> {
     const actividadIds = await seedActividades(tiposActividadIds, patronIds, grupoIds, usuarioIds);
 
     console.log('\n--- 9. Invitados ---');
-    await seedInvitados(actividadIds, miembroIds, rolesActividadIds);
+    await seedInvitados(actividadIds, miembroIds, responsabilidadesActividadIds);
 
     console.log('\n--- 10. Necesidades Log�sticas ---');
     const necesidadIds = await seedNecesidadesLogisticas(actividadIds, tiposNecesidadIds);
@@ -1380,3 +1380,5 @@ export async function runSeeds(): Promise<void> {
 
 // Ejecuci�n directa: pnpm seed
 runSeeds();
+
+

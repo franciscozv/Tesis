@@ -5,11 +5,11 @@ import { supabase } from '@/common/utils/supabaseClient';
 /**
  * Verifica si un miembro tiene privilegios de directiva en un grupo.
  *
- * Un miembro TIENE privilegios si existe en integrante_cuerpo una fila con:
+ * Un miembro TIENE privilegios si existe en integrante_grupo una fila con:
  *   - miembro_id = miembroId
  *   - grupo_id   = grupoId
  *   - fecha_desvinculacion IS NULL  (membresía activa)
- *   - rol_grupo_ministerial.es_directiva = true
+ *   - rol_grupo.es_directiva = true
  *
  * Los administradores deben omitir esta función (bypass total vía rol).
  *
@@ -20,8 +20,8 @@ import { supabase } from '@/common/utils/supabaseClient';
  */
 export async function isEncargadoDeGrupo(miembroId: number, grupoId: number): Promise<boolean> {
   const { data, error } = await supabase
-    .from('integrante_cuerpo')
-    .select('rol_grupo_ministerial!inner(es_directiva)')
+    .from('integrante_grupo')
+    .select('rol_grupo!inner(es_directiva)')
     .eq('miembro_id', miembroId)
     .eq('grupo_id', grupoId)
     .is('fecha_desvinculacion', null)
@@ -30,7 +30,7 @@ export async function isEncargadoDeGrupo(miembroId: number, grupoId: number): Pr
   if (error) throw error;
   if (!data) return false;
 
-  return (data as any).rol_grupo_ministerial.es_directiva === true;
+  return (data as any).rol_grupo.es_directiva === true;
 }
 
 /**

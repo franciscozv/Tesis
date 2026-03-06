@@ -46,10 +46,10 @@ export class NecesidadesLogisticasRepository {
     liderMiembroId: number,
   ): Promise<NecesidadLogistica[]> {
     const { data: comunions, error: gruposError } = await supabase
-      .from('integrante_cuerpo')
-      .select('grupo_id, rol_grupo_ministerial!inner(es_directiva)')
+      .from('integrante_grupo')
+      .select('grupo_id, rol_grupo!inner(es_directiva)')
       .eq('miembro_id', liderMiembroId)
-      .eq('rol_grupo_ministerial.es_directiva', true)
+      .eq('rol_grupo.es_directiva', true)
       .is('fecha_desvinculacion', null);
 
     if (gruposError) throw gruposError;
@@ -162,7 +162,7 @@ export class NecesidadesLogisticasRepository {
 
   /**
    * Verifica si un miembro es encargado vigente del grupo al que pertenece una actividad
-   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
     const { data: actividad, error: actError } = await supabase
@@ -266,6 +266,21 @@ export class NecesidadesLogisticasRepository {
     if (error) throw error;
     if (!data || data.length === 0) return 0;
     return data.reduce((sum, c) => sum + (c.cantidad_ofrecida as number), 0);
+  }
+
+  /**
+   * Indica si existe al menos una colaboración aceptada para una necesidad
+   */
+  async hasColaboracionesAceptadasAsync(necesidadId: number): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('colaborador')
+      .select('id')
+      .eq('necesidad_id', necesidadId)
+      .eq('estado', 'aceptada')
+      .limit(1);
+
+    if (error) throw error;
+    return !!data && data.length > 0;
   }
 
   /**

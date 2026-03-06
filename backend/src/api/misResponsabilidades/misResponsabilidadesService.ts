@@ -62,15 +62,15 @@ export class MisResponsabilidadesService {
             hora_fin: act.hora_fin,
             estado: act.estado,
           },
-          grupo: act.grupo_ministerial
-            ? { id: act.grupo_ministerial.id_grupo, nombre: act.grupo_ministerial.nombre }
+          grupo: act.grupo
+            ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre }
             : null,
           tipo_actividad: {
             id: act.tipo_actividad.id_tipo,
             nombre: act.tipo_actividad.nombre,
           },
-          rol: inv.rol_actividad
-            ? { id: (inv.rol_actividad as any).id_rol, nombre: (inv.rol_actividad as any).nombre }
+          rol: inv.responsabilidad_actividad
+            ? { id: (inv.responsabilidad_actividad as any).id_responsabilidad, nombre: (inv.responsabilidad_actividad as any).nombre }
             : undefined,
           estado_invitacion: inv.estado,
           invitado_id: inv.id,
@@ -92,8 +92,8 @@ export class MisResponsabilidadesService {
             hora_fin: act.hora_fin,
             estado: act.estado,
           },
-          grupo: act.grupo_ministerial
-            ? { id: act.grupo_ministerial.id_grupo, nombre: act.grupo_ministerial.nombre }
+          grupo: act.grupo
+            ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre }
             : null,
           tipo_actividad: {
             id: act.tipo_actividad.id_tipo,
@@ -130,3 +130,4 @@ export class MisResponsabilidadesService {
 }
 
 export const misResponsabilidadesService = new MisResponsabilidadesService();
+

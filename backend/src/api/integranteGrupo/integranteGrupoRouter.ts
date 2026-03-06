@@ -4,34 +4,34 @@ import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
-import { integranteCuerpoController } from './integranteCuerpoController';
+import { integranteGrupoController } from './integranteGrupoController';
 import {
   CambiarRolIntegranteSchema,
   DesvincularMiembroSchema,
   GetIntegrantesByGrupoSchema,
   GetIntegrantesByMiembroSchema,
-  IntegranteCuerpoConNombresSchema,
-  IntegranteCuerpoSchema,
+  IntegranteGrupoConNombresSchema,
+  IntegranteGrupoSchema,
   VincularMiembroSchema,
-} from './integranteCuerpoModel';
+} from './integranteGrupoModel';
 
-export const integranteCuerpoRegistry = new OpenAPIRegistry();
-export const integranteCuerpoRouter: Router = express.Router();
+export const integranteGrupoRegistry = new OpenAPIRegistry();
+export const integranteGrupoRouter: Router = express.Router();
 
 // Registrar schema principal
-integranteCuerpoRegistry.register('IntegranteCuerpo', IntegranteCuerpoSchema);
+integranteGrupoRegistry.register('IntegranteGrupo', IntegranteGrupoSchema);
 
 // Todas las rutas requieren autenticación
-integranteCuerpoRouter.use(verificarToken);
+integranteGrupoRouter.use(verificarToken);
 
 /**
- * POST /api/integrantes-cuerpo - Vincular miembro a grupo (RF_06)
+ * POST /api/integrantes-grupo - Vincular miembro a grupo (RF_06)
  * Permisos: admin, lider
  */
-integranteCuerpoRegistry.registerPath({
+integranteGrupoRegistry.registerPath({
   method: 'post',
-  path: '/api/integrantes-cuerpo',
-  tags: ['Integrantes de Cuerpo'],
+  path: '/api/integrantes-grupo',
+  tags: ['Integrantes de Grupo'],
   request: {
     body: {
       content: {
@@ -41,23 +41,23 @@ integranteCuerpoRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(IntegranteCuerpoSchema, 'Miembro vinculado exitosamente'),
+  responses: createApiResponse(IntegranteGrupoSchema, 'Miembro vinculado exitosamente'),
 });
-integranteCuerpoRouter.post(
+integranteGrupoRouter.post(
   '/',
   verificarRol('administrador', 'usuario'),
   validateRequest(VincularMiembroSchema),
-  integranteCuerpoController.vincularMiembro,
+  integranteGrupoController.vincularMiembro,
 );
 
 /**
- * PATCH /api/integrantes-cuerpo/:id/desvincular - Desvincular miembro (RF_07)
+ * PATCH /api/integrantes-grupo/:id/desvincular - Desvincular miembro (RF_07)
  * Permisos: admin, secretario, lider
  */
-integranteCuerpoRegistry.registerPath({
+integranteGrupoRegistry.registerPath({
   method: 'patch',
-  path: '/api/integrantes-cuerpo/{id}/desvincular',
-  tags: ['Integrantes de Cuerpo'],
+  path: '/api/integrantes-grupo/{id}/desvincular',
+  tags: ['Integrantes de Grupo'],
   request: {
     params: DesvincularMiembroSchema.shape.params,
     body: {
@@ -68,23 +68,23 @@ integranteCuerpoRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(IntegranteCuerpoSchema, 'Miembro desvinculado exitosamente'),
+  responses: createApiResponse(IntegranteGrupoSchema, 'Miembro desvinculado exitosamente'),
 });
-integranteCuerpoRouter.patch(
+integranteGrupoRouter.patch(
   '/:id/desvincular',
   verificarRol('administrador', 'usuario'),
   validateRequest(DesvincularMiembroSchema),
-  integranteCuerpoController.desvincularMiembro,
+  integranteGrupoController.desvincularMiembro,
 );
 
 /**
- * PATCH /api/integrantes-cuerpo/:id/cambiar-rol - Cambiar rol de una membresía activa
+ * PATCH /api/integrantes-grupo/:id/cambiar-rol - Cambiar rol de una membresía activa
  * Permisos: admin, lider
  */
-integranteCuerpoRegistry.registerPath({
+integranteGrupoRegistry.registerPath({
   method: 'patch',
-  path: '/api/integrantes-cuerpo/{id}/cambiar-rol',
-  tags: ['Integrantes de Cuerpo'],
+  path: '/api/integrantes-grupo/{id}/cambiar-rol',
+  tags: ['Integrantes de Grupo'],
   request: {
     params: CambiarRolIntegranteSchema.shape.params,
     body: {
@@ -95,56 +95,56 @@ integranteCuerpoRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(IntegranteCuerpoSchema, 'Rol cambiado exitosamente'),
+  responses: createApiResponse(IntegranteGrupoSchema, 'Rol cambiado exitosamente'),
 });
-integranteCuerpoRouter.patch(
+integranteGrupoRouter.patch(
   '/:id/cambiar-rol',
   verificarRol('administrador', 'usuario'),
   validateRequest(CambiarRolIntegranteSchema),
-  integranteCuerpoController.cambiarRol,
+  integranteGrupoController.cambiarRol,
 );
 
 /**
- * GET /api/integrantes-cuerpo/miembro/:miembro_id - Obtener grupos de un miembro
+ * GET /api/integrantes-grupo/miembro/:miembro_id - Obtener grupos de un miembro
  * Permisos: admin, lider, miembro (solo su propio miembro_id)
  */
-integranteCuerpoRegistry.registerPath({
+integranteGrupoRegistry.registerPath({
   method: 'get',
-  path: '/api/integrantes-cuerpo/miembro/{miembro_id}',
-  tags: ['Integrantes de Cuerpo'],
+  path: '/api/integrantes-grupo/miembro/{miembro_id}',
+  tags: ['Integrantes de Grupo'],
   request: {
     params: GetIntegrantesByMiembroSchema.shape.params,
   },
   responses: createApiResponse(
-    z.array(IntegranteCuerpoConNombresSchema),
+    z.array(IntegranteGrupoConNombresSchema),
     'Integraciones encontradas',
   ),
 });
-integranteCuerpoRouter.get(
+integranteGrupoRouter.get(
   '/miembro/:miembro_id',
   verificarRol('administrador', 'usuario'),
   validateRequest(GetIntegrantesByMiembroSchema),
-  integranteCuerpoController.getIntegrantesByMiembro,
+  integranteGrupoController.getIntegrantesByMiembro,
 );
 
 /**
- * GET /api/integrantes-cuerpo/grupo/:grupo_id - Obtener miembros de un grupo
+ * GET /api/integrantes-grupo/grupo/:grupo_id - Obtener miembros de un grupo
  * Permisos: admin, lider
  */
-integranteCuerpoRegistry.registerPath({
+integranteGrupoRegistry.registerPath({
   method: 'get',
-  path: '/api/integrantes-cuerpo/grupo/{grupo_id}',
-  tags: ['Integrantes de Cuerpo'],
+  path: '/api/integrantes-grupo/grupo/{grupo_id}',
+  tags: ['Integrantes de Grupo'],
   request: {
     params: GetIntegrantesByGrupoSchema.shape.params,
   },
   responses: createApiResponse(
-    z.array(IntegranteCuerpoConNombresSchema),
+    z.array(IntegranteGrupoConNombresSchema),
     'Miembros del grupo encontrados',
   ),
 });
-integranteCuerpoRouter.get(
+integranteGrupoRouter.get(
   '/grupo/:grupo_id',
   validateRequest(GetIntegrantesByGrupoSchema),
-  integranteCuerpoController.getIntegrantesByGrupo,
+  integranteGrupoController.getIntegrantesByGrupo,
 );

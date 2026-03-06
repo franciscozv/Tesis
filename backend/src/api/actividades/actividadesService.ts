@@ -188,7 +188,7 @@ export class ActividadesService {
       }
 
       // Validar permisos según rol
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_grupo.
       if (usuario?.rol === 'usuario') {
         if (!actividadData.grupo_id) {
           return ServiceResponse.failure(
@@ -285,7 +285,7 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda modificar actividades de sus grupos
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_grupo.
       if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(
@@ -397,7 +397,7 @@ export class ActividadesService {
       }
 
       // Validar que un líder solo pueda cambiar el estado de actividades de sus grupos
-      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_cuerpo.
+      // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_grupo.
       if (usuario?.rol === 'usuario') {
         if (!usuario.miembro_id) {
           return ServiceResponse.failure(

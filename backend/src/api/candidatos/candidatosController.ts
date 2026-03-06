@@ -8,13 +8,13 @@ class CandidatosController {
   /**
    * Sugiere candidatos para un rol en actividad (indicadores crudos, sin scoring)
    */
-  public sugerirRol: RequestHandler = async (req: Request, res: Response) => {
+  public sugerirResponsabilidad: RequestHandler = async (req: Request, res: Response) => {
     const {
-      rol_id,
+      responsabilidad_id,
       fecha,
       tipo_actividad_id,
       actividad_id,
-      cuerpo_id,
+      grupo_id,
       periodo_meses,
       filtro_plena_comunion,
       solo_con_experiencia,
@@ -22,12 +22,12 @@ class CandidatosController {
       prioridad,
       incluir_con_conflictos,
     } = req.body;
-    const serviceResponse = await candidatosService.sugerirParaRol(rol_id, fecha, {
+    const serviceResponse = await candidatosService.sugerirParaResponsabilidad(responsabilidad_id, fecha, {
       tipoActividadId: tipo_actividad_id,
       actividadId: actividad_id,
       periodoMeses: periodo_meses ?? 12,
       filtroPlenaComun: filtro_plena_comunion,
-      cuerpoIdBody: cuerpo_id,
+      grupoIdBody: grupo_id,
       usuario: req.usuario,
       soloConExperiencia: solo_con_experiencia,
       soloSinExperiencia: solo_sin_experiencia,
@@ -41,11 +41,11 @@ class CandidatosController {
    * Sugiere candidatos para un cargo en grupo (indicadores crudos, sin scoring)
    */
   public sugerirCargo: RequestHandler = async (req: Request, res: Response) => {
-    const { cargo_id, cuerpo_id, periodo_meses, solo_con_experiencia, criterios_prioridad } =
+    const { cargo_id, grupo_id, periodo_meses, solo_con_experiencia, criterios_prioridad } =
       req.body;
     const serviceResponse = await candidatosService.sugerirParaCargo(cargo_id, {
       periodoMeses: periodo_meses ?? 12,
-      cuerpoIdBody: cuerpo_id,
+      grupoIdBody: grupo_id,
       usuario: req.usuario,
       soloConExperiencia: solo_con_experiencia,
       criteriosPrioridad: criterios_prioridad,
@@ -55,3 +55,4 @@ class CandidatosController {
 }
 
 export const candidatosController = new CandidatosController();
+

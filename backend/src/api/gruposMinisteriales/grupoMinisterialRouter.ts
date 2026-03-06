@@ -22,22 +22,22 @@ gruposMinisterialesRegistry.register('GrupoMinisterial', GrupoMinisterialSchema)
 gruposMinisterialesRouter.use(verificarToken);
 
 /**
- * GET /api/grupos-ministeriales - Obtiene todos los grupos ministeriales activos
+ * GET /api/grupos - Obtiene todos los grupos ministeriales activos
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'get',
-  path: '/api/grupos-ministeriales',
+  path: '/api/grupos',
   tags: ['Grupos Ministeriales'],
   responses: createApiResponse(z.array(GrupoMinisterialSchema), 'Success'),
 });
 gruposMinisterialesRouter.get('/', grupoMinisterialController.getAll);
 
 /**
- * GET /api/grupos-ministeriales/mis-grupos - Obtiene los grupos que el usuario puede gestionar
+ * GET /api/grupos/mis-grupos - Obtiene los grupos que el usuario puede gestionar
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'get',
-  path: '/api/grupos-ministeriales/mis-grupos',
+  path: '/api/grupos/mis-grupos',
   tags: ['Grupos Ministeriales'],
   responses: createApiResponse(
     z.array(GrupoMinisterialSchema),
@@ -47,11 +47,11 @@ gruposMinisterialesRegistry.registerPath({
 gruposMinisterialesRouter.get('/mis-grupos', grupoMinisterialController.getMisGrupos);
 
 /**
- * GET /api/grupos-ministeriales/:id - Obtiene un grupo ministerial por ID
+ * GET /api/grupos/:id - Obtiene un grupo ministerial por ID
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'get',
-  path: '/api/grupos-ministeriales/{id}',
+  path: '/api/grupos/{id}',
   tags: ['Grupos Ministeriales'],
   request: { params: GetGrupoMinisterialSchema.shape.params },
   responses: createApiResponse(GrupoMinisterialSchema, 'Success'),
@@ -63,11 +63,11 @@ gruposMinisterialesRouter.get(
 );
 
 /**
- * POST /api/grupos-ministeriales - Crea un nuevo grupo ministerial
+ * POST /api/grupos - Crea un nuevo grupo ministerial
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'post',
-  path: '/api/grupos-ministeriales',
+  path: '/api/grupos',
   tags: ['Grupos Ministeriales'],
   request: {
     body: {
@@ -92,11 +92,11 @@ gruposMinisterialesRouter.post(
 );
 
 /**
- * PUT /api/grupos-ministeriales/:id - Actualiza un grupo ministerial existente
+ * PUT /api/grupos/:id - Actualiza un grupo ministerial existente
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'put',
-  path: '/api/grupos-ministeriales/{id}',
+  path: '/api/grupos/{id}',
   tags: ['Grupos Ministeriales'],
   request: {
     params: UpdateGrupoMinisterialSchema.shape.params,
@@ -121,11 +121,11 @@ gruposMinisterialesRouter.put(
 );
 
 /**
- * DELETE /api/grupos-ministeriales/:id - Elimina lógicamente un grupo ministerial (soft delete)
+ * DELETE /api/grupos/:id - Elimina lógicamente un grupo ministerial (soft delete)
  */
 gruposMinisterialesRegistry.registerPath({
   method: 'delete',
-  path: '/api/grupos-ministeriales/{id}',
+  path: '/api/grupos/{id}',
   tags: ['Grupos Ministeriales'],
   request: { params: GetGrupoMinisterialSchema.shape.params },
   responses: createApiResponse(z.null(), 'Grupo ministerial eliminado exitosamente'),

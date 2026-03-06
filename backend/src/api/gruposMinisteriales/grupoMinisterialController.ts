@@ -7,7 +7,7 @@ import { grupoMinisterialService } from '@/api/gruposMinisteriales/grupoMinister
  */
 class GrupoMinisterialController {
   /**
-   * GET /grupos-ministeriales - Obtiene todos los grupos ministeriales activos
+   * GET /grupos - Obtiene todos los grupos activos
    */
   public getAll: RequestHandler = async (_req: Request, res: Response) => {
     const serviceResponse = await grupoMinisterialService.findAll();
@@ -15,7 +15,7 @@ class GrupoMinisterialController {
   };
 
   /**
-   * GET /grupos-ministeriales/:id - Obtiene un grupo ministerial por ID
+   * GET /grupos/:id - Obtiene un grupo por ID
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
@@ -24,7 +24,7 @@ class GrupoMinisterialController {
   };
 
   /**
-   * POST /grupos-ministeriales - Crea un nuevo grupo ministerial
+   * POST /grupos - Crea un nuevo grupo
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
     const serviceResponse = await grupoMinisterialService.create(req.body);
@@ -32,7 +32,7 @@ class GrupoMinisterialController {
   };
 
   /**
-   * PUT /grupos-ministeriales/:id - Actualiza un grupo ministerial existente
+   * PUT /grupos/:id - Actualiza un grupo existente
    */
   public update: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
@@ -41,7 +41,7 @@ class GrupoMinisterialController {
   };
 
   /**
-   * DELETE /grupos-ministeriales/:id - Elimina lógicamente un grupo ministerial (soft delete)
+   * DELETE /grupos/:id - Elimina lógicamente un grupo (soft delete)
    */
   public delete: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
@@ -50,7 +50,7 @@ class GrupoMinisterialController {
   };
 
   /**
-   * GET /grupos-ministeriales/mis-grupos - Obtiene los grupos que el usuario puede gestionar
+   * GET /grupos/mis-grupos - Obtiene los grupos que el usuario puede gestionar
    */
   public getMisGrupos: RequestHandler = async (req: Request, res: Response) => {
     const rol = req.usuario!.rol;

@@ -187,7 +187,7 @@ export class GrupoMinisterialService {
   /**
    * Elimina lógicamente un grupo ministerial (soft delete)
    * Validación:
-   * - No debe tener miembros activos (fecha_desvinculacion IS NULL en integrante_cuerpo)
+   * - No debe tener miembros activos (fecha_desvinculacion IS NULL en integrante_grupo)
    */
   async delete(id: number): Promise<ServiceResponse<null>> {
     try {

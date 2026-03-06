@@ -16,7 +16,7 @@ export const InvitadoSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   actividad_id: z.number().openapi({ example: 1 }),
   miembro_id: z.number().openapi({ example: 5 }),
-  rol_id: z.number().openapi({ example: 2 }),
+  responsabilidad_id: z.number().openapi({ example: 2 }),
   estado: z.enum(ESTADOS_INVITADO).openapi({ example: 'pendiente' }),
   motivo_rechazo: z.string().nullable().openapi({ example: null }),
   asistio: z.boolean().openapi({ example: false }),
@@ -31,7 +31,7 @@ export const InvitadoSchema = z.object({
     .optional(),
   rol: z
     .object({
-      id_rol: z.number(),
+      id_responsabilidad: z.number(),
       nombre: z.string(),
     })
     .optional(),
@@ -54,7 +54,7 @@ export const CreateInvitadoSchema = z.object({
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
       .openapi({ example: 5 }),
-    rol_id: z
+    responsabilidad_id: z
       .number()
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
@@ -138,3 +138,4 @@ export const ListInvitadosQuerySchema = z.object({
     estado: z.enum(ESTADOS_INVITADO).optional(),
   }),
 });
+

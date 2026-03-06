@@ -1,16 +1,16 @@
 import type { Request, RequestHandler, Response } from 'express';
-import { rolesActividadService } from './rolesActividadService';
+import { responsabilidadesActividadService } from './rolesActividadService';
 
 /**
- * Controlador para manejar peticiones HTTP de Roles de Actividad
+ * Controlador para manejar peticiones HTTP de Responsabilidades de Actividad
  */
-class RolesActividadController {
+class ResponsabilidadesActividadController {
   /**
    * Obtiene todos los roles activos
    */
   public getAll: RequestHandler = async (req: Request, res: Response) => {
     const activo = req.query.activo !== undefined ? req.query.activo === 'true' : undefined;
-    const serviceResponse = await rolesActividadService.findAll(activo);
+    const serviceResponse = await responsabilidadesActividadService.findAll(activo);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -19,7 +19,7 @@ class RolesActividadController {
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await rolesActividadService.findById(id);
+    const serviceResponse = await responsabilidadesActividadService.findById(id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -27,7 +27,7 @@ class RolesActividadController {
    * Crea un nuevo rol
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
-    const serviceResponse = await rolesActividadService.create(req.body);
+    const serviceResponse = await responsabilidadesActividadService.create(req.body);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -36,16 +36,16 @@ class RolesActividadController {
    */
   public update: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await rolesActividadService.update(id, req.body);
+    const serviceResponse = await responsabilidadesActividadService.update(id, req.body);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
   /**
-   * Cambia el estado activo/inactivo de un rol de actividad
+   * Cambia el estado activo/inactivo de un responsabilidad de actividad
    */
   public toggleEstado: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await rolesActividadService.toggleEstado(id);
+    const serviceResponse = await responsabilidadesActividadService.toggleEstado(id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -54,9 +54,11 @@ class RolesActividadController {
    */
   public delete: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await rolesActividadService.delete(id);
+    const serviceResponse = await responsabilidadesActividadService.delete(id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }
 
-export const rolesActividadController = new RolesActividadController();
+export const responsabilidadesActividadController = new ResponsabilidadesActividadController();
+
+

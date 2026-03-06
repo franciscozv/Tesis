@@ -9,7 +9,7 @@ export class RolesGrupoRepository {
    * Obtiene roles de grupo, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<RolGrupo[]> {
-    let query = supabase.from('rol_grupo_ministerial').select('*');
+    let query = supabase.from('rol_grupo').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -26,7 +26,7 @@ export class RolesGrupoRepository {
    */
   async findByIdAsync(id: number): Promise<RolGrupo | null> {
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .select('*')
       .eq('id_rol_grupo', id)
       .single();
@@ -43,7 +43,7 @@ export class RolesGrupoRepository {
    */
   async existeNombre(nombre: string, excludeId?: number): Promise<boolean> {
     let query = supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .select('id_rol_grupo')
       .eq('nombre', nombre)
       .eq('activo', true);
@@ -63,7 +63,7 @@ export class RolesGrupoRepository {
    */
   async estaEnUso(id: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('id_integrante')
       .eq('rol_grupo_id', id)
       .is('fecha_desvinculacion', null)
@@ -84,7 +84,7 @@ export class RolesGrupoRepository {
     esDirectiva = false,
   ): Promise<RolGrupo> {
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .insert({
         nombre,
         requiere_plena_comunion: requierePlenaComunion,
@@ -112,7 +112,7 @@ export class RolesGrupoRepository {
     },
   ): Promise<RolGrupo | null> {
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .update(updates)
       .eq('id_rol_grupo', id)
       .select()
@@ -130,7 +130,7 @@ export class RolesGrupoRepository {
    */
   async toggleEstadoAsync(id: number): Promise<RolGrupo | null> {
     const { data: current, error: findError } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .select('*')
       .eq('id_rol_grupo', id)
       .single();
@@ -141,7 +141,7 @@ export class RolesGrupoRepository {
     }
 
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .update({ activo: !current.activo })
       .eq('id_rol_grupo', id)
       .select()
@@ -155,7 +155,7 @@ export class RolesGrupoRepository {
    * Elimina un rol permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase.from('rol_grupo_ministerial').delete().eq('id_rol_grupo', id);
+    const { error } = await supabase.from('rol_grupo').delete().eq('id_rol_grupo', id);
 
     if (error) throw error;
     return true;

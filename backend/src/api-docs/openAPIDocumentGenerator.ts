@@ -7,13 +7,13 @@ import { colaboradoresRegistry } from '@/api/colaboradores/colaboradoresRouter';
 import { gruposMinisterialesRegistry } from '@/api/gruposMinisteriales/grupoMinisterialRouter';
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { historialEstadoRegistry } from '@/api/historialEstado/historialEstadoRouter';
-import { integranteCuerpoRegistry } from '@/api/integranteCuerpo/integranteCuerpoRouter';
+import { integranteGrupoRegistry } from '@/api/integranteGrupo/integranteGrupoRouter';
 import { invitadosRegistry } from '@/api/invitados/invitadosRouter';
 import { miembrosRegistry } from '@/api/miembros/miembrosRouter';
 import { misResponsabilidadesRegistry } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { necesidadesLogisticasRegistry } from '@/api/necesidadesLogisticas/necesidadesLogisticasRouter';
 import { patronesActividadRegistry } from '@/api/patronesActividad/patronesActividadRouter';
-import { rolesActividadRegistry } from '@/api/rolesActividad/rolesActividadRouter';
+import { responsabilidadesActividadRegistry } from '@/api/rolesActividad/rolesActividadRouter';
 import { rolesGrupoRegistry } from '@/api/rolesGrupo/rolesGrupoRouter';
 import { tiposActividadRegistry } from '@/api/tiposActividad/tiposActividadRouter';
 import { tiposNecesidadRegistry } from '@/api/tiposNecesidad/tiposNecesidadRouter';
@@ -32,12 +32,12 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     gruposMinisterialesRegistry,
     historialEstadoRegistry,
     invitadosRegistry,
-    integranteCuerpoRegistry,
+    integranteGrupoRegistry,
     misResponsabilidadesRegistry,
     miembrosRegistry,
     necesidadesLogisticasRegistry,
     patronesActividadRegistry,
-    rolesActividadRegistry,
+    responsabilidadesActividadRegistry,
     rolesGrupoRegistry,
     tiposActividadRegistry,
     tiposNecesidadRegistry,
@@ -67,3 +67,5 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     security: [{ bearerAuth: [] }],
   });
 }
+
+

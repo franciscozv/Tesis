@@ -13,12 +13,12 @@ export class MisResponsabilidadesRepository {
     const { data, error } = await supabase
       .from('invitado')
       .select(`
-        id, miembro_id, rol_id, estado, fecha_invitacion,
+        id, miembro_id, responsabilidad_id, estado, fecha_invitacion,
         actividad!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
-          grupo_ministerial(id_grupo, nombre),
+          grupo(id_grupo, nombre),
           tipo_actividad(id_tipo, nombre)
         ),
-        rol_actividad(id_rol, nombre)
+        responsabilidad_actividad(id_responsabilidad, nombre)
       `)
       .eq('miembro_id', miembroId)
       .in('estado', ['pendiente', 'confirmado']);
@@ -38,7 +38,7 @@ export class MisResponsabilidadesRepository {
         id, miembro_id, cantidad_ofrecida, observaciones, estado,
         necesidad_logistica!inner(id, descripcion,
           actividad!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
-            grupo_ministerial(id_grupo, nombre),
+            grupo(id_grupo, nombre),
             tipo_actividad(id_tipo, nombre)
           ),
           tipo_necesidad_logistica(id_tipo, nombre)
@@ -51,3 +51,4 @@ export class MisResponsabilidadesRepository {
     return data;
   }
 }
+

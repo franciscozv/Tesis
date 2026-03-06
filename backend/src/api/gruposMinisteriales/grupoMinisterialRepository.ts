@@ -10,7 +10,7 @@ export class GrupoMinisterialRepository {
    */
   async findAllAsync(): Promise<GrupoMinisterial[]> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('*')
       .eq('activo', true)
       .order('created_at', { ascending: false });
@@ -24,7 +24,7 @@ export class GrupoMinisterialRepository {
    */
   async findByIdAsync(id: number): Promise<GrupoMinisterial | null> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('*')
       .eq('id_grupo', id)
       .eq('activo', true)
@@ -45,7 +45,7 @@ export class GrupoMinisterialRepository {
     grupoData: Omit<GrupoMinisterial, 'id_grupo' | 'created_at' | 'updated_at' | 'activo'>,
   ): Promise<GrupoMinisterial> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .insert([{ ...grupoData, activo: true }])
       .select()
       .single();
@@ -62,7 +62,7 @@ export class GrupoMinisterialRepository {
     grupoData: Partial<GrupoMinisterial>,
   ): Promise<GrupoMinisterial | null> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .update(grupoData)
       .eq('id_grupo', id)
       .eq('activo', true)
@@ -82,7 +82,7 @@ export class GrupoMinisterialRepository {
    */
   async deleteAsync(id: number): Promise<boolean> {
     const { error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .update({ activo: false })
       .eq('id_grupo', id);
 
@@ -92,11 +92,11 @@ export class GrupoMinisterialRepository {
 
   /**
    * Verifica si un grupo ministerial tiene miembros activos
-   * (miembros con fecha_desvinculacion IS NULL en integrante_cuerpo)
+   * (miembros con fecha_desvinculacion IS NULL en integrante_grupo)
    */
   async hasActiveMembersAsync(grupo_id: number): Promise<boolean> {
     const { count, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('*', { count: 'exact', head: true })
       .eq('grupo_id', grupo_id)
       .is('fecha_desvinculacion', null);
@@ -142,11 +142,11 @@ export class GrupoMinisterialRepository {
    */
   async findGruposByDirectivaAsync(miembro_id: number): Promise<GrupoMinisterial[]> {
     const { data: comunions, error: memError } = await supabase
-      .from('integrante_cuerpo')
-      .select('grupo_id, rol_grupo_ministerial!inner(es_directiva)')
+      .from('integrante_grupo')
+      .select('grupo_id, rol_grupo!inner(es_directiva)')
       .eq('miembro_id', miembro_id)
       .is('fecha_desvinculacion', null)
-      .eq('rol_grupo_ministerial.es_directiva', true);
+      .eq('rol_grupo.es_directiva', true);
 
     if (memError) throw memError;
     if (!comunions || comunions.length === 0) return [];
@@ -154,7 +154,7 @@ export class GrupoMinisterialRepository {
     const grupoIds = [...new Set(comunions.map((m: { grupo_id: number }) => m.grupo_id))];
 
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('*')
       .in('id_grupo', grupoIds)
       .eq('activo', true)

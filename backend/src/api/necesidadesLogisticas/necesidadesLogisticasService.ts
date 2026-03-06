@@ -274,6 +274,14 @@ export class NecesidadesLogisticasService {
         }
       }
 
+      if (necesidadExistente.estado === 'cerrada') {
+        return ServiceResponse.failure(
+          'No se puede editar una necesidad logística en estado "cerrada"',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
       // Validar tipo de necesidad (si se proporcionó)
       if (necesidadData.tipo_necesidad_id) {
         const tipoExiste = await this.necesidadesRepository.tipoNecesidadExistsAsync(
@@ -469,6 +477,15 @@ export class NecesidadesLogisticasService {
       if (necesidad.estado !== 'abierta') {
         return ServiceResponse.failure(
           'Solo se pueden eliminar necesidades logísticas en estado "abierta"',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      const tieneAceptadas = await this.necesidadesRepository.hasColaboracionesAceptadasAsync(id);
+      if (tieneAceptadas) {
+        return ServiceResponse.failure(
+          'No se puede eliminar una necesidad con colaboraciones aceptadas',
           null,
           StatusCodes.CONFLICT,
         );

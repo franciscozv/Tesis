@@ -12,9 +12,9 @@ export const ConflictoDetalleSchema = z.object({
 });
 
 /**
- * Schema de indicadores crudos para candidato a rol de actividad (sin puntuación)
+ * Schema de indicadores crudos para candidato a responsabilidad de actividad (sin puntuación)
  */
-export const IndicadoresRolSchema = z.object({
+export const IndicadoresResponsabilidadSchema = z.object({
   disponible_en_fecha: z.boolean().openapi({ example: true }),
   conflictos_en_fecha_count: z.number().int().openapi({ example: 0 }),
   conflictos_detalle: z
@@ -37,14 +37,14 @@ export const IndicadoresRolSchema = z.object({
 });
 
 /**
- * Schema de candidato para rol de actividad (indicadores crudos, sin puntuación)
+ * Schema de candidato para responsabilidad de actividad (indicadores crudos, sin puntuación)
  */
 export const CandidatoSchema = z.object({
   miembro_id: z.number().openapi({ example: 15 }),
   nombre_completo: z.string().openapi({ example: 'Juan Pérez López' }),
   telefono: z.string().nullable().openapi({ example: '+56912345678' }),
   email: z.string().nullable().openapi({ example: 'juan@email.com' }),
-  indicadores: IndicadoresRolSchema,
+  indicadores: IndicadoresResponsabilidadSchema,
   justificacion: z.string().openapi({
     example:
       'Disponible en la fecha, rol realizado 24 veces (10 en este tipo), 95% asistencia últimos 12 meses, 8 años de antigüedad, plena comunión: sí',
@@ -57,7 +57,7 @@ export type Candidato = z.infer<typeof CandidatoSchema>;
  * Schema de indicadores crudos para candidato a cargo en grupo (sin puntuación)
  */
 export const IndicadoresCargoSchema = z.object({
-  experiencia_cargo_en_cuerpo: z.number().int().openapi({ example: 3 }),
+  experiencia_cargo_en_grupo: z.number().int().openapi({ example: 3 }),
   grupos_activos_count: z.number().int().openapi({ example: 2 }),
   asistencia_ratio_periodo: z.number().openapi({ example: 0.87 }),
   antiguedad_anios: z.number().int().openapi({ example: 5 }),
@@ -76,7 +76,7 @@ export const CandidatoCargoSchema = z.object({
   indicadores: IndicadoresCargoSchema,
   justificacion: z.string().openapi({
     example:
-      'Ha ocupado Líder 3 veces en este cuerpo, participa en 2 grupos, 87% asistencia últimos 12 meses, 5 años de antigüedad, plena comunión: sí',
+      'Ha ocupado Líder 3 veces en este grupo, participa en 2 grupos, 87% asistencia últimos 12 meses, 5 años de antigüedad, plena comunión: sí',
   }),
 });
 
@@ -86,7 +86,7 @@ export type CandidatoCargo = z.infer<typeof CandidatoCargoSchema>;
  * Metadata de la respuesta de sugerir-cargo
  */
 export const SugerirCargoMetadataSchema = z.object({
-  cuerpo_id_usado: z.number().int().openapi({ example: 1 }),
+  grupo_id_usado: z.number().int().openapi({ example: 1 }),
   periodo_meses_usado: z.number().int().openapi({ example: 12 }),
   cargo_id: z.number().int().openapi({ example: 3 }),
   requiere_plena_comunion: z.boolean().openapi({ example: false }),
@@ -105,9 +105,9 @@ export type SugerirCargoResponse = z.infer<typeof SugerirCargoResponseSchema>;
 /**
  * Schema para sugerir candidatos para un rol en actividad
  */
-export const SugerirRolSchema = z.object({
+export const SugerirResponsabilidadSchema = z.object({
   body: z.object({
-    rol_id: z
+    responsabilidad_id: z
       .number()
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
@@ -132,7 +132,7 @@ export const SugerirRolSchema = z.object({
           'ID de la actividad. Si se provee, los candidatos se filtran al grupo de esa actividad (obligatorio para rol "usuario").',
         example: 10,
       }),
-    cuerpo_id: z
+    grupo_id: z
       .number()
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
@@ -184,13 +184,13 @@ export const SugerirCargoSchema = z.object({
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
       .openapi({ example: 3 }),
-    cuerpo_id: z
+    grupo_id: z
       .number()
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
       .optional()
       .openapi({
-        description: 'Solo para ADMIN: filtra candidatos de un cuerpo específico',
+        description: 'Solo para ADMIN: filtra candidatos de un grupo específico',
         example: 1,
       }),
     periodo_meses: z
@@ -214,3 +214,4 @@ export const SugerirCargoSchema = z.object({
       }),
   }),
 });
+

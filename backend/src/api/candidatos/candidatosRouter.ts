@@ -10,7 +10,7 @@ import {
   CandidatoSchema,
   SugerirCargoResponseSchema,
   SugerirCargoSchema,
-  SugerirRolSchema,
+  SugerirResponsabilidadSchema,
 } from './candidatosModel';
 
 export const candidatosRegistry = new OpenAPIRegistry();
@@ -24,19 +24,20 @@ candidatosRegistry.register('SugerirCargoResponse', SugerirCargoResponseSchema);
 // Todas las rutas requieren autenticación
 candidatosRouter.use(verificarToken);
 
-// POST /api/candidatos/sugerir-rol
+// POST /api/candidatos/sugerir-responsabilidad
 candidatosRegistry.registerPath({
   method: 'post',
-  path: '/api/candidatos/sugerir-rol',
+  path: '/api/candidatos/sugerir-responsabilidad',
   tags: ['Candidatos'],
-  summary: 'Sugerir candidatos para un rol en actividad (indicadores crudos, sin scoring)',
+  summary:
+    'Sugerir candidatos para una responsabilidad en actividad (indicadores crudos, sin scoring)',
   description: [
     'Retorna hasta 20 candidatos ordenados por: disponibilidad en la fecha, ',
     'experiencia en el tipo de actividad, experiencia total en el rol, ',
     'ratio de asistencia en el periodo y antigüedad. ',
-    'SEGURIDAD: si el token contiene `cuerpo_id` (usuario es encargado de un grupo), ',
-    'el filtro de cuerpo se aplica automáticamente e ignora cualquier `cuerpo_id` del body. ',
-    'Solo ADMIN puede enviar `cuerpo_id` en el body para filtrar un grupo concreto; ',
+    'SEGURIDAD: si el token contiene `grupo_id` (usuario es encargado de un grupo), ',
+    'el filtro de grupo se aplica automáticamente e ignora cualquier `grupo_id` del body. ',
+    'Solo ADMIN puede enviar `grupo_id` en el body para filtrar un grupo concreto; ',
     'sin él, la búsqueda es global.',
     'ACCESO: Administrador y Usuario.',
   ].join(''),
@@ -44,7 +45,7 @@ candidatosRegistry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: SugerirRolSchema.shape.body,
+          schema: SugerirResponsabilidadSchema.shape.body,
         },
       },
     },
@@ -52,10 +53,10 @@ candidatosRegistry.registerPath({
   responses: createApiResponse(z.array(CandidatoSchema), 'Success'),
 });
 candidatosRouter.post(
-  '/sugerir-rol',
+  '/sugerir-responsabilidad',
   verificarRol('administrador', 'usuario'),
-  validateRequest(SugerirRolSchema),
-  candidatosController.sugerirRol,
+  validateRequest(SugerirResponsabilidadSchema),
+  candidatosController.sugerirResponsabilidad,
 );
 
 // POST /api/candidatos/sugerir-cargo
@@ -66,10 +67,10 @@ candidatosRegistry.registerPath({
   summary:
     'Sugerir candidatos para un cargo en grupo ministerial (indicadores crudos, sin scoring)',
   description: [
-    'Retorna hasta 20 candidatos ordenados por: experiencia en el cargo dentro del cuerpo DESC, ',
+    'Retorna hasta 20 candidatos ordenados por: experiencia en el cargo dentro del grupo DESC, ',
     'grupos activos ASC (prioriza al menos ocupado), ratio de asistencia DESC, antigüedad DESC. ',
-    'SEGURIDAD: si el token contiene `cuerpo_id`, se usa ese automáticamente. ',
-    'Si es ADMIN y no hay `cuerpo_id` en el token, debe enviarlo en el body; ',
+    'SEGURIDAD: si el token contiene `grupo_id`, se usa ese automáticamente. ',
+    'Si es ADMIN y no hay `grupo_id` en el token, debe enviarlo en el body; ',
     'de lo contrario se retorna error 400. ',
     'Si el cargo requiere plena comunión, el filtro duro se aplica automáticamente. ',
     'La respuesta incluye un objeto `metadata` con los parámetros efectivos usados.',

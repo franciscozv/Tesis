@@ -1,17 +1,17 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import type { IntegranteCuerpo, IntegranteCuerpoConNombres } from './integranteCuerpoModel';
-import { IntegranteCuerpoRepository } from './integranteCuerpoRepository';
+import type { IntegranteGrupo, IntegranteGrupoConNombres } from './integranteGrupoModel';
+import { IntegranteGrupoRepository } from './integranteGrupoRepository';
 
 /**
- * Service para lógica de negocio de Integrantes en Cuerpo
+ * Service para lï¿½gica de negocio de Integrantes en Grupo
  */
-export class IntegranteCuerpoService {
-  private integranteCuerpoRepository: IntegranteCuerpoRepository;
+export class IntegranteGrupoService {
+  private integranteGrupoRepository: IntegranteGrupoRepository;
 
-  constructor(repository: IntegranteCuerpoRepository = new IntegranteCuerpoRepository()) {
-    this.integranteCuerpoRepository = repository;
+  constructor(repository: IntegranteGrupoRepository = new IntegranteGrupoRepository()) {
+    this.integranteGrupoRepository = repository;
   }
 
   /**
@@ -30,21 +30,21 @@ export class IntegranteCuerpoService {
     rolId: number,
     fechaVinculacion?: string,
     rolUsuario?: string,
-  ): Promise<ServiceResponse<IntegranteCuerpo | null>> {
+  ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que miembro exista y esté activo
-      const miembroStatus = await this.integranteCuerpoRepository.verificarMiembroActivo(miembroId);
+      // 1. Verificar que miembro exista y estï¿½ activo
+      const miembroStatus = await this.integranteGrupoRepository.verificarMiembroActivo(miembroId);
 
       if (!miembroStatus.existe) {
         return ServiceResponse.failure('El miembro no existe', null, StatusCodes.NOT_FOUND);
       }
 
       if (!miembroStatus.activo) {
-        return ServiceResponse.failure('El miembro no está activo', null, StatusCodes.BAD_REQUEST);
+        return ServiceResponse.failure('El miembro no estï¿½ activo', null, StatusCodes.BAD_REQUEST);
       }
 
-      // 3. Verificar que grupo exista y esté activo
-      const grupoStatus = await this.integranteCuerpoRepository.verificarGrupoActivo(grupoId);
+      // 3. Verificar que grupo exista y estï¿½ activo
+      const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(grupoId);
 
       if (!grupoStatus.existe) {
         return ServiceResponse.failure(
@@ -56,14 +56,14 @@ export class IntegranteCuerpoService {
 
       if (!grupoStatus.activo) {
         return ServiceResponse.failure(
-          'El grupo ministerial no está activo',
+          'El grupo ministerial no estï¿½ activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 4. Verificar que rol exista y esté activo
-      const rolStatus = await this.integranteCuerpoRepository.verificarRolActivo(rolId);
+      // 4. Verificar que rol exista y estï¿½ activo
+      const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(rolId);
 
       if (!rolStatus.existe) {
         return ServiceResponse.failure('El rol de grupo no existe', null, StatusCodes.NOT_FOUND);
@@ -71,7 +71,7 @@ export class IntegranteCuerpoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no está activo',
+          'El rol de grupo no estï¿½ activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -86,24 +86,24 @@ export class IntegranteCuerpoService {
         );
       }
 
-      // 4a. Si el rol requiere plena comunión, el miembro debe cumplirla.
+      // 4a. Si el rol requiere plena comuniï¿½n, el miembro debe cumplirla.
       if (rolStatus.requiere_plena_comunion && !miembroStatus.plena_comunion) {
         return ServiceResponse.failure(
-          'Este rol requiere plena comunión. El miembro no cumple esa condición.',
+          'Este rol requiere plena comuniï¿½n. El miembro no cumple esa condiciï¿½n.',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 4c. Si el rol es único, verificar que no esté ya ocupado en el grupo
+      // 4c. Si el rol es ï¿½nico, verificar que no estï¿½ ya ocupado en el grupo
       if (rolStatus.es_unico) {
-        const rolOcupado = await this.integranteCuerpoRepository.estaRolOcupadoEnGrupo(
+        const rolOcupado = await this.integranteGrupoRepository.estaRolOcupadoEnGrupo(
           grupoId,
           rolId,
         );
         if (rolOcupado) {
           return ServiceResponse.failure(
-            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo único.',
+            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo ï¿½nico.',
             null,
             StatusCodes.CONFLICT,
           );
@@ -111,7 +111,7 @@ export class IntegranteCuerpoService {
       }
 
       // 6. Regla 1: un miembro solo puede tener 1 rol activo por grupo
-      const tieneRolActivo = await this.integranteCuerpoRepository.existeIntegranteActivoEnGrupo(
+      const tieneRolActivo = await this.integranteGrupoRepository.existeIntegranteActivoEnGrupo(
         miembroId,
         grupoId,
       );
@@ -125,7 +125,7 @@ export class IntegranteCuerpoService {
       }
 
       // 7. No permitir duplicados (mismo miembro, grupo, rol activo)
-      const existeDuplicado = await this.integranteCuerpoRepository.verificarDuplicado(
+      const existeDuplicado = await this.integranteGrupoRepository.verificarDuplicado(
         miembroId,
         grupoId,
         rolId,
@@ -133,21 +133,21 @@ export class IntegranteCuerpoService {
 
       if (existeDuplicado) {
         return ServiceResponse.failure(
-          'El miembro ya está vinculado a este grupo con este rol',
+          'El miembro ya estï¿½ vinculado a este grupo con este rol',
           null,
           StatusCodes.CONFLICT,
         );
       }
 
       // 7. Vincular miembro
-      const integrante = await this.integranteCuerpoRepository.vincularMiembroAsync(
+      const integrante = await this.integranteGrupoRepository.vincularMiembroAsync(
         miembroId,
         grupoId,
         rolId,
         fechaVinculacion,
       );
 
-      return ServiceResponse.success<IntegranteCuerpo>(
+      return ServiceResponse.success<IntegranteGrupo>(
         'Miembro vinculado exitosamente al grupo ministerial',
         integrante,
         StatusCodes.CREATED,
@@ -167,33 +167,33 @@ export class IntegranteCuerpoService {
    * Desvincula un miembro de un grupo ministerial (RF_07)
    *
    * Validaciones:
-   * - Integración debe existir
-   * - fecha_desvinculacion debe ser NULL (integración activa)
+   * - Integraciï¿½n debe existir
+   * - fecha_desvinculacion debe ser NULL (integraciï¿½n activa)
    */
   async desvincularMiembro(
     id: number,
     fechaDesvinculacion?: string,
     rolUsuario?: string,
-  ): Promise<ServiceResponse<IntegranteCuerpo | null>> {
+  ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que la integración exista
-      const integranteExistente = await this.integranteCuerpoRepository.findByIdAsync(id);
+      // 1. Verificar que la integraciï¿½n exista
+      const integranteExistente = await this.integranteGrupoRepository.findByIdAsync(id);
 
       if (!integranteExistente) {
-        return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La integraciï¿½n no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 3. Verificar que fecha_desvinculacion sea NULL (integración activa)
+      // 3. Verificar que fecha_desvinculacion sea NULL (integraciï¿½n activa)
       if (integranteExistente.fecha_desvinculacion !== null) {
         return ServiceResponse.failure(
-          'La integración ya está desvinculada',
+          'La integraciï¿½n ya estï¿½ desvinculada',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 3b. Si el cargo de la integración es directiva, solo admin puede desvincular
-      const rolStatus = await this.integranteCuerpoRepository.verificarRolActivo(
+      // 3b. Si el cargo de la integraciï¿½n es directiva, solo admin puede desvincular
+      const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(
         integranteExistente.rol_grupo_id,
       );
       if (rolStatus.es_directiva && rolUsuario !== 'administrador') {
@@ -205,7 +205,7 @@ export class IntegranteCuerpoService {
       }
 
       // 4. Desvincular miembro
-      const integrante = await this.integranteCuerpoRepository.desvincularMiembroAsync(
+      const integrante = await this.integranteGrupoRepository.desvincularMiembroAsync(
         id,
         fechaDesvinculacion,
       );
@@ -218,7 +218,7 @@ export class IntegranteCuerpoService {
         );
       }
 
-      return ServiceResponse.success<IntegranteCuerpo>(
+      return ServiceResponse.success<IntegranteGrupo>(
         'Miembro desvinculado exitosamente del grupo ministerial',
         integrante,
       );
@@ -234,32 +234,32 @@ export class IntegranteCuerpoService {
   }
 
   /**
-   * Cambia el rol de una integración activa
+   * Cambia el rol de una integraciï¿½n activa
    */
   async cambiarRol(
     id: number,
     rolGrupoId: number,
     rolUsuario?: string,
-  ): Promise<ServiceResponse<IntegranteCuerpo | null>> {
+  ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que la integración exista
-      const integranteExistente = await this.integranteCuerpoRepository.findByIdAsync(id);
+      // 1. Verificar que la integraciï¿½n exista
+      const integranteExistente = await this.integranteGrupoRepository.findByIdAsync(id);
 
       if (!integranteExistente) {
-        return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La integraciï¿½n no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 2. Verificar que esté activa
+      // 2. Verificar que estï¿½ activa
       if (integranteExistente.fecha_desvinculacion !== null) {
         return ServiceResponse.failure(
-          'No se puede cambiar el rol de una integración desvinculada',
+          'No se puede cambiar el rol de una integraciï¿½n desvinculada',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
       // 2b. Si el cargo actual es directiva, solo admin puede modificarlo
-      const rolActualStatus = await this.integranteCuerpoRepository.verificarRolActivo(
+      const rolActualStatus = await this.integranteGrupoRepository.verificarRolActivo(
         integranteExistente.rol_grupo_id,
       );
       if (rolActualStatus.es_directiva && rolUsuario !== 'administrador') {
@@ -279,8 +279,8 @@ export class IntegranteCuerpoService {
         );
       }
 
-      // 4. Verificar que el nuevo rol exista y esté activo
-      const rolStatus = await this.integranteCuerpoRepository.verificarRolActivo(rolGrupoId);
+      // 4. Verificar que el nuevo rol exista y estï¿½ activo
+      const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(rolGrupoId);
 
       if (!rolStatus.existe) {
         return ServiceResponse.failure('El rol de grupo no existe', null, StatusCodes.NOT_FOUND);
@@ -288,7 +288,7 @@ export class IntegranteCuerpoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no está activo',
+          'El rol de grupo no estï¿½ activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -303,36 +303,36 @@ export class IntegranteCuerpoService {
         );
       }
 
-      // 4b. Si el nuevo rol es único, verificar que no esté ya ocupado en el grupo
+      // 4b. Si el nuevo rol es ï¿½nico, verificar que no estï¿½ ya ocupado en el grupo
       if (rolStatus.es_unico) {
-        const rolOcupado = await this.integranteCuerpoRepository.estaRolOcupadoEnGrupo(
+        const rolOcupado = await this.integranteGrupoRepository.estaRolOcupadoEnGrupo(
           integranteExistente.grupo_id,
           rolGrupoId,
         );
         if (rolOcupado) {
           return ServiceResponse.failure(
-            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo único.',
+            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo ï¿½nico.',
             null,
             StatusCodes.CONFLICT,
           );
         }
       }
 
-      // 4c. Si el nuevo rol requiere plena comunión, validar estado del miembro actual.
+      // 4c. Si el nuevo rol requiere plena comuniï¿½n, validar estado del miembro actual.
       if (rolStatus.requiere_plena_comunion) {
-        const miembroStatus = await this.integranteCuerpoRepository.verificarMiembroActivo(
+        const miembroStatus = await this.integranteGrupoRepository.verificarMiembroActivo(
           integranteExistente.miembro_id,
         );
         if (!miembroStatus.existe || !miembroStatus.activo) {
           return ServiceResponse.failure(
-            'El miembro asociado a la integración no existe o no está activo',
+            'El miembro asociado a la integraciï¿½n no existe o no estï¿½ activo',
             null,
             StatusCodes.BAD_REQUEST,
           );
         }
         if (!miembroStatus.plena_comunion) {
           return ServiceResponse.failure(
-            'Este rol requiere plena comunión. El miembro no cumple esa condición.',
+            'Este rol requiere plena comuniï¿½n. El miembro no cumple esa condiciï¿½n.',
             null,
             StatusCodes.BAD_REQUEST,
           );
@@ -340,19 +340,19 @@ export class IntegranteCuerpoService {
       }
 
       // 5. Rotar: cerrar fila actual e insertar nueva fila activa con el nuevo rol
-      const integrante = await this.integranteCuerpoRepository.rotarRolAsync(
+      const integrante = await this.integranteGrupoRepository.rotarRolAsync(
         id,
         integranteExistente.miembro_id,
         integranteExistente.grupo_id,
         rolGrupoId,
       );
 
-      return ServiceResponse.success<IntegranteCuerpo>('Rol cambiado exitosamente', integrante);
+      return ServiceResponse.success<IntegranteGrupo>('Rol cambiado exitosamente', integrante);
     } catch (error) {
-      const errorMessage = `Error al cambiar rol de integración: ${(error as Error).message}`;
+      const errorMessage = `Error al cambiar rol de integraciï¿½n: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al cambiar el rol de la integración',
+        'Error al cambiar el rol de la integraciï¿½n',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -366,7 +366,7 @@ export class IntegranteCuerpoService {
     miembroId: number,
     rol?: 'administrador' | 'usuario',
     miembroIdToken?: number | null,
-  ): Promise<ServiceResponse<IntegranteCuerpoConNombres[] | null>> {
+  ): Promise<ServiceResponse<IntegranteGrupoConNombres[] | null>> {
     try {
       // Un usuario no-admin solo puede consultar sus propias integraciones
       if (rol !== 'administrador' && rol !== undefined && miembroIdToken !== miembroId) {
@@ -377,7 +377,7 @@ export class IntegranteCuerpoService {
         );
       }
 
-      const integrantes = await this.integranteCuerpoRepository.findByMiembroIdAsync(miembroId);
+      const integrantes = await this.integranteGrupoRepository.findByMiembroIdAsync(miembroId);
 
       if (!integrantes) {
         return ServiceResponse.failure(
@@ -388,13 +388,13 @@ export class IntegranteCuerpoService {
       }
 
       if (integrantes.length === 0) {
-        return ServiceResponse.success<IntegranteCuerpoConNombres[]>(
+        return ServiceResponse.success<IntegranteGrupoConNombres[]>(
           'No se encontraron integraciones para este miembro',
           [],
         );
       }
 
-      return ServiceResponse.success<IntegranteCuerpoConNombres[]>(
+      return ServiceResponse.success<IntegranteGrupoConNombres[]>(
         'Integraciones encontradas',
         integrantes,
       );
@@ -414,9 +414,9 @@ export class IntegranteCuerpoService {
    */
   async getIntegrantesByGrupo(
     grupoId: number,
-  ): Promise<ServiceResponse<IntegranteCuerpoConNombres[] | null>> {
+  ): Promise<ServiceResponse<IntegranteGrupoConNombres[] | null>> {
     try {
-      const integrantes = await this.integranteCuerpoRepository.findByGrupoIdAsync(grupoId);
+      const integrantes = await this.integranteGrupoRepository.findByGrupoIdAsync(grupoId);
 
       if (!integrantes) {
         return ServiceResponse.failure(
@@ -427,13 +427,13 @@ export class IntegranteCuerpoService {
       }
 
       if (integrantes.length === 0) {
-        return ServiceResponse.success<IntegranteCuerpoConNombres[]>(
+        return ServiceResponse.success<IntegranteGrupoConNombres[]>(
           'No se encontraron miembros en este grupo',
           [],
         );
       }
 
-      return ServiceResponse.success<IntegranteCuerpoConNombres[]>(
+      return ServiceResponse.success<IntegranteGrupoConNombres[]>(
         'Miembros del grupo encontrados',
         integrantes,
       );
@@ -449,4 +449,4 @@ export class IntegranteCuerpoService {
   }
 }
 
-export const integranteCuerpoService = new IntegranteCuerpoService();
+export const integranteGrupoService = new IntegranteGrupoService();

@@ -19,7 +19,7 @@ export class CandidatosService {
    * Sugiere candidatos para un rol en actividad usando indicadores crudos (sin scoring).
    * Ordenamiento: disponible > exp_tipo > exp_total > asistencia > antigüedad.
    */
-  async sugerirParaRol(
+  async sugerirParaResponsabilidad(
     rolId: number,
     fecha: string,
     opciones: {
@@ -27,7 +27,7 @@ export class CandidatosService {
       actividadId?: number;
       periodoMeses: number;
       filtroPlenaComun?: boolean;
-      cuerpoIdBody?: number;
+      grupoIdBody?: number;
       usuario?: JwtPayload;
       soloConExperiencia?: boolean;
       soloSinExperiencia?: boolean;
@@ -36,24 +36,23 @@ export class CandidatosService {
     },
   ): Promise<ServiceResponse<Candidato[] | null>> {
     try {
-      const rolExiste = await this.candidatosRepository.rolActividadExistsAsync(rolId);
+      const rolExiste = await this.candidatosRepository.responsabilidadActividadExistsAsync(rolId);
       if (!rolExiste) {
         return ServiceResponse.failure(
-          'El rol de actividad especificado no existe o no está activo',
+          'El responsabilidad de actividad especificado no existe o no está activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      const nombreRol = await this.candidatosRepository.getRolActividadNombreAsync(rolId);
+      const nombreRol = await this.candidatosRepository.getResponsabilidadActividadNombreAsync(rolId);
 
       // ── Resolución del filtro de grupo ─────────────────────────────────────
       // Si se recibe actividadId, obtenemos el grupo de esa actividad.
       // - 'usuario' (directiva): sugerencia solo dentro del GRUPO de la actividad (contextual).
-      // - 'administrador': busca en todo el CUERPO si envía cuerpoIdBody, o busca en el
+      // - 'administrador': busca en todo el CUERPO si envía grupoIdBody, o busca en el
       //    GRUPO de la actividad si solo envía actividadId. Si no envía ninguno, global.
-      let cuerpoIdEfectivo: number | undefined = opciones.cuerpoIdBody;
-      let grupoIdEfectivo: number | undefined;
+      let grupoIdEfectivo: number | undefined = opciones.grupoIdBody;
 
       if (opciones.actividadId) {
         const grupoIdActividad = await this.candidatosRepository.getGrupoIdDeActividadAsync(
@@ -64,12 +63,11 @@ export class CandidatosService {
           if (opciones.usuario?.rol === 'usuario') {
             // Seguridad: directiva solo sugiere gente de SU GRUPO
             grupoIdEfectivo = grupoIdActividad;
-            cuerpoIdEfectivo = undefined; // Forzamos búsqueda por grupo
           } else {
-            // Admin: decide si quiere filtrar por cuerpo (cuerpoIdBody)
+            // Admin: decide si quiere filtrar por grupo (grupoIdBody)
             // o si quiere filtrar por grupo de actividad (grupoIdActividad).
-            // Prioridad al cuerpoIdBody si existe.
-            if (opciones.cuerpoIdBody === undefined) {
+            // Prioridad al grupoIdBody si existe.
+            if (opciones.grupoIdBody === undefined) {
               grupoIdEfectivo = grupoIdActividad;
             }
           }
@@ -85,7 +83,6 @@ export class CandidatosService {
       // Obtener miembros con filtros efectivos (incluyendo grupoIdEfectivo)
       const miembros = await this.candidatosRepository.findMiembrosActivosFiltradosAsync({
         plenaComun: opciones.filtroPlenaComun,
-        cuerpoId: cuerpoIdEfectivo,
         grupoId: grupoIdEfectivo,
       });
 
@@ -239,13 +236,13 @@ export class CandidatosService {
 
   /**
    * Sugiere candidatos para un cargo en grupo usando indicadores crudos (sin scoring).
-   * Filtro duro por cuerpo, batch queries, ordenamiento multi-criterio.
+   * Filtro duro por grupo, batch queries, ordenamiento multi-criterio.
    */
   async sugerirParaCargo(
     cargoId: number,
     opciones: {
       periodoMeses: number;
-      cuerpoIdBody?: number;
+      grupoIdBody?: number;
       usuario?: JwtPayload;
       soloConExperiencia?: boolean;
       criteriosPrioridad?: string[];
@@ -266,28 +263,28 @@ export class CandidatosService {
         );
       }
 
-      // Usar cuerpo_id del body si se provee (cualquier rol puede filtrarlo)
-      const cuerpoIdEfectivo: number | undefined = opciones.cuerpoIdBody;
+      // Usar grupo_id del body si se provee (cualquier rol puede filtrarlo)
+      const grupoIdEfectivo: number | undefined = opciones.grupoIdBody;
 
-      if (cuerpoIdEfectivo === undefined) {
+      if (grupoIdEfectivo === undefined) {
         return ServiceResponse.failure(
-          'Se requiere un cuerpo_id para sugerir candidatos a cargo. Envíalo en el body.',
+          'Se requiere un grupo_id para sugerir candidatos a cargo. Envíalo en el body.',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // ── Filtro duro: miembros vigentes en el cuerpo ───────────────────────────
+      // ── Filtro duro: miembros vigentes en el grupo ───────────────────────────
       const fechaHoy = dayjs().format('YYYY-MM-DD');
       const fechaInicio = dayjs().subtract(opciones.periodoMeses, 'month').format('YYYY-MM-DD');
 
-      const miembros = await this.candidatosRepository.findMiembrosVigentesEnCuerpoAsync(
-        cuerpoIdEfectivo,
+      const miembros = await this.candidatosRepository.findMiembrosVigentesEnGrupoAsync(
+        grupoIdEfectivo,
         requiere_plena_comunion,
       );
 
       const metadata = {
-        cuerpo_id_usado: cuerpoIdEfectivo,
+        grupo_id_usado: grupoIdEfectivo,
         periodo_meses_usado: opciones.periodoMeses,
         cargo_id: cargoId,
         requiere_plena_comunion,
@@ -295,7 +292,7 @@ export class CandidatosService {
 
       if (!miembros || miembros.length === 0) {
         return ServiceResponse.success<SugerirCargoResponse>(
-          'No se encontraron miembros vigentes en el cuerpo',
+          'No se encontraron miembros vigentes en el grupo',
           { metadata, candidatos: [] },
         );
       }
@@ -304,10 +301,10 @@ export class CandidatosService {
 
       // ── Indicadores batch ─────────────────────────────────────────────────────
       const [expCargoMap, gruposActivosMap, asistenciaMap] = await Promise.all([
-        this.candidatosRepository.getExperienciaCargoEnCuerpoBatchAsync(
+        this.candidatosRepository.getExperienciaCargoEnGrupoBatchAsync(
           miembroIds,
           cargoId,
-          cuerpoIdEfectivo,
+          grupoIdEfectivo,
         ),
         this.candidatosRepository.getGruposActivosBatchAsync(miembroIds),
         this.candidatosRepository.getAsistenciaBatchAsync(miembroIds, fechaInicio, fechaHoy),
@@ -327,7 +324,7 @@ export class CandidatosService {
         const plenaComun = miembro.estado_comunion === 'plena_comunion';
 
         const indicadores = {
-          experiencia_cargo_en_cuerpo: experienciaCargo,
+          experiencia_cargo_en_grupo: experienciaCargo,
           grupos_activos_count: gruposActivos,
           asistencia_ratio_periodo: asistenciaRatio,
           antiguedad_anios: antiguedadAnios,
@@ -350,7 +347,7 @@ export class CandidatosService {
 
       // ── Filtrado por experiencia ──────────────────────────────────────────────
       const candidatosFiltrados = opciones.soloConExperiencia
-        ? candidatos.filter((c) => c.indicadores.experiencia_cargo_en_cuerpo > 0)
+        ? candidatos.filter((c) => c.indicadores.experiencia_cargo_en_grupo > 0)
         : candidatos;
 
       // ── Ordenamiento dinámico por criterios ───────────────────────────────────
@@ -360,7 +357,7 @@ export class CandidatosService {
         (a: CandidatoSinPosicion, b: CandidatoSinPosicion) => number
       > = {
         experiencia: (a, b) =>
-          b.indicadores.experiencia_cargo_en_cuerpo - a.indicadores.experiencia_cargo_en_cuerpo,
+          b.indicadores.experiencia_cargo_en_grupo - a.indicadores.experiencia_cargo_en_grupo,
         carga_trabajo: (a, b) =>
           a.indicadores.grupos_activos_count - b.indicadores.grupos_activos_count,
         fidelidad: (a, b) =>
@@ -469,7 +466,7 @@ export class CandidatosService {
   private generarJustificacionCargo(
     nombreCargo: string,
     ind: {
-      experiencia_cargo_en_cuerpo: number;
+      experiencia_cargo_en_grupo: number;
       grupos_activos_count: number;
       asistencia_ratio_periodo: number;
       antiguedad_anios: number;
@@ -480,7 +477,7 @@ export class CandidatosService {
     const partes: string[] = [];
 
     partes.push(
-      `Ha ocupado ${nombreCargo} ${ind.experiencia_cargo_en_cuerpo} veces en este cuerpo`,
+      `Ha ocupado ${nombreCargo} ${ind.experiencia_cargo_en_grupo} veces en este grupo`,
     );
     partes.push(
       `participa en ${ind.grupos_activos_count} grupo${ind.grupos_activos_count !== 1 ? 's' : ''}`,
@@ -496,3 +493,4 @@ export class CandidatosService {
 }
 
 export const candidatosService = new CandidatosService();
+

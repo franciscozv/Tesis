@@ -21,7 +21,7 @@ export class InvitadosRepository {
   async findAllAsync(filters: InvitadoFilters = {}): Promise<Invitado[]> {
     let query = supabase
       .from('invitado')
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
       .order('fecha_invitacion', { ascending: false });
 
     if (filters.actividad_id) {
@@ -48,7 +48,7 @@ export class InvitadosRepository {
   async findByIdAsync(id: number): Promise<Invitado | null> {
     const { data, error } = await supabase
       .from('invitado')
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
       .eq('id', id)
       .single();
 
@@ -115,7 +115,7 @@ export class InvitadosRepository {
 
   /**
    * Verifica si un miembro es encargado vigente del grupo al que pertenece una actividad
-   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async isEncargadoDeActividadAsync(actividadId: number, miembroId: number): Promise<boolean> {
     const { data: actividad, error: actError } = await supabase
@@ -134,13 +134,13 @@ export class InvitadosRepository {
   }
 
   /**
-   * Verifica si un rol de actividad existe y está activo
+   * Verifica si un responsabilidad de actividad existe y está activo
    */
-  async rolActividadExistsAsync(rolId: number): Promise<boolean> {
+  async responsabilidadActividadExistsAsync(rolId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('rol_actividad')
-      .select('id_rol')
-      .eq('id_rol', rolId)
+      .from('responsabilidad_actividad')
+      .select('id_responsabilidad')
+      .eq('id_responsabilidad', rolId)
       .eq('activo', true)
       .single();
 
@@ -164,7 +164,7 @@ export class InvitadosRepository {
       .select('id')
       .eq('actividad_id', actividadId)
       .eq('miembro_id', miembroId)
-      .eq('rol_id', rolId);
+      .eq('responsabilidad_id', rolId);
 
     if (error) throw error;
     return data !== null && data.length > 0;
@@ -194,7 +194,7 @@ export class InvitadosRepository {
     const { data, error } = await supabase
       .from('invitado')
       .insert(insertData)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
       .single();
 
     if (error) throw error;
@@ -226,7 +226,7 @@ export class InvitadosRepository {
       .from('invitado')
       .update(updateData)
       .eq('id', id)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
       .single();
 
     if (error) {
@@ -244,7 +244,7 @@ export class InvitadosRepository {
       .from('invitado')
       .update({ asistio })
       .eq('id', id)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:rol_id(id_rol, nombre)')
+      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
       .single();
 
     if (error) {
@@ -264,3 +264,4 @@ export class InvitadosRepository {
     return true;
   }
 }
+

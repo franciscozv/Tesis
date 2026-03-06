@@ -27,25 +27,24 @@ export interface MiembroBase {
  */
 export class CandidatosRepository {
   /**
-   * Obtiene miembros activos con filtros opcionales de plena comunión, cuerpo_id o grupo_id.
+   * Obtiene miembros activos con filtros opcionales de plena comunión, grupo_id o grupo_id.
    * - grupoId: filtra miembros con membresía activa en un grupo ministerial específico.
-   * - cuerpoId: filtra miembros pertenecientes a una sede/cuerpo (asumiendo que cuerpo_id existe en tabla miembro).
+   * - grupoId: filtra miembros pertenecientes a una sede/grupo (asumiendo que grupo_id existe en tabla miembro).
    */
   async findMiembrosActivosFiltradosAsync(filtros: {
     plenaComun?: boolean;
-    cuerpoId?: number;
     grupoId?: number;
   }): Promise<MiembroBase[]> {
-    // Caso 1: Filtrar por GRUPO MINISTERIAL (requiere JOIN con integrante_cuerpo)
+    // Caso 1: Filtrar por GRUPO MINISTERIAL (requiere JOIN con integrante_grupo)
     if (filtros.grupoId !== undefined) {
       let query = supabase
         .from('miembro')
         .select(
-          'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_cuerpo!inner(grupo_id, fecha_desvinculacion)',
+          'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_grupo!inner(grupo_id, fecha_desvinculacion)',
         )
         .eq('activo', true)
-        .eq('integrante_cuerpo.grupo_id', filtros.grupoId)
-        .is('integrante_cuerpo.fecha_desvinculacion', null);
+        .eq('integrante_grupo.grupo_id', filtros.grupoId)
+        .is('integrante_grupo.fecha_desvinculacion', null);
 
       if (filtros.plenaComun === true) {
         query = query.eq('estado_comunion', 'plena_comunion');
@@ -65,17 +64,17 @@ export class CandidatosRepository {
       }));
     }
 
-    // Caso 2: Filtrar por CUERPO (sede física, asumiendo campo cuerpo_id en miembro)
-    // Nota: Si en tu base de datos el "cuerpo" también es un grupo, este filtro es opcional.
+    // Caso 2: Filtrar por CUERPO (sede física, asumiendo campo grupo_id en miembro)
+    // Nota: Si en tu base de datos el "grupo" también es un grupo, este filtro es opcional.
     let query = supabase
       .from('miembro')
       .select('id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso')
       .eq('activo', true);
 
-    if (filtros.cuerpoId !== undefined) {
-      // Si tu tabla miembro tiene cuerpo_id, descomenta la siguiente línea:
-      // query = query.eq('cuerpo_id', filtros.cuerpoId);
-      // Si el cuerpo es un grupo ministerial especial, se debería usar la lógica del Caso 1.
+    if (filtros.grupoId !== undefined) {
+      // Si tu tabla miembro tiene grupo_id, descomenta la siguiente línea:
+      // query = query.eq('grupo_id', filtros.grupoId);
+      // Si el grupo es un grupo ministerial especial, se debería usar la lógica del Caso 1.
     }
 
     if (filtros.plenaComun === true) {
@@ -105,13 +104,13 @@ export class CandidatosRepository {
   }
 
   /**
-   * Verifica si un rol de actividad existe y está activo
+   * Verifica si un responsabilidad de actividad existe y está activo
    */
-  async rolActividadExistsAsync(rolId: number): Promise<boolean> {
+  async responsabilidadActividadExistsAsync(rolId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('rol_actividad')
-      .select('id_rol')
-      .eq('id_rol', rolId)
+      .from('responsabilidad_actividad')
+      .select('id_responsabilidad')
+      .eq('id_responsabilidad', rolId)
       .eq('activo', true)
       .single();
 
@@ -123,13 +122,13 @@ export class CandidatosRepository {
   }
 
   /**
-   * Obtiene el nombre de un rol de actividad
+   * Obtiene el nombre de un responsabilidad de actividad
    */
-  async getRolActividadNombreAsync(rolId: number): Promise<string | null> {
+  async getResponsabilidadActividadNombreAsync(rolId: number): Promise<string | null> {
     const { data, error } = await supabase
-      .from('rol_actividad')
+      .from('responsabilidad_actividad')
       .select('nombre')
-      .eq('id_rol', rolId)
+      .eq('id_responsabilidad', rolId)
       .single();
 
     if (error) {
@@ -147,7 +146,7 @@ export class CandidatosRepository {
     cargoId: number,
   ): Promise<{ existe: boolean; requiere_plena_comunion: boolean; nombre: string | null }> {
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .select('id_rol_grupo, nombre, requiere_plena_comunion')
       .eq('id_rol_grupo', cargoId)
       .eq('activo', true)
@@ -166,21 +165,21 @@ export class CandidatosRepository {
   }
 
   /**
-   * Retorna miembros con membresía vigente (fecha_desvinculacion IS NULL) en un cuerpo.
+   * Retorna miembros con membresía vigente (fecha_desvinculacion IS NULL) en un grupo.
    * Si requierePlenaComunion es true, filtra solo los de estado 'plena_comunion'.
    */
-  async findMiembrosVigentesEnCuerpoAsync(
-    cuerpoId: number,
+  async findMiembrosVigentesEnGrupoAsync(
+    grupoId: number,
     requierePlenaComunion: boolean,
   ): Promise<MiembroBase[]> {
     let query = supabase
       .from('miembro')
       .select(
-        'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_cuerpo!inner(grupo_id, fecha_desvinculacion)',
+        'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_grupo!inner(grupo_id, fecha_desvinculacion)',
       )
       .eq('activo', true)
-      .eq('integrante_cuerpo.grupo_id', cuerpoId)
-      .is('integrante_cuerpo.fecha_desvinculacion', null);
+      .eq('integrante_grupo.grupo_id', grupoId)
+      .is('integrante_grupo.fecha_desvinculacion', null);
 
     if (requierePlenaComunion) {
       query = query.eq('estado_comunion', 'plena_comunion');
@@ -200,7 +199,7 @@ export class CandidatosRepository {
     }));
   }
 
-  // ─── Métodos BATCH para sugerirParaRol (evitan N+1) ─────────────────────────
+  // ─── Métodos BATCH para sugerirParaResponsabilidad (evitan N+1) ─────────────────────────
 
   /**
    * BATCH: Cuenta invitaciones asistidas por rol en actividades realizadas,
@@ -216,7 +215,7 @@ export class CandidatosRepository {
       .from('invitado')
       .select('miembro_id, actividad!inner(estado)')
       .in('miembro_id', miembroIds)
-      .eq('rol_id', rolId)
+      .eq('responsabilidad_id', rolId)
       .eq('asistio', true)
       .eq('actividad.estado', 'realizada');
 
@@ -244,7 +243,7 @@ export class CandidatosRepository {
       .from('invitado')
       .select('miembro_id, actividad!inner(estado, tipo_actividad_id)')
       .in('miembro_id', miembroIds)
-      .eq('rol_id', rolId)
+      .eq('responsabilidad_id', rolId)
       .eq('asistio', true)
       .eq('actividad.estado', 'realizada')
       .eq('actividad.tipo_actividad_id', tipoActividadId);
@@ -291,22 +290,22 @@ export class CandidatosRepository {
   }
 
   /**
-   * BATCH: Conteo histórico de un cargo en un cuerpo específico para una lista de miembros.
+   * BATCH: Conteo histórico de un cargo en un grupo específico para una lista de miembros.
    * Incluye membresías pasadas y vigentes. Retorna Map<miembro_id, count>.
    */
-  async getExperienciaCargoEnCuerpoBatchAsync(
+  async getExperienciaCargoEnGrupoBatchAsync(
     miembroIds: number[],
     cargoId: number,
-    cuerpoId: number,
+    grupoId: number,
   ): Promise<Map<number, number>> {
     if (miembroIds.length === 0) return new Map();
 
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('miembro_id')
       .in('miembro_id', miembroIds)
       .eq('rol_grupo_id', cargoId)
-      .eq('grupo_id', cuerpoId);
+      .eq('grupo_id', grupoId);
 
     if (error) throw error;
 
@@ -325,7 +324,7 @@ export class CandidatosRepository {
     if (miembroIds.length === 0) return new Map();
 
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('miembro_id')
       .in('miembro_id', miembroIds)
       .is('fecha_desvinculacion', null);
@@ -354,7 +353,7 @@ export class CandidatosRepository {
       .from('invitado')
       .select('miembro_id, actividad!inner(fecha, estado)')
       .in('miembro_id', miembroIds)
-      .eq('rol_id', rolId)
+      .eq('responsabilidad_id', rolId)
       .eq('asistio', true)
       .eq('actividad.estado', 'realizada');
 
@@ -417,7 +416,7 @@ export class CandidatosRepository {
 
     let query = supabase
       .from('invitado')
-      .select('miembro_id, actividad!inner(nombre, fecha, estado), rol_actividad!rol_id(nombre)')
+      .select('miembro_id, actividad!inner(nombre, fecha, estado), responsabilidad_actividad!responsabilidad_id(nombre)')
       .in('miembro_id', miembroIds)
       .eq('estado', 'confirmado')
       .eq('actividad.fecha', fecha)
@@ -436,10 +435,12 @@ export class CandidatosRepository {
       const arr = result.get(row.miembro_id) ?? [];
       arr.push({
         actividad: row.actividad.nombre,
-        rol: row.rol_actividad?.nombre ?? 'Rol desconocido',
+        rol: row.responsabilidad_actividad?.nombre ?? 'Rol desconocido',
       });
       result.set(row.miembro_id, arr);
     }
     return result;
   }
 }
+
+

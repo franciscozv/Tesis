@@ -241,7 +241,7 @@ export class ColaboradoresRepository {
 
   /**
    * Obtiene colaboradores cuya cadena necesidad→actividad→grupo pertenece a la directiva
-   * (miembro con membresía vigente con rol es_directiva = true en integrante_cuerpo).
+   * (miembro con membresía vigente con rol es_directiva = true en integrante_grupo).
    */
   async findAllForEncargadoAsync(
     filters: ColaboradorFilters,
@@ -249,10 +249,10 @@ export class ColaboradoresRepository {
   ): Promise<Colaborador[]> {
     // 1. Grupos donde el miembro tiene rol de directiva vigente
     const { data: comunions, error: gruposError } = await supabase
-      .from('integrante_cuerpo')
-      .select('grupo_id, rol_grupo_ministerial!inner(es_directiva)')
+      .from('integrante_grupo')
+      .select('grupo_id, rol_grupo!inner(es_directiva)')
       .eq('miembro_id', liderMiembroId)
-      .eq('rol_grupo_ministerial.es_directiva', true)
+      .eq('rol_grupo.es_directiva', true)
       .is('fecha_desvinculacion', null);
 
     if (gruposError) throw gruposError;
@@ -308,7 +308,7 @@ export class ColaboradoresRepository {
 
   /**
    * Verifica si una necesidad pertenece a un grupo donde el miembro es encargado vigente
-   * (integrante_cuerpo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
+   * (integrante_grupo con ROL_ENCARGADO_ID y fecha_desvinculacion IS NULL).
    */
   async perteneceEncargadoAsync(necesidadId: number, liderMiembroId: number): Promise<boolean> {
     const { data: necesidad, error: necError } = await supabase

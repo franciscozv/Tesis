@@ -61,7 +61,7 @@ export class CalendarioRepository {
     const { data, error } = await supabase
       .from('invitado')
       .select(
-        'estado, fecha_invitacion, actividad:actividad_id(id, nombre, fecha, hora_inicio, hora_fin, lugar, estado), rol_asignado:rol_id(id_rol, nombre)',
+        'estado, fecha_invitacion, actividad:actividad_id(id, nombre, fecha, hora_inicio, hora_fin, lugar, estado), responsabilidad_asignada:responsabilidad_id(id_responsabilidad, nombre)',
       )
       .eq('miembro_id', miembroId)
       .eq('estado', 'confirmado');
@@ -72,7 +72,7 @@ export class CalendarioRepository {
     const resultado: Responsabilidad[] = [];
     for (const row of data || []) {
       const actividad = (row as any).actividad;
-      const rol = (row as any).rol_asignado;
+      const rol = (row as any).responsabilidad_asignada;
 
       if (!actividad || !rol) continue;
       if (actividad.estado !== 'programada') continue;
@@ -87,8 +87,8 @@ export class CalendarioRepository {
           hora_fin: actividad.hora_fin as string,
           lugar: (actividad.lugar as string) ?? null,
         },
-        rol_asignado: {
-          id: rol.id_rol as number,
+        responsabilidad_asignada: {
+          id: rol.id_responsabilidad as number,
           nombre: rol.nombre as string,
         },
         fecha_invitacion: row.fecha_invitacion as string,
@@ -128,3 +128,4 @@ export class CalendarioRepository {
     });
   }
 }
+

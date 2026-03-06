@@ -97,7 +97,7 @@ export class PatronesActividadRepository {
    */
   async grupoExistsAsync(grupoId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('id_grupo')
       .eq('id_grupo', grupoId)
       .eq('activo', true)

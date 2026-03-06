@@ -81,7 +81,7 @@ export class InvitadosService {
     invitadoData: {
       actividad_id: number;
       miembro_id: number;
-      rol_id: number;
+      responsabilidad_id: number;
       confirmado?: boolean;
     },
     usuario?: JwtPayload,
@@ -159,11 +159,11 @@ export class InvitadosService {
         );
       }
 
-      // Validar que el rol de actividad exista y esté activo
-      const rolExiste = await this.invitadosRepository.rolActividadExistsAsync(invitadoData.rol_id);
+      // Validar que el responsabilidad de actividad exista y esté activo
+      const rolExiste = await this.invitadosRepository.responsabilidadActividadExistsAsync(invitadoData.responsabilidad_id);
       if (!rolExiste) {
         return ServiceResponse.failure(
-          'El rol de actividad especificado no existe o no está activo',
+          'El responsabilidad de actividad especificado no existe o no está activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -173,7 +173,7 @@ export class InvitadosService {
       const existeDuplicada = await this.invitadosRepository.existsInvitacionDuplicadaAsync(
         invitadoData.actividad_id,
         invitadoData.miembro_id,
-        invitadoData.rol_id,
+        invitadoData.responsabilidad_id,
       );
       if (existeDuplicada) {
         return ServiceResponse.failure(
@@ -219,6 +219,16 @@ export class InvitadosService {
       if (invitado.estado !== 'pendiente') {
         return ServiceResponse.failure(
           `No se puede responder a una invitación en estado "${invitado.estado}"`,
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      // No permitir respuestas sobre invitaciones de actividades canceladas
+      const actividad = await this.invitadosRepository.findActividadDatosAsync(invitado.actividad_id);
+      if (!actividad || actividad.estado === 'cancelada') {
+        return ServiceResponse.failure(
+          'No se puede responder invitaciones de una actividad cancelada',
           null,
           StatusCodes.CONFLICT,
         );
@@ -374,3 +384,4 @@ export class InvitadosService {
 }
 
 export const invitadosService = new InvitadosService();
+

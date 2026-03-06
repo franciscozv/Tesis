@@ -61,7 +61,7 @@ export const RolAsignadoRefSchema = z.object({
  */
 export const ResponsabilidadSchema = z.object({
   actividad: ActividadResponsabilidadSchema,
-  rol_asignado: RolAsignadoRefSchema,
+  responsabilidad_asignada: RolAsignadoRefSchema,
   fecha_invitacion: z.string().openapi({ example: '2025-02-15T10:30:00' }),
   estado: z.string().openapi({ example: 'confirmado' }),
 });
@@ -93,3 +93,4 @@ export const CalendarioQuerySchema = z.object({
 export const MisResponsabilidadesSchema = z.object({
   params: z.object({ miembro_id: commonValidations.id }),
 });
+

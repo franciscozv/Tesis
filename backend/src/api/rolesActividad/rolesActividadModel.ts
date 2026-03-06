@@ -5,10 +5,10 @@ import { commonValidations } from '@/common/utils/commonValidation';
 extendZodWithOpenApi(z);
 
 /**
- * Schema para Rol de Actividad
+ * Schema para Responsabilidad de Actividad
  */
-export const RolActividadSchema = z.object({
-  id_rol: z.number().openapi({ example: 1 }),
+export const ResponsabilidadActividadSchema = z.object({
+  id_responsabilidad: z.number().openapi({ example: 1 }),
   nombre: z.string().openapi({ example: 'Coordinador' }),
   descripcion: z.string().nullable().openapi({ example: 'Coordinador de la actividad' }),
   activo: z.boolean().openapi({ example: true }),
@@ -16,12 +16,12 @@ export const RolActividadSchema = z.object({
   updated_at: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
 });
 
-export type RolActividad = z.infer<typeof RolActividadSchema>;
+export type ResponsabilidadActividad = z.infer<typeof ResponsabilidadActividadSchema>;
 
 /**
- * Schema para crear un Rol de Actividad
+ * Schema para crear un Responsabilidad de Actividad
  */
-export const CreateRolActividadSchema = z.object({
+export const CreateResponsabilidadActividadSchema = z.object({
   body: z.object({
     nombre: z
       .string()
@@ -33,24 +33,24 @@ export const CreateRolActividadSchema = z.object({
 });
 
 /**
- * Schema para obtener un Rol de Actividad por ID
+ * Schema para obtener un Responsabilidad de Actividad por ID
  */
-export const GetRolActividadSchema = z.object({
+export const GetResponsabilidadActividadSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
 /**
- * Schema para cambiar estado (activo/inactivo) de un Rol de Actividad
- * PATCH /api/roles-actividad/:id/toggle-estado
+ * Schema para cambiar estado (activo/inactivo) de un Responsabilidad de Actividad
+ * PATCH /api/responsabilidades-actividad/:id/toggle-estado
  */
-export const ToggleEstadoRolActividadSchema = z.object({
+export const ToggleEstadoResponsabilidadActividadSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
 /**
- * Schema para actualizar un Rol de Actividad
+ * Schema para actualizar un Responsabilidad de Actividad
  */
-export const UpdateRolActividadSchema = z.object({
+export const UpdateResponsabilidadActividadSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
     nombre: z
@@ -62,3 +62,4 @@ export const UpdateRolActividadSchema = z.object({
     descripcion: z.string().optional().openapi({ example: 'Coordinador de la actividad' }),
   }),
 });
+

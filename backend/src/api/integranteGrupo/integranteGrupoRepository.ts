@@ -1,10 +1,10 @@
 import { supabase } from '@/common/utils/supabaseClient';
-import type { IntegranteCuerpo, IntegranteCuerpoConNombres } from './integranteCuerpoModel';
+import type { IntegranteGrupo, IntegranteGrupoConNombres } from './integranteGrupoModel';
 
 /**
- * Repository para operaciones de Integrantes en Cuerpo
+ * Repository para operaciones de Integrantes en Grupo
  */
-export class IntegranteCuerpoRepository {
+export class IntegranteGrupoRepository {
   /**
    * Verifica si un miembro existe y está activo
    */
@@ -33,7 +33,7 @@ export class IntegranteCuerpoRepository {
    */
   async verificarGrupoActivo(grupoId: number): Promise<{ existe: boolean; activo: boolean }> {
     const { data, error } = await supabase
-      .from('grupo_ministerial')
+      .from('grupo')
       .select('activo')
       .eq('id_grupo', grupoId)
       .single();
@@ -59,7 +59,7 @@ export class IntegranteCuerpoRepository {
     es_directiva: boolean;
   }> {
     const { data, error } = await supabase
-      .from('rol_grupo_ministerial')
+      .from('rol_grupo')
       .select('activo, requiere_plena_comunion, es_unico, es_directiva')
       .eq('id_rol_grupo', rolId)
       .single();
@@ -89,7 +89,7 @@ export class IntegranteCuerpoRepository {
    */
   async estaRolOcupadoEnGrupo(grupoId: number, rolId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('id_integrante')
       .eq('grupo_id', grupoId)
       .eq('rol_grupo_id', rolId)
@@ -110,7 +110,7 @@ export class IntegranteCuerpoRepository {
     excludeIntegranteId?: number,
   ): Promise<boolean> {
     let query = supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('id_integrante')
       .eq('miembro_id', miembroId)
       .eq('grupo_id', grupoId)
@@ -130,7 +130,7 @@ export class IntegranteCuerpoRepository {
    */
   async verificarDuplicado(miembroId: number, grupoId: number, rolId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('id_integrante')
       .eq('miembro_id', miembroId)
       .eq('grupo_id', grupoId)
@@ -150,9 +150,9 @@ export class IntegranteCuerpoRepository {
     grupoId: number,
     rolId: number,
     fechaVinculacion?: string,
-  ): Promise<IntegranteCuerpo> {
+  ): Promise<IntegranteGrupo> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .insert({
         miembro_id: miembroId,
         grupo_id: grupoId,
@@ -163,15 +163,15 @@ export class IntegranteCuerpoRepository {
       .single();
 
     if (error) throw error;
-    return data as IntegranteCuerpo;
+    return data as IntegranteGrupo;
   }
 
   /**
    * Obtiene una integración por ID
    */
-  async findByIdAsync(id: number): Promise<IntegranteCuerpo | null> {
+  async findByIdAsync(id: number): Promise<IntegranteGrupo | null> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select('*')
       .eq('id_integrante', id)
       .single();
@@ -180,7 +180,7 @@ export class IntegranteCuerpoRepository {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as IntegranteCuerpo;
+    return data as IntegranteGrupo;
   }
 
   /**
@@ -189,9 +189,9 @@ export class IntegranteCuerpoRepository {
   async desvincularMiembroAsync(
     id: number,
     fechaDesvinculacion?: string,
-  ): Promise<IntegranteCuerpo | null> {
+  ): Promise<IntegranteGrupo | null> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .update({
         fecha_desvinculacion: fechaDesvinculacion || new Date().toISOString(),
       })
@@ -204,7 +204,7 @@ export class IntegranteCuerpoRepository {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as IntegranteCuerpo;
+    return data as IntegranteGrupo;
   }
 
   /**
@@ -217,12 +217,12 @@ export class IntegranteCuerpoRepository {
     grupoId: number,
     nuevoRolId: number,
     fecha?: string,
-  ): Promise<IntegranteCuerpo> {
+  ): Promise<IntegranteGrupo> {
     const hoy = fecha || new Date().toISOString();
 
     // 1. Cerrar fila activa
     const { error: errorCierre } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .update({ fecha_desvinculacion: hoy })
       .eq('id_integrante', id)
       .is('fecha_desvinculacion', null);
@@ -231,7 +231,7 @@ export class IntegranteCuerpoRepository {
 
     // 2. Insertar nueva fila activa con el nuevo rol
     const { data, error: errorInsert } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .insert({
         miembro_id: miembroId,
         grupo_id: grupoId,
@@ -242,15 +242,15 @@ export class IntegranteCuerpoRepository {
       .single();
 
     if (errorInsert) throw errorInsert;
-    return data as IntegranteCuerpo;
+    return data as IntegranteGrupo;
   }
 
   /**
    * Obtiene todas las integraciones de un miembro (activas + históricas) con nombres de grupo y rol
    */
-  async findByMiembroIdAsync(miembroId: number): Promise<IntegranteCuerpoConNombres[]> {
+  async findByMiembroIdAsync(miembroId: number): Promise<IntegranteGrupoConNombres[]> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select(`
         id_integrante,
         miembro_id,
@@ -258,8 +258,8 @@ export class IntegranteCuerpoRepository {
         rol_grupo_id,
         fecha_vinculacion,
         fecha_desvinculacion,
-        grupo_ministerial!inner(id_grupo, nombre),
-        rol_grupo_ministerial!inner(id_rol_grupo, nombre, es_directiva)
+        grupo!inner(id_grupo, nombre),
+        rol_grupo!inner(id_rol_grupo, nombre, es_directiva)
       `)
       .eq('miembro_id', miembroId)
       .order('fecha_vinculacion', { ascending: false });
@@ -267,12 +267,12 @@ export class IntegranteCuerpoRepository {
     if (error) throw error;
 
     return (data as any[]).map((row) => {
-      const grupoObj = Array.isArray(row.grupo_ministerial)
-        ? row.grupo_ministerial[0]
-        : row.grupo_ministerial;
-      const rolObj = Array.isArray(row.rol_grupo_ministerial)
-        ? row.rol_grupo_ministerial[0]
-        : row.rol_grupo_ministerial;
+      const grupoObj = Array.isArray(row.grupo)
+        ? row.grupo[0]
+        : row.grupo;
+      const rolObj = Array.isArray(row.rol_grupo)
+        ? row.rol_grupo[0]
+        : row.rol_grupo;
 
       return {
         id: row.id_integrante,
@@ -295,9 +295,9 @@ export class IntegranteCuerpoRepository {
   /**
    * Obtiene todas las integraciones activas de un grupo con nombres de rol y miembro
    */
-  async findByGrupoIdAsync(grupoId: number): Promise<IntegranteCuerpoConNombres[]> {
+  async findByGrupoIdAsync(grupoId: number): Promise<IntegranteGrupoConNombres[]> {
     const { data, error } = await supabase
-      .from('integrante_cuerpo')
+      .from('integrante_grupo')
       .select(`
         id_integrante,
         miembro_id,
@@ -305,8 +305,8 @@ export class IntegranteCuerpoRepository {
         rol_grupo_id,
         fecha_vinculacion,
         fecha_desvinculacion,
-        grupo_ministerial!inner(id_grupo, nombre),
-        rol_grupo_ministerial!inner(id_rol_grupo, nombre, es_directiva),
+        grupo!inner(id_grupo, nombre),
+        rol_grupo!inner(id_rol_grupo, nombre, es_directiva),
         miembro!inner(id, nombre, apellido, rut)
       `)
       .eq('grupo_id', grupoId)
@@ -319,12 +319,12 @@ export class IntegranteCuerpoRepository {
       // PostgREST/Supabase joins usually return an object for many-to-one,
       // but we handle both cases to be safer.
       const miembroObj = Array.isArray(row.miembro) ? row.miembro[0] : row.miembro;
-      const grupoObj = Array.isArray(row.grupo_ministerial)
-        ? row.grupo_ministerial[0]
-        : row.grupo_ministerial;
-      const rolObj = Array.isArray(row.rol_grupo_ministerial)
-        ? row.rol_grupo_ministerial[0]
-        : row.rol_grupo_ministerial;
+      const grupoObj = Array.isArray(row.grupo)
+        ? row.grupo[0]
+        : row.grupo;
+      const rolObj = Array.isArray(row.rol_grupo)
+        ? row.rol_grupo[0]
+        : row.rol_grupo;
 
       return {
         id: row.id_integrante,
