@@ -4,7 +4,7 @@ export interface Invitado {
   id: number;
   actividad_id: number;
   miembro_id: number;
-  rol_id: number;
+  responsabilidad_id: number;
   estado: EstadoInvitado;
   motivo_rechazo: string | null;
   asistio: boolean;
@@ -24,7 +24,7 @@ export interface Invitado {
     apellido: string;
   };
   rol?: {
-    id_rol: number;
+    id_responsabilidad: number;
     nombre: string;
   };
 }
@@ -38,10 +38,11 @@ export interface InvitadoFilters {
 export interface CreateInvitadoInput {
   actividad_id: number;
   miembro_id: number;
-  rol_id: number;
+  responsabilidad_id: number;
 }
 
 export interface ResponderInvitacionInput {
   estado: 'confirmado' | 'rechazado';
   motivo_rechazo?: string;
 }
+

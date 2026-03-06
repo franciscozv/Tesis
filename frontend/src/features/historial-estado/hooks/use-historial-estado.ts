@@ -10,3 +10,4 @@ export function useHistorialEstado(miembroId: number) {
     enabled: miembroId > 0,
   });
 }
+

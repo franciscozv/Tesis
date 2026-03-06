@@ -17,3 +17,4 @@ export function useGrupo(id: number) {
     enabled: !!id,
   });
 }
+

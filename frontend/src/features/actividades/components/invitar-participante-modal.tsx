@@ -30,13 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { RolActividad } from '@/features/catalogos/types';
+import type { ResponsabilidadActividad } from '@/features/catalogos/types';
 import type { Miembro } from '@/features/miembros/types';
 import { useCreateInvitado } from '../hooks/use-invitados-actividad';
 
 const invitarSchema = z.object({
   miembro_id: z.coerce.number().int().positive('Seleccione un miembro'),
-  rol_id: z.coerce.number().int().positive('Seleccione un rol'),
+  responsabilidad_id: z.coerce.number().int().positive('Seleccione un rol'),
   confirmado: z.boolean().default(false),
 });
 
@@ -47,8 +47,8 @@ interface InvitarParticipanteModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   miembros: Miembro[] | undefined;
-  rolesActividad: RolActividad[] | undefined;
-  defaultValues?: { miembro_id?: number; rol_id?: number };
+  responsabilidadesActividad: ResponsabilidadActividad[] | undefined;
+  defaultValues?: { miembro_id?: number; responsabilidad_id?: number };
   excludeMiembroId?: number;
 }
 
@@ -57,7 +57,7 @@ export function InvitarParticipanteModal({
   open,
   onOpenChange,
   miembros,
-  rolesActividad,
+  responsabilidadesActividad,
   defaultValues,
   excludeMiembroId,
 }: InvitarParticipanteModalProps) {
@@ -72,7 +72,7 @@ export function InvitarParticipanteModal({
     resolver: zodResolver(invitarSchema) as any,
     defaultValues: {
       miembro_id: 0,
-      rol_id: 0,
+      responsabilidad_id: 0,
       confirmado: false,
     },
   });
@@ -81,7 +81,7 @@ export function InvitarParticipanteModal({
     if (open) {
       form.reset({
         miembro_id: defaultValues?.miembro_id ?? 0,
-        rol_id: defaultValues?.rol_id ?? 0,
+        responsabilidad_id: defaultValues?.responsabilidad_id ?? 0,
         confirmado: false,
       });
     }
@@ -96,7 +96,7 @@ export function InvitarParticipanteModal({
       {
         actividad_id: actividadId,
         miembro_id: data.miembro_id,
-        rol_id: data.rol_id,
+        responsabilidad_id: data.responsabilidad_id,
         confirmado: data.confirmado,
       },
       {
@@ -149,7 +149,7 @@ export function InvitarParticipanteModal({
 
             <FormField
               control={form.control}
-              name="rol_id"
+              name="responsabilidad_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Rol *</FormLabel>
@@ -163,8 +163,8 @@ export function InvitarParticipanteModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {rolesActividad?.map((r) => (
-                        <SelectItem key={r.id_rol} value={String(r.id_rol)}>
+                      {responsabilidadesActividad?.map((r) => (
+                        <SelectItem key={r.id_responsabilidad} value={String(r.id_responsabilidad)}>
                           {r.nombre}
                         </SelectItem>
                       ))}
@@ -205,3 +205,4 @@ export function InvitarParticipanteModal({
     </Dialog>
   );
 }
+

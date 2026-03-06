@@ -42,3 +42,4 @@ export const colaboradoresApi = {
     await apiClient.delete(`/colaboradores/${id}`);
   },
 };
+

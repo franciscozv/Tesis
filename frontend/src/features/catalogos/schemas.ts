@@ -14,15 +14,15 @@ export type CreateRolGrupoFormData = z.infer<typeof createRolGrupoSchema>;
 export type UpdateRolGrupoFormData = z.infer<typeof updateRolGrupoSchema>;
 
 // --- Roles Actividad ---
-export const createRolActividadSchema = z.object({
+export const createResponsabilidadActividadSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
   descripcion: z.string().or(z.literal('')).optional(),
 });
 
-export const updateRolActividadSchema = createRolActividadSchema.partial();
+export const updateResponsabilidadActividadSchema = createResponsabilidadActividadSchema.partial();
 
-export type CreateRolActividadFormData = z.infer<typeof createRolActividadSchema>;
-export type UpdateRolActividadFormData = z.infer<typeof updateRolActividadSchema>;
+export type CreateResponsabilidadActividadFormData = z.infer<typeof createResponsabilidadActividadSchema>;
+export type UpdateResponsabilidadActividadFormData = z.infer<typeof updateResponsabilidadActividadSchema>;
 
 // --- Tipos Actividad ---
 export const createTipoActividadSchema = z.object({
@@ -46,3 +46,4 @@ export const updateTipoNecesidadSchema = createTipoNecesidadSchema.partial();
 
 export type CreateTipoNecesidadFormData = z.infer<typeof createTipoNecesidadSchema>;
 export type UpdateTipoNecesidadFormData = z.infer<typeof updateTipoNecesidadSchema>;
+

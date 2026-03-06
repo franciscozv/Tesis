@@ -4,20 +4,20 @@ import type { CreateGrupoInput, GrupoMinisterial, UpdateGrupoInput } from '../ty
 
 export const gruposApi = {
   getAll: async () => {
-    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>('/grupos-ministeriales');
+    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>('/grupos');
     return data.responseObject;
   },
 
   getById: async (id: number) => {
     const { data } = await apiClient.get<ApiResponse<GrupoMinisterial>>(
-      `/grupos-ministeriales/${id}`,
+      `/grupos/${id}`,
     );
     return data.responseObject;
   },
 
   create: async (input: CreateGrupoInput) => {
     const { data } = await apiClient.post<ApiResponse<GrupoMinisterial>>(
-      '/grupos-ministeriales',
+      '/grupos',
       input,
     );
     return data.responseObject;
@@ -25,7 +25,7 @@ export const gruposApi = {
 
   update: async (id: number, input: UpdateGrupoInput) => {
     const { data } = await apiClient.put<ApiResponse<GrupoMinisterial>>(
-      `/grupos-ministeriales/${id}`,
+      `/grupos/${id}`,
       input,
     );
     return data.responseObject;
@@ -33,12 +33,13 @@ export const gruposApi = {
 
   getMisGrupos: async () => {
     const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>(
-      '/grupos-ministeriales/mis-grupos',
+      '/grupos/mis-grupos',
     );
     return data.responseObject;
   },
 
   delete: async (id: number) => {
-    await apiClient.delete(`/grupos-ministeriales/${id}`);
+    await apiClient.delete(`/grupos/${id}`);
   },
 };
+

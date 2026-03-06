@@ -138,3 +138,4 @@ export function CambiarEstadoModal({ miembro, open, onOpenChange }: CambiarEstad
     </Dialog>
   );
 }
+

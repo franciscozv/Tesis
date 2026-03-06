@@ -8,3 +8,4 @@ export function useNecesidadesAbiertas() {
     queryFn: () => necesidadesApi.getAbiertas(),
   });
 }
+

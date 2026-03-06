@@ -46,3 +46,4 @@ export interface ActividadFilters {
   estado?: EstadoActividad;
   es_publica?: boolean;
 }
+

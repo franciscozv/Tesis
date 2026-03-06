@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import type { RolActividad } from '@/features/catalogos/types';
+import type { ResponsabilidadActividad } from '@/features/catalogos/types';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import type { Candidato, SugerirRolInput } from '../types';
 import { CandidatosResults } from './candidatos-results';
@@ -86,7 +86,7 @@ interface SugerirCandidatoModalProps {
   actividadId?: number;
   /** Si es false (directiva), el selector de grupo se oculta: el backend lo infiere de actividadId. */
   isAdmin?: boolean;
-  rolesActividad: RolActividad[] | undefined;
+  responsabilidadesActividad: ResponsabilidadActividad[] | undefined;
   // biome-ignore lint/suspicious/noExplicitAny: mutation type varies
   sugerirMutation: any;
   onInvitar: (candidato: Candidato, rolId: number) => void;
@@ -98,7 +98,7 @@ export function SugerirCandidatoModal({
   defaultFecha,
   actividadId,
   isAdmin = false,
-  rolesActividad,
+  responsabilidadesActividad,
   sugerirMutation,
   onInvitar,
 }: SugerirCandidatoModalProps) {
@@ -109,7 +109,7 @@ export function SugerirCandidatoModal({
   const [fecha, setFecha] = useState(defaultFecha ?? '');
   const [periodoMeses, setPeriodoMeses] = useState<string>('12');
   const [filtroPlenaComun, setFiltroPlenaComun] = useState(false);
-  const [cuerpoId, setCuerpoId] = useState<string>('');
+  const [grupoId, setGrupoId] = useState<string>('');
   const [resultados, setResultados] = useState<Candidato[] | null>(null);
 
   // Opciones avanzadas
@@ -160,12 +160,12 @@ export function SugerirCandidatoModal({
     const excluirConflictosEfectivo = excluirConflictos;
 
     const body: SugerirRolInput = {
-      rol_id: Number(rolId),
+      responsabilidad_id: Number(rolId),
       fecha,
       ...(actividadId !== undefined && { actividad_id: actividadId }),
       periodo_meses: Number(periodoMeses),
       ...(filtroPlenaComun && { filtro_plena_comunion: true }),
-      ...(cuerpoId ? { cuerpo_id: Number(cuerpoId) } : {}),
+      ...(grupoId ? { grupo_id: Number(grupoId) } : {}),
       solo_con_experiencia: soloExpEfectivo,
       solo_sin_experiencia: soloSinExpEfectivo,
       prioridad: criteriosEfectivos,
@@ -190,7 +190,7 @@ export function SugerirCandidatoModal({
       setFecha(defaultFecha ?? '');
       setPeriodoMeses('12');
       setFiltroPlenaComun(false);
-      setCuerpoId('');
+      setGrupoId('');
       setResultados(null);
       setShowOpciones(false);
       setSoloConExperiencia(false);
@@ -226,8 +226,8 @@ export function SugerirCandidatoModal({
                   <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rolesActividad?.map((r) => (
-                    <SelectItem key={r.id_rol} value={String(r.id_rol)}>
+                  {responsabilidadesActividad?.map((r) => (
+                    <SelectItem key={r.id_responsabilidad} value={String(r.id_responsabilidad)}>
                       {r.nombre}
                     </SelectItem>
                   ))}
@@ -293,7 +293,7 @@ export function SugerirCandidatoModal({
             {isAdmin && (
               <div className="flex items-center gap-2">
                 <Label className="shrink-0 text-sm">Grupo:</Label>
-                <Select value={cuerpoId} onValueChange={setCuerpoId}>
+                <Select value={grupoId} onValueChange={setGrupoId}>
                   <SelectTrigger className="w-44">
                     <SelectValue placeholder="Todos los grupos" />
                   </SelectTrigger>
@@ -477,3 +477,4 @@ export function SugerirCandidatoModal({
     </Dialog>
   );
 }
+

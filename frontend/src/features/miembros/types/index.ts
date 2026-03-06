@@ -62,3 +62,4 @@ export interface MiembrosQueryParams {
   search?: string;
   estado_comunion?: EstadoComunion | '';
 }
+

@@ -130,3 +130,4 @@ export function Sidebar({ className }: { className?: string }) {
     </aside>
   );
 }
+

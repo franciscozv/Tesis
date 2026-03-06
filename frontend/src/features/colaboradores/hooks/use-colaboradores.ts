@@ -10,3 +10,4 @@ export function useColaboradores(filters?: ColaboradorFilters) {
     queryFn: () => colaboradoresApi.getAll(filters),
   });
 }
+

@@ -25,3 +25,4 @@ export function CandidatosResults({ candidatos, onInvitar }: CandidatosResultsPr
     </div>
   );
 }
+

@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useHistorialEstado } from '@/features/historial-estado/hooks/use-historial-estado';
-import { useDesvincularMiembro } from '@/features/integrantes-cuerpo/hooks/use-desvincular-miembro';
-import { useAsignacionesMiembro } from '@/features/integrantes-cuerpo/hooks/use-integraciones-miembro';
+import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-desvincular-miembro';
+import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import type { EstadoComunion } from '@/features/miembros/types';
 

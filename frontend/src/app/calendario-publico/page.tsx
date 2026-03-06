@@ -287,3 +287,4 @@ function DetallePublicoModal({
     </Dialog>
   );
 }
+

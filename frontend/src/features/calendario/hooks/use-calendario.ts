@@ -14,3 +14,4 @@ export function useCalendarioConsolidado(
     enabled: options?.enabled,
   });
 }
+

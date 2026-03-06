@@ -65,3 +65,4 @@ export type MiPerfilFormData = z.infer<typeof miPerfilSchema>;
 export type CreateMiembroFormData = z.infer<typeof createMiembroSchema>;
 export type UpdateMiembroFormData = z.infer<typeof updateMiembroSchema>;
 export type CambiarEstadoFormData = z.infer<typeof cambiarEstadoSchema>;
+

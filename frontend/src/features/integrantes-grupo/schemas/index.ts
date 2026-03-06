@@ -12,3 +12,4 @@ export const vincularMiembroSchema = z.object({
 });
 
 export type VincularMiembroFormData = z.infer<typeof vincularMiembroSchema>;
+

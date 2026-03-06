@@ -150,3 +150,4 @@ export function ResponderInvitacionModal({
     </Dialog>
   );
 }
+

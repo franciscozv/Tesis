@@ -5,7 +5,7 @@ import type { Candidato, SugerirCargoInput, SugerirCargoResponse, SugerirRolInpu
 export const candidatosApi = {
   sugerirRol: async (input: SugerirRolInput) => {
     const { data } = await apiClient.post<ApiResponse<Candidato[]>>(
-      '/candidatos/sugerir-rol',
+      '/candidatos/sugerir-responsabilidad',
       input,
     );
     return data.responseObject;
@@ -19,3 +19,4 @@ export const candidatosApi = {
     return data.responseObject;
   },
 };
+

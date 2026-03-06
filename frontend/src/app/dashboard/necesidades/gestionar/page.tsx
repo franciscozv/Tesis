@@ -361,7 +361,7 @@ function NecesidadesTable({
                             Cerrar
                           </DropdownMenuItem>
                         )}
-                        {nec.estado !== 'cerrada' && (
+                        {nec.estado === 'abierta' && (
                           <DropdownMenuItem onClick={() => onDelete(nec.id)}>
                             <Trash2 className="size-4 text-destructive" />
                             Eliminar
@@ -504,3 +504,4 @@ function OfertasTable({ colaboradores, isLoading, onDecidir, isPending }: Oferta
     </div>
   );
 }
+

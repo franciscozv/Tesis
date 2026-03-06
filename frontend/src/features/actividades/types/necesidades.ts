@@ -20,3 +20,4 @@ export interface CreateNecesidadInput {
   unidad_medida: string;
   cantidad_cubierta?: number;
 }
+

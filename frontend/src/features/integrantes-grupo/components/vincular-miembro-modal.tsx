@@ -245,3 +245,5 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
     </Dialog>
   );
 }
+
+

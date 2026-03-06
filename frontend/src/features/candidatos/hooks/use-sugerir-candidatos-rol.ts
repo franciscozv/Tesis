@@ -6,3 +6,4 @@ export function useSugerirCandidatosRol() {
     mutationFn: candidatosApi.sugerirRol,
   });
 }
+

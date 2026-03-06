@@ -48,3 +48,4 @@ export interface GenerarInstanciasResult {
     actividades_creadas: number;
   }[];
 }
+

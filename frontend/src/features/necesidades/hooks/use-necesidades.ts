@@ -10,3 +10,4 @@ export function useNecesidades(filters?: NecesidadFilters) {
     queryFn: () => necesidadesApi.getAll(filters),
   });
 }
+

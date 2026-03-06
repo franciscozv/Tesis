@@ -30,19 +30,19 @@ import {
   type ColumnConfig,
 } from '@/features/catalogos/components/catalogo-table';
 import {
-  rolesActividadHooks,
+  responsabilidadesActividadHooks,
   rolesGrupoHooks,
   tiposActividadHooks,
   tiposNecesidadHooks,
 } from '@/features/catalogos/hooks';
 import {
-  createRolActividadSchema,
+  createResponsabilidadActividadSchema,
   createRolGrupoSchema,
   createTipoActividadSchema,
   createTipoNecesidadSchema,
 } from '@/features/catalogos/schemas';
 import type {
-  RolActividad,
+  ResponsabilidadActividad,
   RolGrupo,
   TipoActividad,
   TipoNecesidad,
@@ -235,10 +235,10 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
 // =============================================================================
 
 function RolesActividadTab({ isAdmin }: { isAdmin: boolean }) {
-  const tab = useCatalogoTab<RolActividad, z.infer<typeof createRolActividadSchema>>({
-    hooks: rolesActividadHooks,
-    schema: createRolActividadSchema,
-    getId: (r) => r.id_rol,
+  const tab = useCatalogoTab<ResponsabilidadActividad, z.infer<typeof createResponsabilidadActividadSchema>>({
+    hooks: responsabilidadesActividadHooks,
+    schema: createResponsabilidadActividadSchema,
+    getId: (r) => r.id_responsabilidad,
     toDefaults: (r) => ({
       nombre: r?.nombre ?? '',
       descripcion: r?.descripcion ?? '',
@@ -246,13 +246,13 @@ function RolesActividadTab({ isAdmin }: { isAdmin: boolean }) {
     entityName: 'Rol de actividad',
   });
 
-  const columns: ColumnConfig<RolActividad>[] = [
+  const columns: ColumnConfig<ResponsabilidadActividad>[] = [
     { key: 'nombre', header: 'Nombre' },
     { key: 'descripcion', header: 'Descripción', render: (r) => r.descripcion ?? '—' },
     { key: 'activo', header: 'Estado', render: (r) => <ActiveBadge activo={r.activo} /> },
   ];
 
-  const fields: FieldConfig<z.infer<typeof createRolActividadSchema>>[] = [
+  const fields: FieldConfig<z.infer<typeof createResponsabilidadActividadSchema>>[] = [
     { name: 'nombre', label: 'Nombre', type: 'text', placeholder: 'Ej: Predicador' },
     { name: 'descripcion', label: 'Descripción', type: 'textarea', placeholder: 'Opcional' },
   ];
@@ -262,7 +262,7 @@ function RolesActividadTab({ isAdmin }: { isAdmin: boolean }) {
       tab={tab}
       columns={columns}
       fields={fields}
-      idKey="id_rol"
+      idKey="id_responsabilidad"
       isAdmin={isAdmin}
       entityName="Rol de actividad"
     />
@@ -466,7 +466,7 @@ export default function ConfiguracionPage() {
       <Tabs defaultValue="roles-grupo">
         <TabsList>
           <TabsTrigger value="roles-grupo">Roles de Grupo</TabsTrigger>
-          <TabsTrigger value="roles-actividad">Roles de Actividad</TabsTrigger>
+          <TabsTrigger value="responsabilidades-actividad">Responsabilidades de Actividad</TabsTrigger>
           <TabsTrigger value="tipos-actividad">Tipos de Actividad</TabsTrigger>
           <TabsTrigger value="tipos-necesidad">Tipos de Necesidad</TabsTrigger>
         </TabsList>
@@ -475,7 +475,7 @@ export default function ConfiguracionPage() {
           <RolesGrupoTab isAdmin={isAdmin} />
         </TabsContent>
 
-        <TabsContent value="roles-actividad" className="mt-4">
+        <TabsContent value="responsabilidades-actividad" className="mt-4">
           <RolesActividadTab isAdmin={isAdmin} />
         </TabsContent>
 
@@ -490,3 +490,5 @@ export default function ConfiguracionPage() {
     </div>
   );
 }
+
+

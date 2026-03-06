@@ -47,10 +47,10 @@ import { useSugerirCandidatosCargo } from '@/features/candidatos/hooks/use-suger
 import { rolesGrupoHooks } from '@/features/catalogos/hooks';
 import { useGrupo } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
-import { CambiarRolModal } from '@/features/integrantes-cuerpo/components/cambiar-rol-modal';
-import { VincularMiembroModal } from '@/features/integrantes-cuerpo/components/vincular-miembro-modal';
-import { useDesvincularMiembro } from '@/features/integrantes-cuerpo/hooks/use-desvincular-miembro';
-import { useIntegrantesGrupo } from '@/features/integrantes-cuerpo/hooks/use-integrantes-grupo';
+import { CambiarRolModal } from '@/features/integrantes-grupo/components/cambiar-rol-modal';
+import { VincularMiembroModal } from '@/features/integrantes-grupo/components/vincular-miembro-modal';
+import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-desvincular-miembro';
+import { useIntegrantesGrupo } from '@/features/integrantes-grupo/hooks/use-integrantes-grupo';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {

@@ -115,3 +115,4 @@ export function getMiembrosColumns({ isAdmin, onCambiarEstado }: ColumnOptions):
     },
   ];
 }
+

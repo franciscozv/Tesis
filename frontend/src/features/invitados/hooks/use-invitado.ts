@@ -9,3 +9,4 @@ export function useInvitado(id: number) {
     enabled: !!id,
   });
 }
+

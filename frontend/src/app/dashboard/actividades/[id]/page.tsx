@@ -62,7 +62,7 @@ import { SugerirCandidatoModal } from '@/features/candidatos/components/sugerir-
 import { useSugerirCandidatosRol } from '@/features/candidatos/hooks/use-sugerir-candidatos-rol';
 import type { Candidato } from '@/features/candidatos/types';
 import {
-  rolesActividadHooks,
+  responsabilidadesActividadHooks,
   tiposActividadHooks,
   tiposNecesidadHooks,
 } from '@/features/catalogos/hooks';
@@ -161,7 +161,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const { data: invitados, isLoading: loadingInvitados } = useInvitadosActividad(actividadId);
   const { data: necesidades, isLoading: loadingNecesidades } = useNecesidadesActividad(actividadId);
   const { data: miembros } = useMiembros();
-  const { data: rolesActividad } = rolesActividadHooks.useAllActivos();
+  const { data: responsabilidadesActividad } = responsabilidadesActividadHooks.useAllActivos();
   const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
   const isAdmin = usuario?.rol === 'administrador';
 
@@ -184,12 +184,12 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const [sugerirOpen, setSugerirOpen] = useState(false);
   const [deletingInvitadoId, setDeletingInvitadoId] = useState<number | null>(null);
   const [invitarDefaults, setInvitarDefaults] = useState<
-    { miembro_id?: number; rol_id?: number } | undefined
+    { miembro_id?: number; responsabilidad_id?: number } | undefined
   >();
 
-  function handleInvitarFromCandidato(candidato: Candidato, rolId: number) {
+  function handleInvitarFromCandidato(candidato: Candidato, responsabilidadId: number) {
     setSugerirOpen(false);
-    setInvitarDefaults({ miembro_id: candidato.miembro_id, rol_id: rolId });
+    setInvitarDefaults({ miembro_id: candidato.miembro_id, responsabilidad_id: responsabilidadId });
     setInvitarOpen(true);
   }
 
@@ -201,9 +201,9 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
     : null;
 
-  const rolesMap = useMemo(
-    () => new Map(rolesActividad?.map((r) => [r.id_rol, r])),
-    [rolesActividad],
+  const responsabilidadesMap = useMemo(
+    () => new Map(responsabilidadesActividad?.map((r) => [r.id_responsabilidad, r])),
+    [responsabilidadesActividad],
   );
   const tiposNecesidadMap = useMemo(
     () => new Map(tiposNecesidad?.map((t) => [t.id_tipo, t])),
@@ -428,8 +428,8 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                     <TableCell>
                       <Badge variant="outline">
                         {inv.rol?.nombre ??
-                          rolesMap.get(inv.rol_id)?.nombre ??
-                          `Rol #${inv.rol_id}`}
+                          responsabilidadesMap.get(inv.responsabilidad_id)?.nombre ??
+                          `Responsabilidad #${inv.responsabilidad_id}`}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -563,7 +563,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         open={invitarOpen}
         onOpenChange={setInvitarOpen}
         miembros={miembros}
-        rolesActividad={rolesActividad}
+        responsabilidadesActividad={responsabilidadesActividad}
         defaultValues={invitarDefaults}
         excludeMiembroId={usuario?.miembro_id ?? undefined}
       />
@@ -574,7 +574,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         defaultFecha={actividad?.fecha ?? ''}
         actividadId={actividadId}
         isAdmin={isAdmin}
-        rolesActividad={rolesActividad}
+        responsabilidadesActividad={responsabilidadesActividad}
         sugerirMutation={sugerirMutation}
         onInvitar={handleInvitarFromCandidato}
       />

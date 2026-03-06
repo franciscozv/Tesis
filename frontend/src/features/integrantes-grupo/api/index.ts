@@ -3,15 +3,15 @@ import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import apiClient from '@/lib/api-client';
 import type { CambiarRolInput, DesvincularMiembroInput, VincularMiembroInput } from '../types';
 
-export const integranteCuerpoApi = {
+export const integranteGrupoApi = {
   vincular: async (input: VincularMiembroInput) => {
-    const { data } = await apiClient.post<ApiResponse<MiembroGrupo>>('/integrantes-cuerpo', input);
+    const { data } = await apiClient.post<ApiResponse<MiembroGrupo>>('/integrantes-grupo', input);
     return data.responseObject;
   },
 
   desvincular: async (id: number, input?: DesvincularMiembroInput) => {
     const { data } = await apiClient.patch<ApiResponse<MiembroGrupo>>(
-      `/integrantes-cuerpo/${id}/desvincular`,
+      `/integrantes-grupo/${id}/desvincular`,
       input ?? {},
     );
     return data.responseObject;
@@ -19,7 +19,7 @@ export const integranteCuerpoApi = {
 
   cambiarRol: async (id: number, input: CambiarRolInput) => {
     const { data } = await apiClient.patch<ApiResponse<MiembroGrupo>>(
-      `/integrantes-cuerpo/${id}/cambiar-rol`,
+      `/integrantes-grupo/${id}/cambiar-rol`,
       input,
     );
     return data.responseObject;
@@ -27,15 +27,16 @@ export const integranteCuerpoApi = {
 
   getByMiembro: async (miembroId: number) => {
     const { data } = await apiClient.get<ApiResponse<MiembroGrupo[]>>(
-      `/integrantes-cuerpo/miembro/${miembroId}`,
+      `/integrantes-grupo/miembro/${miembroId}`,
     );
     return data.responseObject;
   },
 
   getByGrupo: async (grupoId: number) => {
     const { data } = await apiClient.get<ApiResponse<MiembroGrupo[]>>(
-      `/integrantes-cuerpo/grupo/${grupoId}`,
+      `/integrantes-grupo/grupo/${grupoId}`,
     );
     return data.responseObject;
   },
 };
+

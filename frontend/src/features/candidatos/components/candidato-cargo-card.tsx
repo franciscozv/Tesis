@@ -43,11 +43,11 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
 
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-          {/* Experiencia en el cargo dentro del cuerpo */}
+          {/* Experiencia en el cargo dentro del grupo */}
           <div className="flex items-center gap-1.5 text-sm">
             <Award className="size-3.5 shrink-0 text-amber-500" />
-            <span className="text-muted-foreground">En este cuerpo:</span>
-            <span className="ml-auto font-medium">{indicadores.experiencia_cargo_en_cuerpo}×</span>
+            <span className="text-muted-foreground">En este grupo:</span>
+            <span className="ml-auto font-medium">{indicadores.experiencia_cargo_en_grupo}×</span>
           </div>
 
           {/* Grupos activos — menos es mejor */}
@@ -82,3 +82,4 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
     </Card>
   );
 }
+

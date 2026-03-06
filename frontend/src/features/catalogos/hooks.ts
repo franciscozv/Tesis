@@ -70,17 +70,17 @@ function createCatalogoHooks<T, TCreate, TUpdate>(
   return { useAll, useAllActivos, useCreate, useUpdate, useDelete, useToggleEstado };
 }
 
-import { rolesActividadApi, rolesGrupoApi, tiposActividadApi, tiposNecesidadApi } from './api';
+import { responsabilidadesActividadApi, rolesGrupoApi, tiposActividadApi, tiposNecesidadApi } from './api';
 import type {
-  CreateRolActividadInput,
+  CreateResponsabilidadActividadInput,
   CreateRolGrupoInput,
   CreateTipoActividadInput,
   CreateTipoNecesidadInput,
-  RolActividad,
+  ResponsabilidadActividad,
   RolGrupo,
   TipoActividad,
   TipoNecesidad,
-  UpdateRolActividadInput,
+  UpdateResponsabilidadActividadInput,
   UpdateRolGrupoInput,
   UpdateTipoActividadInput,
   UpdateTipoNecesidadInput,
@@ -92,11 +92,11 @@ export const rolesGrupoHooks = createCatalogoHooks<
   UpdateRolGrupoInput
 >('roles-grupo', rolesGrupoApi);
 
-export const rolesActividadHooks = createCatalogoHooks<
-  RolActividad,
-  CreateRolActividadInput,
-  UpdateRolActividadInput
->('roles-actividad', rolesActividadApi);
+export const responsabilidadesActividadHooks = createCatalogoHooks<
+  ResponsabilidadActividad,
+  CreateResponsabilidadActividadInput,
+  UpdateResponsabilidadActividadInput
+>('responsabilidades-actividad', responsabilidadesActividadApi);
 
 export const tiposActividadHooks = createCatalogoHooks<
   TipoActividad,
@@ -109,3 +109,4 @@ export const tiposNecesidadHooks = createCatalogoHooks<
   CreateTipoNecesidadInput,
   UpdateTipoNecesidadInput
 >('tipos-necesidad', tiposNecesidadApi);
+

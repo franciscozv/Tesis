@@ -25,17 +25,17 @@ export interface UpdateRolGrupoInput {
 }
 
 // --- Roles Actividad ---
-export interface RolActividad extends CatalogoBase {
-  id_rol: number;
+export interface ResponsabilidadActividad extends CatalogoBase {
+  id_responsabilidad: number;
   descripcion: string | null;
 }
 
-export interface CreateRolActividadInput {
+export interface CreateResponsabilidadActividadInput {
   nombre: string;
   descripcion?: string;
 }
 
-export type UpdateRolActividadInput = Partial<CreateRolActividadInput>;
+export type UpdateResponsabilidadActividadInput = Partial<CreateResponsabilidadActividadInput>;
 
 // --- Tipos Actividad ---
 export interface TipoActividad extends CatalogoBase {
@@ -64,3 +64,5 @@ export interface CreateTipoNecesidadInput {
 }
 
 export type UpdateTipoNecesidadInput = Partial<CreateTipoNecesidadInput>;
+
+

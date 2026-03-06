@@ -129,3 +129,4 @@ export function ColorCell({ color }: { color: string }) {
     </div>
   );
 }
+

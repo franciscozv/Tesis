@@ -86,3 +86,4 @@ export const cambiarEstadoActividadSchema = z
 export type CreateActividadFormData = z.infer<typeof createActividadSchema>;
 export type UpdateActividadFormData = z.infer<typeof updateActividadSchema>;
 export type CambiarEstadoActividadFormData = z.infer<typeof cambiarEstadoActividadSchema>;
+

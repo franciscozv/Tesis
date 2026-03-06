@@ -493,11 +493,11 @@ Cambiar estado de membresía. *(RF_05)*
 
 ---
 
-## 4. Grupos Ministeriales (`/api/grupos-ministeriales`)
+## 4. Grupos Ministeriales (`/api/grupos`)
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
-### GET `/api/grupos-ministeriales`
+### GET `/api/grupos`
 
 Listar todos los grupos ministeriales activos.
 
@@ -524,7 +524,7 @@ Listar todos los grupos ministeriales activos.
 
 ---
 
-### GET `/api/grupos-ministeriales/:id`
+### GET `/api/grupos/:id`
 
 Obtener grupo por ID.
 
@@ -532,7 +532,7 @@ Obtener grupo por ID.
 
 ---
 
-### POST `/api/grupos-ministeriales`
+### POST `/api/grupos`
 
 Crear nuevo grupo ministerial.
 
@@ -555,7 +555,7 @@ Crear nuevo grupo ministerial.
 
 ---
 
-### PUT `/api/grupos-ministeriales/:id`
+### PUT `/api/grupos/:id`
 
 Actualizar grupo ministerial.
 
@@ -565,7 +565,7 @@ Actualizar grupo ministerial.
 
 ---
 
-### DELETE `/api/grupos-ministeriales/:id`
+### DELETE `/api/grupos/:id`
 
 Eliminación lógica (soft delete).
 
@@ -1004,7 +1004,7 @@ Listar invitaciones con filtros opcionales.
       "id": 1,
       "actividad_id": 1,
       "miembro_id": 5,
-      "rol_id": 2,
+      "responsabilidad_id": 2,
       "estado": "pendiente",
       "motivo_rechazo": null,
       "asistio": false,
@@ -1038,7 +1038,7 @@ Crear invitación para un miembro a una actividad.
 {
   "actividad_id": 1,
   "miembro_id": 5,
-  "rol_id": 2
+  "responsabilidad_id": 2
 }
 ```
 
@@ -1046,7 +1046,7 @@ Crear invitación para un miembro a una actividad.
 |-------|------|-----------|-------------|
 | `actividad_id` | number | Sí | ID de la actividad |
 | `miembro_id` | number | Sí | ID del miembro invitado |
-| `rol_id` | number | Sí | ID del rol de actividad asignado |
+| `responsabilidad_id` | number | Sí | ID del responsabilidad de actividad asignado |
 
 ---
 
@@ -1310,22 +1310,22 @@ Eliminar colaboración (solo si está pendiente).
 
 > Todos requieren `Bearer Token` + rol `administrador` o `lider`.
 
-### POST `/api/candidatos/sugerir-rol`
+### POST `/api/candidatos/sugerir-responsabilidad`
 
-Sugerir candidatos ideales para un rol de actividad (scoring automático).
+Sugerir candidatos ideales para un responsabilidad de actividad (scoring automático).
 
 **Request Body:**
 
 ```json
 {
-  "rol_id": 5,
+  "responsabilidad_id": 5,
   "fecha": "2025-03-15"
 }
 ```
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `rol_id` | number | Sí | ID del rol de actividad |
+| `responsabilidad_id` | number | Sí | ID del responsabilidad de actividad |
 | `fecha` | string | Sí | Fecha de la actividad `YYYY-MM-DD` |
 
 **Response 200:**
@@ -1387,7 +1387,7 @@ Sugerir candidatos ideales para un cargo de grupo (scoring automático).
 | `cargo_id` | number | Sí | ID del rol de grupo |
 | `fecha` | string | Sí | Fecha de referencia `YYYY-MM-DD` |
 
-**Response 200:** Mismo formato que `sugerir-rol`.
+**Response 200:** Mismo formato que `sugerir-responsabilidad`.
 
 ---
 
@@ -1475,7 +1475,7 @@ Obtener responsabilidades futuras confirmadas de un miembro.
         "hora_fin": "11:30:00",
         "lugar": "Templo principal"
       },
-      "rol_asignado": {
+      "responsabilidad_asignada": {
         "id": 2,
         "nombre": "Músico"
       },
@@ -1527,23 +1527,23 @@ Obtener responsabilidades futuras confirmadas de un miembro.
 
 ---
 
-### 13.2 Roles de Actividad (`/api/roles-actividad`)
+### 13.2 Responsabilidades de Actividad (`/api/responsabilidades-actividad`)
 
 > Todos requieren `Bearer Token`. Escritura solo para `administrador`.
 
 | Método | Ruta | Roles | Descripción |
 |--------|------|-------|-------------|
-| GET | `/api/roles-actividad` | Todos | Listar roles de actividad activos |
-| GET | `/api/roles-actividad/:id` | Todos | Obtener rol por ID |
-| POST | `/api/roles-actividad` | Admin | Crear rol de actividad |
-| PUT | `/api/roles-actividad/:id` | Admin | Actualizar rol de actividad |
-| DELETE | `/api/roles-actividad/:id` | Admin | Eliminación lógica |
+| GET | `/api/responsabilidades-actividad` | Todos | Listar responsabilidades de actividad activos |
+| GET | `/api/responsabilidades-actividad/:id` | Todos | Obtener rol por ID |
+| POST | `/api/responsabilidades-actividad` | Admin | Crear responsabilidad de actividad |
+| PUT | `/api/responsabilidades-actividad/:id` | Admin | Actualizar responsabilidad de actividad |
+| DELETE | `/api/responsabilidades-actividad/:id` | Admin | Eliminación lógica |
 
-**Schema RolActividad:**
+**Schema ResponsabilidadActividad:**
 
 ```json
 {
-  "id_rol": 1,
+  "id_responsabilidad": 1,
   "nombre": "Coordinador",
   "descripcion": "Coordinador de la actividad",
   "activo": true,
@@ -1736,7 +1736,7 @@ Registrar cambio de estado (actualiza automáticamente el miembro).
    }
    → Obtener miembro.id (ej: 10)
 
-2. GET /api/grupos-ministeriales
+2. GET /api/grupos
    → Obtener id_grupo del grupo deseado (ej: 2)
 
 3. GET /api/roles-grupo
@@ -1769,18 +1769,18 @@ Registrar cambio de estado (actualiza automáticamente el miembro).
    }
    → Obtener actividad.id (ej: 20)
 
-3. GET /api/roles-actividad
-   → Obtener id_rol del rol a asignar (ej: 2)
+3. GET /api/responsabilidades-actividad
+   → Obtener id_responsabilidad del rol a asignar (ej: 2)
 
-4. POST /api/candidatos/sugerir-rol
-   Body: { "rol_id": 2, "fecha": "2025-03-15" }
+4. POST /api/candidatos/sugerir-responsabilidad
+   Body: { "responsabilidad_id": 2, "fecha": "2025-03-15" }
    → Ver candidatos sugeridos con scoring
 
 5. POST /api/invitados
    Body: {
      "actividad_id": 20,
      "miembro_id": 5,
-     "rol_id": 2
+     "responsabilidad_id": 2
    }
 
 6. (El miembro responde)
@@ -1856,7 +1856,7 @@ Registrar cambio de estado (actualiza automáticamente el miembro).
 | Autenticación | `/api/auth` | 4 | Mixto |
 | Usuarios | `/api/usuarios` | 5 | Admin |
 | Miembros | `/api/miembros` | 6 | Token + Admin(write) |
-| Grupos Ministeriales | `/api/grupos-ministeriales` | 5 | Token + Admin(write) |
+| Grupos Ministeriales | `/api/grupos` | 5 | Token + Admin(write) |
 | Membresía Grupo | `/api/comunion-grupo` | 4 | Token + Admin/Líder(write) |
 | Actividades | `/api/actividades` | 6 | Mixto |
 | Patrones | `/api/patrones` | 6 | Token + Admin(write) |
@@ -1866,7 +1866,7 @@ Registrar cambio de estado (actualiza automáticamente el miembro).
 | Candidatos | `/api/candidatos` | 2 | Admin/Líder |
 | Calendario | `/api/calendario` | 3 | Mixto |
 | Roles Grupo | `/api/roles-grupo` | 5 | Token + Admin(write) |
-| Roles Actividad | `/api/roles-actividad` | 5 | Token + Admin(write) |
+| Roles Actividad | `/api/responsabilidades-actividad` | 5 | Token + Admin(write) |
 | Tipos Actividad | `/api/tipos-actividad` | 5 | Token + Admin(write) |
 | Tipos Necesidad | `/api/tipos-necesidad` | 5 | Token + Admin(write) |
 | Historial Estado | `/api/historial-estado` | 3 | Admin |
@@ -1883,6 +1883,7 @@ Registrar cambio de estado (actualiza automáticamente el miembro).
 | POST | `/api/auth/reset-password` | Restablecer contraseña |
 | GET | `/api/actividades/publicas` | Actividades públicas futuras |
 | GET | `/api/calendario/publico` | Calendario público mensual |
+
 
 
 

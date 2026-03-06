@@ -222,3 +222,4 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
     </Dialog>
   );
 }
+

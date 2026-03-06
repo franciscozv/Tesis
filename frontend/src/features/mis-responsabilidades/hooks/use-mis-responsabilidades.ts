@@ -9,3 +9,4 @@ export function useMisResponsabilidades() {
     queryFn: misResponsabilidadesApi.getAll,
   });
 }
+

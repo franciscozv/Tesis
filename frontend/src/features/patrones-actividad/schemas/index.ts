@@ -35,3 +35,4 @@ export const generarInstanciasSchema = z.object({
 export type CreatePatronFormData = z.infer<typeof createPatronSchema>;
 export type UpdatePatronFormData = z.infer<typeof updatePatronSchema>;
 export type GenerarInstanciasFormData = z.infer<typeof generarInstanciasSchema>;
+

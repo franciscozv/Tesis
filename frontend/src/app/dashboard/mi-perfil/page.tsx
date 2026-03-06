@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { authApi } from '@/features/auth/api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { type CambiarPasswordFormData, cambiarPasswordSchema } from '@/features/auth/schemas';
-import { useAsignacionesMiembro } from '@/features/integrantes-cuerpo/hooks/use-integraciones-miembro';
+import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import { useUpdateMiPerfil } from '@/features/miembros/hooks/use-update-mi-perfil';
 import { type MiPerfilFormData, miPerfilSchema } from '@/features/miembros/schemas';
@@ -365,3 +365,4 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
     </div>
   );
 }
+

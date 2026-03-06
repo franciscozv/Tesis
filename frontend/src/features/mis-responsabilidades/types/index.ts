@@ -18,3 +18,4 @@ export interface Responsabilidad {
   cantidad_ofrecida?: number;
   invitado_id?: number;
 }
+

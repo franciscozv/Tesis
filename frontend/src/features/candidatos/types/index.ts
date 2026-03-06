@@ -31,7 +31,7 @@ export interface Candidato {
 }
 
 export interface SugerirRolInput {
-  rol_id: number;
+  responsabilidad_id: number;
   fecha: string;
   tipo_actividad_id?: number;
   /** ID de la actividad. Para rol 'usuario', restringe los candidatos al grupo de esa actividad. */
@@ -39,7 +39,7 @@ export interface SugerirRolInput {
   periodo_meses?: number;
   filtro_plena_comunion?: boolean;
   /** Solo para administradores: filtra candidatos de un grupo específico */
-  cuerpo_id?: number;
+  grupo_id?: number;
   /** Excluir candidatos sin experiencia previa en el rol */
   solo_con_experiencia?: boolean;
   /** Excluir candidatos con experiencia previa (rotación / nuevos talentos) */
@@ -53,7 +53,7 @@ export interface SugerirRolInput {
 // ─── Sugerir Cargo (indicadores crudos, sin scoring) ─────────────────────────
 
 export interface IndicadoresCargo {
-  experiencia_cargo_en_cuerpo: number;
+  experiencia_cargo_en_grupo: number;
   grupos_activos_count: number;
   asistencia_ratio_periodo: number;
   antiguedad_anios: number;
@@ -71,7 +71,7 @@ export interface CandidatoCargo {
 }
 
 export interface SugerirCargoMetadata {
-  cuerpo_id_usado: number;
+  grupo_id_usado: number;
   periodo_meses_usado: number;
   cargo_id: number;
   requiere_plena_comunion: boolean;
@@ -84,8 +84,9 @@ export interface SugerirCargoResponse {
 
 export interface SugerirCargoInput {
   cargo_id: number;
-  cuerpo_id?: number;
+  grupo_id?: number;
   periodo_meses?: number;
   solo_con_experiencia?: boolean;
   criterios_prioridad?: string[];
 }
+

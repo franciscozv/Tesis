@@ -7,3 +7,4 @@ export function useGenerarInstancias() {
     mutationFn: (input: GenerarInstanciasInput) => patronesApi.generarInstancias(input),
   });
 }
+

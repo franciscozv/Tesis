@@ -14,3 +14,4 @@ export interface DesvincularMiembroInput {
 export interface CambiarRolInput {
   rol_grupo_id: number;
 }
+

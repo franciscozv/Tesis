@@ -63,7 +63,7 @@ function responsabilidadToInvitado(r: Responsabilidad): Invitado {
     id: r.invitado_id!,
     actividad_id: r.actividad.id,
     miembro_id: 0,
-    rol_id: r.rol?.id ?? 0,
+    responsabilidad_id: r.rol?.id ?? 0,
     estado: r.estado_invitacion as Invitado['estado'],
     motivo_rechazo: null,
     asistio: false,
@@ -333,3 +333,4 @@ function ResponsabilidadesTable({
     </div>
   );
 }
+

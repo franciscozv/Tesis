@@ -35,3 +35,4 @@ export interface ApiResponse<T = null> {
   responseObject: T;
   statusCode: number;
 }
+

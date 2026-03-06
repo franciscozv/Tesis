@@ -146,3 +146,4 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
     </Card>
   );
 }
+

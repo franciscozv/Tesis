@@ -10,3 +10,4 @@ const publicApiClient = axios.create({
 });
 
 export default publicApiClient;
+

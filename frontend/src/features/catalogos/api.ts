@@ -46,15 +46,15 @@ function createCatalogoApi<T, TCreate, TUpdate>(
 }
 
 import type {
-  CreateRolActividadInput,
+  CreateResponsabilidadActividadInput,
   CreateRolGrupoInput,
   CreateTipoActividadInput,
   CreateTipoNecesidadInput,
-  RolActividad,
+  ResponsabilidadActividad,
   RolGrupo,
   TipoActividad,
   TipoNecesidad,
-  UpdateRolActividadInput,
+  UpdateResponsabilidadActividadInput,
   UpdateRolGrupoInput,
   UpdateTipoActividadInput,
   UpdateTipoNecesidadInput,
@@ -64,11 +64,11 @@ export const rolesGrupoApi = createCatalogoApi<RolGrupo, CreateRolGrupoInput, Up
   '/roles-grupo',
 );
 
-export const rolesActividadApi = createCatalogoApi<
-  RolActividad,
-  CreateRolActividadInput,
-  UpdateRolActividadInput
->('/roles-actividad');
+export const responsabilidadesActividadApi = createCatalogoApi<
+  ResponsabilidadActividad,
+  CreateResponsabilidadActividadInput,
+  UpdateResponsabilidadActividadInput
+>('/responsabilidades-actividad');
 
 export const tiposActividadApi = createCatalogoApi<
   TipoActividad,
@@ -81,3 +81,4 @@ export const tiposNecesidadApi = createCatalogoApi<
   CreateTipoNecesidadInput,
   UpdateTipoNecesidadInput
 >('/tipos-necesidad');
+

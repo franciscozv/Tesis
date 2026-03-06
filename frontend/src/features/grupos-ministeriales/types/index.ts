@@ -33,3 +33,4 @@ export interface MiembroGrupo {
     rut: string;
   };
 }
+

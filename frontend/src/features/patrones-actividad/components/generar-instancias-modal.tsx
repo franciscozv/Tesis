@@ -160,3 +160,4 @@ export function GenerarInstanciasModal({ open, onOpenChange }: GenerarInstancias
     </Dialog>
   );
 }
+

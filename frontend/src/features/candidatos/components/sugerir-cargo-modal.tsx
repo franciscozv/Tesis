@@ -64,7 +64,7 @@ const CRITERIOS_INFO = [
   {
     key: 'antiguedad',
     label: 'Antigüedad',
-    description: 'Más años en el cuerpo → mejor',
+    description: 'Más años en el grupo → mejor',
   },
 ] as const;
 
@@ -104,15 +104,15 @@ export function SugerirCargoModal({
 
   const [cargoId, setCargoId] = useState<string>('');
   const [periodoMeses, setPeriodoMeses] = useState<string>('12');
-  const [cuerpoId, setCuerpoId] = useState<string>('');
+  const [grupoId, setGrupoId] = useState<string>('');
   const [respuesta, setRespuesta] = useState<SugerirCargoResponse | null>(null);
 
   // Auto-selección si solo hay un grupo disponible (común para directiva)
   useEffect(() => {
-    if (open && gruposAMostrar?.length === 1 && !cuerpoId) {
-      setCuerpoId(String(gruposAMostrar[0].id_grupo));
+    if (open && gruposAMostrar?.length === 1 && !grupoId) {
+      setGrupoId(String(gruposAMostrar[0].id_grupo));
     }
-  }, [open, gruposAMostrar, cuerpoId]);
+  }, [open, gruposAMostrar, grupoId]);
 
   // Opciones avanzadas
   const [showOpciones, setShowOpciones] = useState(false);
@@ -123,8 +123,8 @@ export function SugerirCargoModal({
   const [usedCriterios, setUsedCriterios] = useState<string[]>([]);
   const [usedSoloExp, setUsedSoloExp] = useState(false);
 
-  // El botón se habilita cuando hay cargo y cuerpo elegido
-  const puedeHaceQuery = Boolean(cargoId) && Boolean(cuerpoId);
+  // El botón se habilita cuando hay cargo y grupo elegido
+  const puedeHaceQuery = Boolean(cargoId) && Boolean(grupoId);
 
   function moverArriba(index: number) {
     if (index === 0) return;
@@ -149,7 +149,7 @@ export function SugerirCargoModal({
     const body: SugerirCargoInput = {
       cargo_id: Number(cargoId),
       periodo_meses: Number(periodoMeses),
-      ...(cuerpoId ? { cuerpo_id: Number(cuerpoId) } : {}),
+      ...(grupoId ? { grupo_id: Number(grupoId) } : {}),
       solo_con_experiencia: soloExpEfectivo,
       criterios_prioridad: criteriosEfectivos,
     };
@@ -167,7 +167,7 @@ export function SugerirCargoModal({
     if (!value) {
       setCargoId('');
       setPeriodoMeses('12');
-      setCuerpoId('');
+      setGrupoId('');
       setRespuesta(null);
       setShowOpciones(false);
       setSoloConExperiencia(false);
@@ -185,7 +185,7 @@ export function SugerirCargoModal({
           <DialogTitle>Sugerir Candidatos para Cargo</DialogTitle>
           <DialogDescription>
             {isAdmin
-              ? 'Candidatos del cuerpo ordenados por experiencia, carga actual, asistencia y antigüedad.'
+              ? 'Candidatos del grupo ordenados por experiencia, carga actual, asistencia y antigüedad.'
               : 'Candidatos idóneos entre los miembros de tu grupo.'}
           </DialogDescription>
         </DialogHeader>
@@ -266,14 +266,14 @@ export function SugerirCargoModal({
             </Button>
           </div>
 
-          {/* Selector de cuerpo (obligatorio para filtrar) */}
+          {/* Selector de grupo (obligatorio para filtrar) */}
           <div>
             <Label className="mb-1.5 block">
-              {isAdmin ? 'Cuerpo' : 'Grupo'} <span className="text-destructive">*</span>
+              {isAdmin ? 'Grupo' : 'Grupo'} <span className="text-destructive">*</span>
             </Label>
-            <Select value={cuerpoId} onValueChange={setCuerpoId}>
+            <Select value={grupoId} onValueChange={setGrupoId}>
               <SelectTrigger>
-                <SelectValue placeholder={isAdmin ? 'Seleccionar cuerpo' : 'Seleccionar grupo'} />
+                <SelectValue placeholder={isAdmin ? 'Seleccionar grupo' : 'Seleccionar grupo'} />
               </SelectTrigger>
               <SelectContent>
                 {gruposAMostrar?.map((g) => (
@@ -389,8 +389,8 @@ export function SugerirCargoModal({
         {respuesta && (
           <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-1.5">
             <p className="font-medium">
-              Sugerencias para el cuerpo{' '}
-              <span className="text-foreground">#{respuesta.metadata.cuerpo_id_usado}</span>
+              Sugerencias para el grupo{' '}
+              <span className="text-foreground">#{respuesta.metadata.grupo_id_usado}</span>
               {' · '}
               últimos {respuesta.metadata.periodo_meses_usado} mes
               {respuesta.metadata.periodo_meses_usado !== 1 ? 'es' : ''}
@@ -432,7 +432,7 @@ export function SugerirCargoModal({
         {/* Sin resultados */}
         {respuesta && respuesta.candidatos.length === 0 && (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No se encontraron candidatos para este cargo en el cuerpo seleccionado.
+            No se encontraron candidatos para este cargo en el grupo seleccionado.
           </p>
         )}
 
@@ -448,3 +448,5 @@ export function SugerirCargoModal({
     </Dialog>
   );
 }
+
+

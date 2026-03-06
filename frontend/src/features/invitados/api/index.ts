@@ -49,3 +49,4 @@ export const invitadosApi = {
     await apiClient.delete(`/invitados/${id}`);
   },
 };
+
