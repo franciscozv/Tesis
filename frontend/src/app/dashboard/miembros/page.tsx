@@ -1,7 +1,7 @@
 'use client';
 
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
+import axios from 'axios';
+import { Plus, ShieldOff } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { CambiarEstadoModal } from '@/features/miembros/components/cambiar-estado-modal';
 import { getMiembrosColumns } from '@/features/miembros/components/columns';
 import { DataTable } from '@/features/miembros/components/data-table';
+import { MiembroFormModal } from '@/features/miembros/components/miembro-form-modal';
 import { useMiembrosPaginated } from '@/features/miembros/hooks/use-miembros';
 import type { EstadoComunion, Miembro } from '@/features/miembros/types';
 
@@ -29,6 +30,7 @@ export default function MiembrosPage() {
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoComunion | ''>('');
   const [estadoModal, setEstadoModal] = useState<Miembro | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const queryParams = useMemo(
     () => ({
@@ -40,7 +42,9 @@ export default function MiembrosPage() {
     [page, search, estadoFilter],
   );
 
-  const { data, isLoading, isFetching } = useMiembrosPaginated(queryParams);
+  const { data, isLoading, isFetching, error } = useMiembrosPaginated(queryParams);
+
+  const isForbidden = axios.isAxiosError(error) && error.response?.status === 403;
 
   const handleSearch = useCallback((value: string) => {
     setSearch(value);
@@ -57,6 +61,20 @@ export default function MiembrosPage() {
     [isAdmin],
   );
 
+  if (isForbidden) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+        <ShieldOff className="size-12 text-muted-foreground" />
+        <div>
+          <h2 className="text-xl font-semibold">Acceso restringido</h2>
+          <p className="text-muted-foreground mt-1">
+            Solo los miembros de directiva pueden ver la lista de miembros.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
@@ -65,11 +83,9 @@ export default function MiembrosPage() {
           <p className="text-muted-foreground">Gestión de miembros de la iglesia</p>
         </div>
         {isAdmin && (
-          <Button asChild>
-            <Link href="/dashboard/miembros/nuevo">
-              <Plus className="size-4" />
-              Nuevo Miembro
-            </Link>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            Nuevo Miembro
           </Button>
         )}
       </div>
@@ -102,6 +118,8 @@ export default function MiembrosPage() {
         page={page}
         onPageChange={setPage}
       />
+
+      <MiembroFormModal open={createOpen} onOpenChange={setCreateOpen} />
 
       <CambiarEstadoModal
         miembro={estadoModal}

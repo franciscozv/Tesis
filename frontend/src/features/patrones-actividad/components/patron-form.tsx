@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { CalendarClock, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -41,6 +42,54 @@ const frecuenciaLabels: Record<string, string> = {
   tercera_semana: 'Tercera semana',
   cuarta_semana: 'Cuarta semana',
 };
+
+function calcularHoraFin(horaInicio: string, duracionMinutos: number): string | null {
+  const match = horaInicio.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match || duracionMinutos <= 0) return null;
+  const totalMin = Number(match[1]) * 60 + Number(match[2]) + duracionMinutos;
+  const h = Math.floor(totalMin / 60) % 24;
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatDuracion(minutos: number): string {
+  if (minutos <= 0) return '';
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m} min`;
+}
+
+function buildResumen(
+  frecuencia: string,
+  diaSemana: number | string,
+  horaInicio: string,
+  duracion: number,
+): string | null {
+  const dia = diasSemana.find((d) => d.value === String(diaSemana));
+  if (!dia) return null;
+
+  const prefijos: Record<string, string> = {
+    semanal: `Todos los ${dia.label.toLowerCase()}s`,
+    primera_semana: `El primer ${dia.label.toLowerCase()} de cada mes`,
+    segunda_semana: `El segundo ${dia.label.toLowerCase()} de cada mes`,
+    tercera_semana: `El tercer ${dia.label.toLowerCase()} de cada mes`,
+    cuarta_semana: `El cuarto ${dia.label.toLowerCase()} de cada mes`,
+  };
+
+  const textoFrecuencia = prefijos[frecuencia];
+  if (!textoFrecuencia) return null;
+
+  if (!horaInicio) return textoFrecuencia;
+
+  const horaFin = calcularHoraFin(horaInicio, duracion);
+  const textoHora = horaFin
+    ? `${horaInicio} – ${horaFin} (${formatDuracion(duracion)})`
+    : `a las ${horaInicio}`;
+
+  return `${textoFrecuencia} · ${textoHora}`;
+}
 
 const diasSemana: { value: string; label: string }[] = [
   { value: '1', label: 'Lunes' },
@@ -107,6 +156,13 @@ export function PatronFormModal({
     }
   }, [open, defaultValues, form]);
 
+  const frecuencia = form.watch('frecuencia');
+  const diaSemana = form.watch('dia_semana');
+  const horaInicio = form.watch('hora_inicio');
+  const duracion = form.watch('duracion_minutos');
+
+  const resumen = buildResumen(frecuencia, diaSemana, horaInicio, Number(duracion));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -165,26 +221,40 @@ export function PatronFormModal({
             <FormField
               control={form.control}
               name="frecuencia"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Frecuencia *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(frecuenciaLabels).map(([val, label]) => (
-                        <SelectItem key={val} value={val}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const dia = diasSemana.find((d) => d.value === String(diaSemana));
+                const nombreDia = dia?.label.toLowerCase() ?? 'ese día';
+                const descripciones: Record<string, string> = {
+                  semanal: `Genera una actividad cada ${nombreDia} del mes`,
+                  primera_semana: `Genera una actividad el primer ${nombreDia} del mes`,
+                  segunda_semana: `Genera una actividad el segundo ${nombreDia} del mes`,
+                  tercera_semana: `Genera una actividad el tercer ${nombreDia} del mes`,
+                  cuarta_semana: `Genera una actividad el cuarto ${nombreDia} del mes`,
+                };
+                return (
+                  <FormItem>
+                    <FormLabel>Frecuencia *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(frecuenciaLabels).map(([val, label]) => (
+                          <SelectItem key={val} value={val}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {field.value && (
+                      <FormDescription>{descripciones[field.value]}</FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
@@ -297,6 +367,13 @@ export function PatronFormModal({
                 </FormItem>
               )}
             />
+
+            {resumen && (
+              <div className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground sm:col-span-2">
+                <CalendarClock className="mt-0.5 size-4 shrink-0" />
+                <span>{resumen}</span>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

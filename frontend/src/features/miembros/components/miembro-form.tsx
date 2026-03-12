@@ -32,6 +32,7 @@ interface MiembroFormProps {
   disableRut?: boolean;
   allowEstadoComunion?: boolean;
   apiErrors?: Partial<Record<keyof CreateMiembroFormData, string>>;
+  onCancel?: () => void;
 }
 
 export function MiembroForm({
@@ -42,6 +43,7 @@ export function MiembroForm({
   disableRut = false,
   allowEstadoComunion = true,
   apiErrors,
+  onCancel,
 }: MiembroFormProps) {
   const form = useForm<CreateMiembroFormData>({
     resolver: zodResolver(createMiembroSchema),
@@ -226,6 +228,11 @@ export function MiembroForm({
           )}
         />
         <div className="flex justify-end gap-2 sm:col-span-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          )}
           <Button type="submit" disabled={isPending}>
             {isPending && <Loader2 className="animate-spin" />}
             {submitLabel}

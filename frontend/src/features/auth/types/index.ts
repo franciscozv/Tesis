@@ -3,6 +3,7 @@ export interface Usuario {
   email: string;
   rol: 'administrador' | 'usuario';
   miembro_id: number | null;
+  es_directiva: boolean;
 }
 
 export interface LoginRequest {

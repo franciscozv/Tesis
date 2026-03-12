@@ -64,7 +64,6 @@ export const CreateUsuarioSchema = z.object({
       .number()
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
-      .optional()
       .openapi({ example: 5 }),
   }),
 });

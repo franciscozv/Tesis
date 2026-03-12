@@ -13,6 +13,7 @@ export const LoginResponseSchema = z.object({
     email: z.string().email().openapi({ example: 'admin@iglesia.cl' }),
     rol: z.enum(['administrador', 'usuario']).openapi({ example: 'administrador' }),
     miembro_id: z.number().nullable().openapi({ example: 5 }),
+    es_directiva: z.boolean().openapi({ example: false }),
   }),
 });
 

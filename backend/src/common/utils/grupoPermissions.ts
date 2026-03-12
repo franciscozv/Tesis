@@ -34,6 +34,23 @@ export async function isEncargadoDeGrupo(miembroId: number, grupoId: number): Pr
 }
 
 /**
+ * Verifica si un miembro tiene privilegios de directiva en AL MENOS un grupo.
+ * Usado para decidir si puede acceder a recursos globales (ej: lista de miembros).
+ */
+export async function isDirectivaEnAlgunGrupo(miembroId: number): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('integrante_grupo')
+    .select('rol_grupo!inner(es_directiva)')
+    .eq('miembro_id', miembroId)
+    .is('fecha_desvinculacion', null);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return false;
+
+  return (data as any[]).some((row) => row.rol_grupo.es_directiva === true);
+}
+
+/**
  * Retorna un ServiceResponse 403 si el miembro NO es encargado vigente del grupo.
  * Retorna null si está autorizado (la ejecución puede continuar).
  *

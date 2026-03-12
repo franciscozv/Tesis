@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { type DefaultValues, type FieldValues, type Path, useForm } from 'react-hook-form';
 import type { ZodType } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ interface CatalogoFormModalProps<T extends FieldValues> {
   defaultValues: DefaultValues<T>;
   onSubmit: (data: T) => void;
   isPending: boolean;
+  serverError?: string | null;
 }
 
 export function CatalogoFormModal<T extends FieldValues>({
@@ -58,6 +59,7 @@ export function CatalogoFormModal<T extends FieldValues>({
   defaultValues,
   onSubmit,
   isPending,
+  serverError,
 }: CatalogoFormModalProps<T>) {
   // Use FieldValues for useForm to avoid generic incompatibility with zodResolver
   const form = useForm({
@@ -66,13 +68,23 @@ export function CatalogoFormModal<T extends FieldValues>({
     defaultValues: defaultValues as DefaultValues<FieldValues>,
   });
 
+  const prevServerError = useRef<string | null | undefined>(null);
+
   useEffect(() => {
     if (open) {
       form.reset(defaultValues as DefaultValues<FieldValues>);
     }
   }, [open, defaultValues, form]);
 
+  useEffect(() => {
+    if (serverError && serverError !== prevServerError.current) {
+      form.setError('root', { message: serverError });
+    }
+    prevServerError.current = serverError;
+  }, [serverError, form]);
+
   function handleSubmit(data: FieldValues) {
+    form.clearErrors('root');
     onSubmit(data as T);
   }
 
@@ -151,6 +163,9 @@ export function CatalogoFormModal<T extends FieldValues>({
                 )}
               />
             ))}
+            {form.formState.errors.root && (
+              <p className="text-destructive text-sm">{form.formState.errors.root.message}</p>
+            )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar

@@ -15,7 +15,12 @@ export function useCreateUsuario() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateUsuarioInput) => usuariosApi.create(input),
-    onSuccess: () => {
+    onSuccess: (nuevoUsuario) => {
+      if (nuevoUsuario) {
+        queryClient.setQueryData<typeof nuevoUsuario[]>([USUARIOS_QUERY_KEY], (prev) =>
+          prev ? [nuevoUsuario, ...prev] : [nuevoUsuario],
+        );
+      }
       queryClient.invalidateQueries({ queryKey: [USUARIOS_QUERY_KEY] });
     },
   });

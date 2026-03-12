@@ -6,6 +6,7 @@ import { ServiceResponse } from '@/common/models/serviceResponse';
 import { emailService } from '@/common/utils/emailService';
 import { env } from '@/common/utils/envConfig';
 import { logger } from '@/server';
+import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
 import type { LoginResponse } from './authModel';
 import { AuthRepository } from './authRepository';
 
@@ -60,6 +61,12 @@ export class AuthService {
       // Actualizar último acceso
       await this.authRepository.updateUltimoAccesoAsync(usuario.id);
 
+      // Verificar si el usuario es directiva en algún grupo
+      const esDirectiva =
+        rolNormalizado === 'usuario' && usuario.miembro_id !== null
+          ? await isDirectivaEnAlgunGrupo(usuario.miembro_id)
+          : false;
+
       const loginResponse: LoginResponse = {
         token,
         usuario: {
@@ -67,6 +74,7 @@ export class AuthService {
           email: usuario.email,
           rol: rolNormalizado,
           miembro_id: usuario.miembro_id,
+          es_directiva: esDirectiva,
         },
       };
 

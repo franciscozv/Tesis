@@ -13,6 +13,7 @@ class MiembrosController {
   public getAll: RequestHandler = async (req: Request, res: Response) => {
     const serviceResponse = await miembrosService.findAllPaginated(
       req.query as unknown as GetMiembrosQuery,
+      req.usuario!,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -22,7 +23,7 @@ class MiembrosController {
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
-    const serviceResponse = await miembrosService.findById(id);
+    const serviceResponse = await miembrosService.findById(id, req.usuario!);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

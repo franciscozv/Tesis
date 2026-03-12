@@ -25,6 +25,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: Usuario['rol'][];
+  requiresDirectiva?: boolean;
 }
 
 interface NavGroup {
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
         href: '/dashboard/miembros',
         icon: Users,
         roles: ['administrador', 'usuario'],
+        requiresDirectiva: true,
       },
       {
         label: 'Grupos Ministeriales',
@@ -115,6 +117,7 @@ export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const { usuario } = useAuth();
   const rol = usuario?.rol ?? 'usuario';
+  const isAdmin = rol === 'administrador';
 
   return (
     <aside
@@ -143,7 +146,11 @@ export function Sidebar({ className }: { className?: string }) {
       {/* Navegación */}
       <nav className="flex flex-1 flex-col overflow-y-auto px-3 py-4 gap-5">
         {navGroups.map((group) => {
-          const visibleItems = group.items.filter((item) => item.roles.includes(rol));
+          const visibleItems = group.items.filter((item) => {
+            if (!item.roles.includes(rol)) return false;
+            if (item.requiresDirectiva && !isAdmin && !usuario?.es_directiva) return false;
+            return true;
+          });
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>

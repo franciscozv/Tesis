@@ -6,7 +6,7 @@ export const createUsuarioSchema = z.object({
   email: z.string().email('Email inválido').max(100),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(100),
   rol: rolEnum,
-  miembro_id: z.coerce.number().int().positive().optional().or(z.literal(0)),
+  miembro_id: z.coerce.number().int().positive('Debe seleccionar un miembro'),
 });
 
 export const updateUsuarioSchema = z.object({

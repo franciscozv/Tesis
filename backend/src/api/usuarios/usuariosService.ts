@@ -78,7 +78,7 @@ export class UsuariosService {
     email: string;
     password: string;
     rol: (typeof ROLES_USUARIO)[number];
-    miembro_id?: number;
+    miembro_id: number;
   }): Promise<ServiceResponse<Usuario | null>> {
     try {
       // Validar email único
@@ -91,30 +91,26 @@ export class UsuariosService {
         );
       }
 
-      // Validar que el miembro exista (si se proporcionó)
-      if (usuarioData.miembro_id) {
-        const miembroExiste = await this.usuariosRepository.miembroExistsAsync(
-          usuarioData.miembro_id,
+      // Validar que el miembro exista y esté activo
+      const miembroExiste = await this.usuariosRepository.miembroExistsAsync(usuarioData.miembro_id);
+      if (!miembroExiste) {
+        return ServiceResponse.failure(
+          'El miembro especificado no existe o no está activo',
+          null,
+          StatusCodes.BAD_REQUEST,
         );
-        if (!miembroExiste) {
-          return ServiceResponse.failure(
-            'El miembro especificado no existe o no está activo',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
+      }
 
-        // Validar que el miembro no tenga ya un usuario
-        const miembroTieneUsuario = await this.usuariosRepository.miembroHasUsuarioAsync(
-          usuarioData.miembro_id,
+      // Validar que el miembro no tenga ya un usuario
+      const miembroTieneUsuario = await this.usuariosRepository.miembroHasUsuarioAsync(
+        usuarioData.miembro_id,
+      );
+      if (miembroTieneUsuario) {
+        return ServiceResponse.failure(
+          'El miembro especificado ya tiene un usuario asociado',
+          null,
+          StatusCodes.CONFLICT,
         );
-        if (miembroTieneUsuario) {
-          return ServiceResponse.failure(
-            'El miembro especificado ya tiene un usuario asociado',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
       }
 
       // Hashear password

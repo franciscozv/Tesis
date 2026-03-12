@@ -27,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePatrones } from '../hooks/use-patrones';
 import { useGenerarInstancias } from '../hooks/use-generar-instancias';
 import { type GenerarInstanciasFormData, generarInstanciasSchema } from '../schemas';
+import type { PatronActividad } from '../types';
 
 const meses = [
   { value: '1', label: 'Enero' },
@@ -48,6 +50,39 @@ const meses = [
 const currentYear = new Date().getFullYear();
 const anios = Array.from({ length: 7 }, (_, i) => currentYear + i - 1);
 
+/**
+ * Calcula las fechas (días del mes) que generaría un patrón para un mes/año dado.
+ * dia_semana: 1=Lunes … 6=Sábado, 7=Domingo (convención del form)
+ * Date.getDay(): 0=Domingo, 1=Lunes … 6=Sábado
+ */
+function calcularFechasPatron(patron: PatronActividad, mes: number, anio: number): Date[] {
+  const jsDia = patron.dia_semana === 7 ? 0 : patron.dia_semana;
+  const diasEnMes = new Date(anio, mes, 0).getDate();
+
+  const coincidencias: Date[] = [];
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fecha = new Date(anio, mes - 1, d);
+    if (fecha.getDay() === jsDia) {
+      coincidencias.push(fecha);
+    }
+  }
+
+  switch (patron.frecuencia) {
+    case 'semanal':
+      return coincidencias;
+    case 'primera_semana':
+      return coincidencias.slice(0, 1);
+    case 'segunda_semana':
+      return coincidencias.slice(1, 2);
+    case 'tercera_semana':
+      return coincidencias.slice(2, 3);
+    case 'cuarta_semana':
+      return coincidencias.slice(3, 4);
+    default:
+      return [];
+  }
+}
+
 interface GenerarInstanciasModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +90,7 @@ interface GenerarInstanciasModalProps {
 
 export function GenerarInstanciasModal({ open, onOpenChange }: GenerarInstanciasModalProps) {
   const mutation = useGenerarInstancias();
+  const { data: patrones } = usePatrones();
 
   const form = useForm<GenerarInstanciasFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce creates input type mismatch with zodResolver
@@ -64,6 +100,19 @@ export function GenerarInstanciasModal({ open, onOpenChange }: GenerarInstancias
       anio: currentYear,
     },
   });
+
+  const mesSeleccionado = Number(form.watch('mes'));
+  const anioSeleccionado = Number(form.watch('anio'));
+
+  const patronesActivos = patrones?.filter((p) => p.activo) ?? [];
+
+  const preview = patronesActivos.map((patron) => ({
+    patron,
+    fechas: calcularFechasPatron(patron, mesSeleccionado, anioSeleccionado),
+  }));
+
+  const totalInstancias = preview.reduce((acc, { fechas }) => acc + fechas.length, 0);
+  const nombreMes = meses.find((m) => m.value === String(mesSeleccionado))?.label ?? '';
 
   function onSubmit(data: GenerarInstanciasFormData) {
     mutation.mutate(data, {
@@ -141,11 +190,41 @@ export function GenerarInstanciasModal({ open, onOpenChange }: GenerarInstancias
               )}
             />
 
+            {/* Vista previa de fechas */}
+            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Vista previa · {nombreMes} {anioSeleccionado}
+              </p>
+              {patronesActivos.length === 0 ? (
+                <p className="text-muted-foreground">No hay patrones activos.</p>
+              ) : (
+                <ul className="max-h-40 space-y-2 overflow-y-auto">
+                  {preview.map(({ patron, fechas }) => (
+                    <li key={patron.id} className="grid grid-cols-[1fr_auto] gap-x-3">
+                      <span className="truncate font-medium">{patron.nombre}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {fechas.length === 0
+                          ? 'sin fechas'
+                          : `días ${fechas.map((f) => f.getDate()).join(', ')}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {patronesActivos.length > 0 && (
+                <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
+                  {totalInstancias === 0
+                    ? 'No se crearán actividades este mes.'
+                    : `${totalInstancias} actividad${totalInstancias !== 1 ? 'es' : ''} a crear (se omiten duplicados)`}
+                </p>
+              )}
+            </div>
+
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button type="submit" disabled={mutation.isPending || totalInstancias === 0}>
                 {mutation.isPending ? (
                   <Loader2 className="animate-spin" />
                 ) : (

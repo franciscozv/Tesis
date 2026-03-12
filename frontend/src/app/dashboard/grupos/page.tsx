@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/table';
 import { gruposApi } from '@/features/grupos-ministeriales/api';
 import { GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { GrupoFormModal } from '@/features/grupos-ministeriales/components/grupo-form-modal';
 import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
 import { MIS_GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
@@ -44,6 +45,7 @@ export default function GruposPage() {
 
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<GrupoMinisterial | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => gruposApi.delete(id),
@@ -69,11 +71,9 @@ export default function GruposPage() {
           <p className="text-muted-foreground">Gestión de grupos de la iglesia</p>
         </div>
         {isAdmin && (
-          <Button asChild>
-            <Link href="/dashboard/grupos/nuevo">
-              <Plus className="size-4" />
-              Nuevo Grupo
-            </Link>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            Nuevo Grupo
           </Button>
         )}
       </div>
@@ -168,6 +168,8 @@ export default function GruposPage() {
           </div>
         </CardContent>
       </Card>
+
+      <GrupoFormModal open={createOpen} onOpenChange={setCreateOpen} />
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>

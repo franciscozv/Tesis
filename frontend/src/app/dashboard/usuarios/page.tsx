@@ -26,7 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useMiembrosPaginated } from '@/features/miembros/hooks/use-miembros';
-import { UsuarioFormModal } from '@/features/usuarios/components/usuario-form-modal';
+import { UsuarioFormModal, type SuccessCredentials } from '@/features/usuarios/components/usuario-form-modal';
 import {
   useCambiarEstadoUsuario,
   useCreateUsuario,
@@ -57,8 +57,15 @@ export default function UsuariosPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Usuario | null>(null);
   const [toggling, setToggling] = useState<Usuario | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [successCredentials, setSuccessCredentials] = useState<SuccessCredentials | null>(null);
 
   const miembrosMap = useMemo(() => new Map(miembros?.map((m) => [m.id, m])), [miembros]);
+
+  // biome-ignore lint/suspicious/noExplicitAny: Axios error shape
+  function extractApiMessage(error: any, fallback: string): string {
+    return error?.response?.data?.message ?? fallback;
+  }
 
   function handleCreate(data: CreateUsuarioFormData) {
     const input = {
@@ -67,17 +74,18 @@ export default function UsuariosPage() {
       rol: data.rol,
       miembro_id: data.miembro_id && data.miembro_id > 0 ? data.miembro_id : undefined,
     };
+    setServerError(null);
     createMutation.mutate(input, {
       onSuccess: () => {
-        toast.success('Usuario creado exitosamente');
-        setFormOpen(false);
+        setSuccessCredentials({ email: input.email, password: input.password });
       },
-      onError: () => toast.error('Error al crear usuario'),
+      onError: (error) => setServerError(extractApiMessage(error, 'Error al crear usuario')),
     });
   }
 
   function handleUpdate(data: UpdateUsuarioFormData) {
     if (!editing) return;
+    setServerError(null);
     updateMutation.mutate(
       { id: editing.id, input: data },
       {
@@ -86,7 +94,8 @@ export default function UsuariosPage() {
           setFormOpen(false);
           setEditing(null);
         },
-        onError: () => toast.error('Error al actualizar usuario'),
+        onError: (error) =>
+          setServerError(extractApiMessage(error, 'Error al actualizar usuario')),
       },
     );
   }
@@ -107,11 +116,14 @@ export default function UsuariosPage() {
 
   function openEdit(usuario: Usuario) {
     setEditing(usuario);
+    setServerError(null);
     setFormOpen(true);
   }
 
   function openCreate() {
     setEditing(null);
+    setServerError(null);
+    setSuccessCredentials(null);
     setFormOpen(true);
   }
 
@@ -226,13 +238,20 @@ export default function UsuariosPage() {
         open={formOpen}
         onOpenChange={(open) => {
           setFormOpen(open);
-          if (!open) setEditing(null);
+          if (!open) {
+            setEditing(null);
+            setServerError(null);
+            setSuccessCredentials(null);
+          }
         }}
         editing={editing}
         miembros={miembros}
+        usuarios={usuarios}
         isPending={createMutation.isPending || updateMutation.isPending}
         onCreateSubmit={handleCreate}
         onUpdateSubmit={handleUpdate}
+        serverError={serverError}
+        successCredentials={successCredentials}
       />
 
       <AlertDialog open={!!toggling} onOpenChange={(open) => !open && setToggling(null)}>

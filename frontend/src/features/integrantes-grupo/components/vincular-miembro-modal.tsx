@@ -319,7 +319,12 @@ export function VincularMiembroModal({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha de Vinculación *</FormLabel>
-                  <DatePicker value={field.value} onChange={field.onChange} />
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabledDays={(date) => date > new Date()}
+                    toYear={new Date().getFullYear()}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

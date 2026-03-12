@@ -6,7 +6,9 @@ import type {
   PaginatedMiembrosResponse,
 } from '@/api/miembros/miembrosModel';
 import { MiembrosRepository } from '@/api/miembros/miembrosRepository';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 
 /**
@@ -55,8 +57,19 @@ export class MiembrosService {
    */
   async findAllPaginated(
     params: GetMiembrosQuery,
+    usuario: JwtPayload,
   ): Promise<ServiceResponse<PaginatedMiembrosResponse | null>> {
     try {
+      if (usuario.rol === 'usuario') {
+        if (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id))) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver la lista de miembros',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
       const { page, limit, search, estado_comunion } = params;
       const { data, total } = await this.miembrosRepository.findAllPaginatedAsync({
         page,
@@ -83,8 +96,18 @@ export class MiembrosService {
   /**
    * Busca un miembro por ID
    */
-  async findById(id: number): Promise<ServiceResponse<Miembro | null>> {
+  async findById(id: number, usuario: JwtPayload): Promise<ServiceResponse<Miembro | null>> {
     try {
+      if (usuario.rol === 'usuario') {
+        if (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id))) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver la información de miembros',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
       const miembro = await this.miembrosRepository.findByIdAsync(id);
 
       if (!miembro) {

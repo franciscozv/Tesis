@@ -80,25 +80,37 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
   const [editing, setEditing] = useState<T | null>(null);
   const [deleting, setDeleting] = useState<T | null>(null);
   const [toggling, setToggling] = useState<T | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   function openCreate() {
     setEditing(null);
+    setServerError(null);
     setModalOpen(true);
   }
 
   function openEdit(item: T) {
     setEditing(item);
+    setServerError(null);
     setModalOpen(true);
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Axios error shape
+  function extractApiMessage(error: any, fallback: string): string {
+    return error?.response?.data?.message ?? fallback;
+  }
+
   function handleSubmit(formData: TForm) {
+    setServerError(null);
     if (editing) {
       updateMutation.mutate({ id: opts.getId(editing), input: formData } as never, {
         onSuccess: () => {
           toast.success(`${opts.entityName} actualizado`);
           setModalOpen(false);
         },
-        onError: () => toast.error(`Error al actualizar ${opts.entityName.toLowerCase()}`),
+        onError: (error) => {
+          const msg = extractApiMessage(error, `Error al actualizar ${opts.entityName.toLowerCase()}`);
+          setServerError(msg);
+        },
       });
     } else {
       createMutation.mutate(formData as never, {
@@ -106,7 +118,10 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
           toast.success(`${opts.entityName} creado`);
           setModalOpen(false);
         },
-        onError: () => toast.error(`Error al crear ${opts.entityName.toLowerCase()}`),
+        onError: (error) => {
+          const msg = extractApiMessage(error, `Error al crear ${opts.entityName.toLowerCase()}`);
+          setServerError(msg);
+        },
       });
     }
   }
@@ -154,6 +169,7 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
     isToggling: toggleMutation.isPending,
     schema: opts.schema,
     defaults: opts.toDefaults(editing),
+    serverError,
   };
 }
 
@@ -403,6 +419,7 @@ function CatalogoTabContent<T, TForm extends FieldValues>({
         defaultValues={tab.defaults}
         onSubmit={tab.handleSubmit}
         isPending={tab.isPending}
+        serverError={tab.serverError}
       />
 
       <AlertDialog open={!!tab.deleting} onOpenChange={(open) => !open && tab.setDeleting(null)}>

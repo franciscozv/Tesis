@@ -107,7 +107,7 @@ export class UsuariosRepository {
    */
   async createAsync(
     usuarioData: Pick<UsuarioConPassword, 'email' | 'password_hash' | 'rol'> & {
-      miembro_id?: number;
+      miembro_id: number;
     },
   ): Promise<Usuario> {
     const { data, error } = await supabase

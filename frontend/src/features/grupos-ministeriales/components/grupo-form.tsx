@@ -31,6 +31,7 @@ interface GrupoFormProps {
   isPending: boolean;
   submitLabel?: string;
   error?: any;
+  onCancel?: () => void;
 }
 
 export function GrupoForm({
@@ -40,6 +41,7 @@ export function GrupoForm({
   isPending,
   submitLabel = 'Guardar',
   error,
+  onCancel,
 }: GrupoFormProps) {
   const schema = mode === 'edit' ? updateGrupoSchema : createGrupoSchema;
 
@@ -103,6 +105,11 @@ export function GrupoForm({
           )}
         />
         <div className="flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          )}
           <Button type="submit" disabled={isPending}>
             {isPending && <Loader2 className="animate-spin" />}
             {submitLabel}
