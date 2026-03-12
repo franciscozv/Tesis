@@ -16,12 +16,13 @@ class CalendarioController {
   };
 
   /**
-   * GET /api/calendario/consolidado?mes=3&anio=2025
+   * GET /api/calendario/consolidado?mes=3&anio=2025&grupoId=5
    */
   public getConsolidado: RequestHandler = async (req: Request, res: Response) => {
     const mes = Number(req.query.mes);
     const anio = Number(req.query.anio);
-    const serviceResponse = await calendarioService.getCalendarioConsolidado(mes, anio);
+    const grupoId = req.query.grupoId ? Number(req.query.grupoId) : undefined;
+    const serviceResponse = await calendarioService.getCalendarioConsolidado(mes, anio, grupoId);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

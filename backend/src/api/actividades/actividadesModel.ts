@@ -190,10 +190,12 @@ export const PatchEstadoActividadSchema = z.object({
 });
 
 /**
- * Schema para filtros de listado de actividades (query params)
+ * Schema para query params de listado de actividades (query params)
  */
 export const ListActividadesQuerySchema = z.object({
   query: z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
     mes: z
       .string()
       .regex(/^\d{1,2}$/, 'Mes debe ser un número entre 1 y 12')
@@ -210,5 +212,20 @@ export const ListActividadesQuerySchema = z.object({
       .string()
       .transform((val) => val === 'true')
       .optional(),
+    search: z.string().optional(),
+    grupo_id: z.coerce.number().int().positive().optional(),
   }),
 });
+
+export type GetActividadesQuery = z.infer<typeof ListActividadesQuerySchema>['query'];
+
+export interface PaginatedActividadesResponse {
+  data: Actividad[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+

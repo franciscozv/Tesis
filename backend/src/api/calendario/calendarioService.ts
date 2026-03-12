@@ -60,9 +60,10 @@ export class CalendarioService {
   async getCalendarioConsolidado(
     mes: number,
     anio: number,
+    grupoId?: number,
   ): Promise<ServiceResponse<CalendarioEvento[] | null>> {
     try {
-      const eventos = await this.calendarioRepository.findConsolidadoAsync(mes, anio);
+      const eventos = await this.calendarioRepository.findConsolidadoAsync(mes, anio, grupoId);
 
       if (!eventos) {
         return ServiceResponse.failure(

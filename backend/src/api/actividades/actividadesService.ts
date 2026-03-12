@@ -5,7 +5,11 @@ import { ServiceResponse } from '@/common/models/serviceResponse';
 import { hoyCL, nowEnZona, parseActividadFin, parseActividadInicio } from '@/common/utils/dateTime';
 import { requireEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
-import type { Actividad, ESTADOS_ACTIVIDAD } from './actividadesModel';
+import type {
+  Actividad,
+  ESTADOS_ACTIVIDAD,
+  PaginatedActividadesResponse,
+} from './actividadesModel';
 import { ActividadesRepository } from './actividadesRepository';
 
 /**
@@ -86,6 +90,43 @@ export class ActividadesService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Error al obtener actividades',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Obtiene actividades paginadas con búsqueda y filtros
+   */
+  async findAllPaginated(filters: {
+    page?: number;
+    limit?: number;
+    mes?: number;
+    anio?: number;
+    estado?: string;
+    es_publica?: boolean;
+    search?: string;
+    grupo_id?: number;
+  }): Promise<ServiceResponse<PaginatedActividadesResponse | null>> {
+    try {
+      await this.syncProgramadasVencidas();
+      const result = await this.actividadesRepository.findAllPaginatedAsync(filters);
+
+      const enriched = result.data.map((a) => ({
+        ...a,
+        tipo_actividad: (a as any).tipo_actividad ?? null,
+      }));
+
+      return ServiceResponse.success<PaginatedActividadesResponse>('Actividades encontradas', {
+        ...result,
+        data: enriched,
+      });
+    } catch (error) {
+      const errorMessage = `Error al obtener actividades paginadas: ${(error as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Error al obtener actividades paginadas',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

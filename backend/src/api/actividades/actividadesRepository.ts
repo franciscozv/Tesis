@@ -1,16 +1,20 @@
 import { hoyCL } from '@/common/utils/dateTime';
 import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
-import type { Actividad } from './actividadesModel';
+import type { Actividad, PaginatedActividadesResponse } from './actividadesModel';
 
 /**
  * Filtros para listar actividades
  */
 interface ActividadFilters {
+  page?: number;
+  limit?: number;
   mes?: number;
   anio?: number;
   estado?: string;
   es_publica?: boolean;
+  search?: string;
+  grupo_id?: number;
 }
 
 /**
@@ -56,6 +60,68 @@ export class ActividadesRepository {
   }
 
   /**
+   * Obtiene actividades paginadas con búsqueda y filtros
+   */
+  async findAllPaginatedAsync(filters: ActividadFilters): Promise<PaginatedActividadesResponse> {
+    const { page = 1, limit = 10, search, estado, es_publica, anio, mes, grupo_id } = filters;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('actividad')
+      .select('*, tipo_actividad(nombre, color)', { count: 'exact' });
+
+    if (estado) {
+      query = query.eq('estado', estado);
+    }
+
+    if (es_publica !== undefined) {
+      query = query.eq('es_publica', es_publica);
+    }
+
+    if (search) {
+      query = query.ilike('nombre', `%${search}%`);
+    }
+
+    if (grupo_id) {
+      query = query.eq('grupo_id', grupo_id);
+    }
+
+    if (anio && mes) {
+      const startDate = `${anio}-${String(mes).padStart(2, '0')}-01`;
+      const lastDay = new Date(anio, mes, 0).getDate();
+      const endDate = `${anio}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      query = query.gte('fecha', startDate).lte('fecha', endDate);
+    } else if (anio) {
+      query = query.gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`);
+    } else if (mes) {
+      const currentYear = new Date().getFullYear();
+      const startDate = `${currentYear}-${String(mes).padStart(2, '0')}-01`;
+      const lastDay = new Date(currentYear, mes, 0).getDate();
+      const endDate = `${currentYear}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      query = query.gte('fecha', startDate).lte('fecha', endDate);
+    }
+
+    const { data, error, count } = await query
+      .order('fecha', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: (data as any[]) || [],
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
+  /**
    * Obtiene id, fecha y hora_fin de todas las actividades en estado 'programada'
    */
   async findProgramadasAsync(): Promise<Pick<Actividad, 'id' | 'fecha' | 'hora_fin'>[]> {
@@ -87,7 +153,7 @@ export class ActividadesRepository {
   async findPublicasAsync(): Promise<Actividad[]> {
     const { data, error } = await supabase
       .from('actividad')
-      .select('*, tipo_actividad(nombre, color)')
+      .select('*, tipo_actividad(nombre, color), grupo(nombre)')
       .eq('es_publica', true)
       .eq('estado', 'programada')
       .gte('fecha', hoyCL())

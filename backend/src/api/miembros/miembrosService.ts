@@ -261,6 +261,15 @@ export class MiembrosService {
 
       const estado_anterior = miembroResponse.responseObject.estado_comunion;
 
+      // Validar que el nuevo estado sea distinto al actual
+      if (estado_nuevo === estado_anterior) {
+        return ServiceResponse.failure(
+          `El miembro ya se encuentra en estado "${estado_nuevo}"`,
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
       // Delegar al servicio de historial (registra historial + actualiza miembro)
       const historialResponse = await historialEstadoService.create({
         miembro_id: id,

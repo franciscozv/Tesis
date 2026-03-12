@@ -213,6 +213,6 @@ export const ChangeEstadoComunionSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
     estado_nuevo: EstadoComunionEnum,
-    motivo: z.string().min(5, 'El motivo debe tener al menos 5 caracteres').max(500),
+    motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres').max(500),
   }),
 });

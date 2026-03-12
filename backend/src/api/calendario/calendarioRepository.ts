@@ -31,20 +31,27 @@ export class CalendarioRepository {
 
   /**
    * Obtiene todas las actividades programadas dentro de un mes/año (públicas y privadas)
+   * Permite filtrar opcionalmente por grupo_id
    */
-  async findConsolidadoAsync(mes: number, anio: number): Promise<CalendarioEvento[]> {
+  async findConsolidadoAsync(mes: number, anio: number, grupoId?: number): Promise<CalendarioEvento[]> {
     const startDate = `${anio}-${String(mes).padStart(2, '0')}-01`;
     const lastDay = new Date(anio, mes, 0).getDate();
     const endDate = `${anio}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('actividad')
       .select(
         'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
       )
       .eq('estado', 'programada')
       .gte('fecha', startDate)
-      .lte('fecha', endDate)
+      .lte('fecha', endDate);
+
+    if (grupoId) {
+      query = query.eq('grupo_id', grupoId);
+    }
+
+    const { data, error } = await query
       .order('fecha', { ascending: true })
       .order('hora_inicio', { ascending: true });
 

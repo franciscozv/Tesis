@@ -1,4 +1,5 @@
 import type { Request, RequestHandler, Response } from 'express';
+import type { GetActividadesQuery } from './actividadesModel';
 import { actividadesService } from './actividadesService';
 
 /**
@@ -6,16 +7,11 @@ import { actividadesService } from './actividadesService';
  */
 class ActividadesController {
   /**
-   * Obtiene todas las actividades con filtros opcionales
+   * Obtiene todas las actividades con filtros opcionales (paginado)
    */
   public getAll: RequestHandler = async (req: Request, res: Response) => {
-    const filters = {
-      mes: req.query.mes ? Number(req.query.mes) : undefined,
-      anio: req.query.anio ? Number(req.query.anio) : undefined,
-      estado: req.query.estado as string | undefined,
-      es_publica: req.query.es_publica !== undefined ? req.query.es_publica === 'true' : undefined,
-    };
-    const serviceResponse = await actividadesService.findAll(filters);
+    const query = req.query as unknown as GetActividadesQuery;
+    const serviceResponse = await actividadesService.findAllPaginated(query);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

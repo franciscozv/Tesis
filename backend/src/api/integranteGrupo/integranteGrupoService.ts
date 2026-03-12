@@ -32,7 +32,7 @@ export class IntegranteGrupoService {
     rolUsuario?: string,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que miembro exista y est� activo
+      // 1. Verificar que miembro exista y está activo
       const miembroStatus = await this.integranteGrupoRepository.verificarMiembroActivo(miembroId);
 
       if (!miembroStatus.existe) {
@@ -40,10 +40,10 @@ export class IntegranteGrupoService {
       }
 
       if (!miembroStatus.activo) {
-        return ServiceResponse.failure('El miembro no est� activo', null, StatusCodes.BAD_REQUEST);
+        return ServiceResponse.failure('El miembro no está activo', null, StatusCodes.BAD_REQUEST);
       }
 
-      // 3. Verificar que grupo exista y est� activo
+      // 3. Verificar que grupo exista y está activo
       const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(grupoId);
 
       if (!grupoStatus.existe) {
@@ -56,13 +56,13 @@ export class IntegranteGrupoService {
 
       if (!grupoStatus.activo) {
         return ServiceResponse.failure(
-          'El grupo ministerial no est� activo',
+          'El grupo ministerial no está activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 4. Verificar que rol exista y est� activo
+      // 4. Verificar que rol exista y está activo
       const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(rolId);
 
       if (!rolStatus.existe) {
@@ -71,7 +71,7 @@ export class IntegranteGrupoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no est� activo',
+          'El rol de grupo no está activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -86,16 +86,16 @@ export class IntegranteGrupoService {
         );
       }
 
-      // 4a. Si el rol requiere plena comuni�n, el miembro debe cumplirla.
+      // 4a. Si el rol requiere plena comunión, el miembro debe cumplirla.
       if (rolStatus.requiere_plena_comunion && !miembroStatus.plena_comunion) {
         return ServiceResponse.failure(
-          'Este rol requiere plena comuni�n. El miembro no cumple esa condici�n.',
+          'Este rol requiere plena comunión. El miembro no cumple esa condición.',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 4c. Si el rol es �nico, verificar que no est� ya ocupado en el grupo
+      // 4c. Si el rol es único, verificar que no está ya ocupado en el grupo
       if (rolStatus.es_unico) {
         const rolOcupado = await this.integranteGrupoRepository.estaRolOcupadoEnGrupo(
           grupoId,
@@ -103,7 +103,7 @@ export class IntegranteGrupoService {
         );
         if (rolOcupado) {
           return ServiceResponse.failure(
-            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo �nico.',
+            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo único.',
             null,
             StatusCodes.CONFLICT,
           );
@@ -133,7 +133,7 @@ export class IntegranteGrupoService {
 
       if (existeDuplicado) {
         return ServiceResponse.failure(
-          'El miembro ya est� vinculado a este grupo con este rol',
+          'El miembro ya está vinculado a este grupo con este rol',
           null,
           StatusCodes.CONFLICT,
         );
@@ -168,7 +168,7 @@ export class IntegranteGrupoService {
    *
    * Validaciones:
    * - Integraci�n debe existir
-   * - fecha_desvinculacion debe ser NULL (integraci�n activa)
+   * - fecha_desvinculacion debe ser NULL (integración activa)
    */
   async desvincularMiembro(
     id: number,
@@ -176,23 +176,23 @@ export class IntegranteGrupoService {
     rolUsuario?: string,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que la integraci�n exista
+      // 1. Verificar que la integración exista
       const integranteExistente = await this.integranteGrupoRepository.findByIdAsync(id);
 
       if (!integranteExistente) {
-        return ServiceResponse.failure('La integraci�n no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 3. Verificar que fecha_desvinculacion sea NULL (integraci�n activa)
+      // 3. Verificar que fecha_desvinculacion sea NULL (integración activa)
       if (integranteExistente.fecha_desvinculacion !== null) {
         return ServiceResponse.failure(
-          'La integraci�n ya est� desvinculada',
+          'La integración ya está desvinculada',
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
-      // 3b. Si el cargo de la integraci�n es directiva, solo admin puede desvincular
+      // 3b. Si el cargo de la integración es directiva, solo admin puede desvincular
       const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(
         integranteExistente.rol_grupo_id,
       );
@@ -234,7 +234,7 @@ export class IntegranteGrupoService {
   }
 
   /**
-   * Cambia el rol de una integraci�n activa
+   * Cambia el rol de una integración activa
    */
   async cambiarRol(
     id: number,
@@ -242,17 +242,17 @@ export class IntegranteGrupoService {
     rolUsuario?: string,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
-      // 1. Verificar que la integraci�n exista
+      // 1. Verificar que la integración exista
       const integranteExistente = await this.integranteGrupoRepository.findByIdAsync(id);
 
       if (!integranteExistente) {
-        return ServiceResponse.failure('La integraci�n no existe', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
       }
 
-      // 2. Verificar que est� activa
+      // 2. Verificar que está activa
       if (integranteExistente.fecha_desvinculacion !== null) {
         return ServiceResponse.failure(
-          'No se puede cambiar el rol de una integraci�n desvinculada',
+          'No se puede cambiar el rol de una integración desvinculada',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -279,7 +279,7 @@ export class IntegranteGrupoService {
         );
       }
 
-      // 4. Verificar que el nuevo rol exista y est� activo
+      // 4. Verificar que el nuevo rol exista y está activo
       const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(rolGrupoId);
 
       if (!rolStatus.existe) {
@@ -288,7 +288,7 @@ export class IntegranteGrupoService {
 
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
-          'El rol de grupo no est� activo',
+          'El rol de grupo no está activo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -303,7 +303,7 @@ export class IntegranteGrupoService {
         );
       }
 
-      // 4b. Si el nuevo rol es �nico, verificar que no est� ya ocupado en el grupo
+      // 4b. Si el nuevo rol es único, verificar que no está ya ocupado en el grupo
       if (rolStatus.es_unico) {
         const rolOcupado = await this.integranteGrupoRepository.estaRolOcupadoEnGrupo(
           integranteExistente.grupo_id,
@@ -311,28 +311,28 @@ export class IntegranteGrupoService {
         );
         if (rolOcupado) {
           return ServiceResponse.failure(
-            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo �nico.',
+            'Este cargo ya tiene un titular activo en el grupo. Solo puede haber un titular por cargo único.',
             null,
             StatusCodes.CONFLICT,
           );
         }
       }
 
-      // 4c. Si el nuevo rol requiere plena comuni�n, validar estado del miembro actual.
+      // 4c. Si el nuevo rol requiere plena comunión, validar estado del miembro actual.
       if (rolStatus.requiere_plena_comunion) {
         const miembroStatus = await this.integranteGrupoRepository.verificarMiembroActivo(
           integranteExistente.miembro_id,
         );
         if (!miembroStatus.existe || !miembroStatus.activo) {
           return ServiceResponse.failure(
-            'El miembro asociado a la integraci�n no existe o no est� activo',
+            'El miembro asociado a la integración no existe o no está activo',
             null,
             StatusCodes.BAD_REQUEST,
           );
         }
         if (!miembroStatus.plena_comunion) {
           return ServiceResponse.failure(
-            'Este rol requiere plena comuni�n. El miembro no cumple esa condici�n.',
+            'Este rol requiere plena comunión. El miembro no cumple esa condición.',
             null,
             StatusCodes.BAD_REQUEST,
           );
@@ -349,10 +349,10 @@ export class IntegranteGrupoService {
 
       return ServiceResponse.success<IntegranteGrupo>('Rol cambiado exitosamente', integrante);
     } catch (error) {
-      const errorMessage = `Error al cambiar rol de integraci�n: ${(error as Error).message}`;
+      const errorMessage = `Error al cambiar rol de integración: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al cambiar el rol de la integraci�n',
+        'Error al cambiar el rol de la integración',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
