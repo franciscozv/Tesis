@@ -7,12 +7,10 @@ import {
   Info,
   Loader2,
   Search,
-  ShieldCheck,
   UserCheck,
 } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +23,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RolGrupo } from '@/features/catalogos/types';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { cn } from '@/lib/utils';
@@ -49,9 +46,6 @@ export function CambiarRolModal({
   const [nuevoRolId, setNuevoRolId] = React.useState<number>(0);
   
   const mutation = useCambiarRol();
-  const { usuario } = useAuth();
-
-  const esAdmin = usuario?.rol === 'administrador';
   
   // FILTRO: Solo roles activos que NO sean de directiva y que no sea el rol actual
   const rolesDisponibles =
