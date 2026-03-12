@@ -35,3 +35,6 @@ coverage/
 
 # Biome
 .biome/
+
+.claude
+.CLAUDE.md
