@@ -10,4 +10,3 @@ export function useIntegrantesGrupo(grupoId: number) {
     enabled: !!grupoId,
   });
 }
-

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -182,93 +183,97 @@ export default function PatronesPage() {
         />
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Tipo Actividad</TableHead>
-              <TableHead className="hidden md:table-cell">Frecuencia</TableHead>
-              <TableHead className="hidden md:table-cell">Día</TableHead>
-              <TableHead className="hidden lg:table-cell">Hora</TableHead>
-              <TableHead className="hidden lg:table-cell">Duración</TableHead>
-              <TableHead className="hidden xl:table-cell">Grupo</TableHead>
-              <TableHead>Estado</TableHead>
-              {isAdmin && <TableHead className="w-12" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              ['s1', 's2', 's3', 's4', 's5'].map((key) => (
-                <TableRow key={key}>
-                  <TableCell colSpan={isAdmin ? 9 : 8}>
-                    <Skeleton className="h-4 w-full" />
-                  </TableCell>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Tipo Actividad</TableHead>
+                  <TableHead className="hidden md:table-cell">Frecuencia</TableHead>
+                  <TableHead className="hidden md:table-cell">Día</TableHead>
+                  <TableHead className="hidden lg:table-cell">Hora</TableHead>
+                  <TableHead className="hidden lg:table-cell">Duración</TableHead>
+                  <TableHead className="hidden xl:table-cell">Grupo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  {isAdmin && <TableHead className="w-12" />}
                 </TableRow>
-              ))
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={isAdmin ? 9 : 8} className="h-24 text-center">
-                  No se encontraron patrones.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((patron) => (
-                <TableRow key={patron.id}>
-                  <TableCell className="font-medium">{patron.nombre}</TableCell>
-                  <TableCell>
-                    {tiposMap.get(patron.tipo_actividad_id)?.nombre ?? patron.tipo_actividad_id}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {frecuenciaLabels[patron.frecuencia] ?? patron.frecuencia}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {diasSemanaLabels[patron.dia_semana] ?? patron.dia_semana}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {formatHora(patron.hora_inicio)}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {patron.duracion_minutos} min
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    {patron.grupo_id ? (gruposMap.get(patron.grupo_id)?.nombre ?? '—') : '—'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Badge variant={patron.activo ? 'default' : 'secondary'}>
-                        {patron.activo ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      {patron.es_publica && <Badge variant="outline">Público</Badge>}
-                    </div>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(patron)}>
-                            <Pencil className="size-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleEstado(patron)}>
-                            <Power className="size-4" />
-                            {patron.activo ? 'Desactivar' : 'Activar'}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  ['s1', 's2', 's3', 's4', 's5'].map((key) => (
+                    <TableRow key={key}>
+                      <TableCell colSpan={isAdmin ? 9 : 8}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 9 : 8} className="h-24 text-center">
+                      No se encontraron patrones.
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </TableRow>
+                ) : (
+                  filtered.map((patron) => (
+                    <TableRow key={patron.id}>
+                      <TableCell className="font-medium">{patron.nombre}</TableCell>
+                      <TableCell>
+                        {tiposMap.get(patron.tipo_actividad_id)?.nombre ?? patron.tipo_actividad_id}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {frecuenciaLabels[patron.frecuencia] ?? patron.frecuencia}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {diasSemanaLabels[patron.dia_semana] ?? patron.dia_semana}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {formatHora(patron.hora_inicio)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {patron.duracion_minutos} min
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        {patron.grupo_id ? (gruposMap.get(patron.grupo_id)?.nombre ?? '—') : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Badge variant={patron.activo ? 'success' : 'secondary'}>
+                            {patron.activo ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          {patron.es_publica && <Badge variant="outline">Público</Badge>}
+                        </div>
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon-sm">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEdit(patron)}>
+                                <Pencil className="size-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleEstado(patron)}>
+                                <Power className="size-4" />
+                                {patron.activo ? 'Desactivar' : 'Activar'}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <PatronFormModal
         open={formOpen}
@@ -285,4 +290,3 @@ export default function PatronesPage() {
     </div>
   );
 }
-

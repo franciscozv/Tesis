@@ -14,7 +14,13 @@
       "Bash(npx @biomejs/biome check:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm build:*)",
-      "mcp__shadcn__get_project_registries"
+      "mcp__shadcn__get_project_registries",
+      "Bash(npx playwright:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(node:*)",
+      "Bash(NODE_PATH=\"C:/Users/pancho/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules\" node:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(PLAYWRIGHT_BROWSERS_PATH=\"/c/Users/pancho/AppData/Local/ms-playwright\" node:*)"
     ]
   },
   "enableAllProjectMcpServers": false

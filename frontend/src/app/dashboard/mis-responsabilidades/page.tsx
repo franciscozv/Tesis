@@ -7,13 +7,13 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -136,24 +136,16 @@ export default function MisResponsabilidadesPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="grid gap-1.5">
-          <Label htmlFor="fecha-desde">Desde</Label>
-          <Input
-            id="fecha-desde"
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            className="sm:w-44"
-          />
+          <Label>Desde</Label>
+          <div className="sm:w-44">
+            <DatePicker value={fechaDesde} onChange={setFechaDesde} placeholder="Desde" />
+          </div>
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="fecha-hasta">Hasta</Label>
-          <Input
-            id="fecha-hasta"
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            className="sm:w-44"
-          />
+          <Label>Hasta</Label>
+          <div className="sm:w-44">
+            <DatePicker value={fechaHasta} onChange={setFechaHasta} placeholder="Hasta" />
+          </div>
         </div>
         {(fechaDesde || fechaHasta) && (
           <Button
@@ -169,9 +161,9 @@ export default function MisResponsabilidadesPage() {
         )}
       </div>
 
-      <Tabs defaultValue="proximas">
+      <Tabs defaultValue="proximas" className="min-w-0">
         <TabsList>
-          <TabsTrigger value="proximas">Proximas ({proximas.length})</TabsTrigger>
+          <TabsTrigger value="proximas">Próximas ({proximas.length})</TabsTrigger>
           <TabsTrigger value="historial">Historial ({historial.length})</TabsTrigger>
         </TabsList>
 
@@ -220,117 +212,122 @@ function ResponsabilidadesTable({
   onResponder: (r: Responsabilidad) => void;
 }) {
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Actividad</TableHead>
-            <TableHead className="hidden md:table-cell">Rol / Necesidad</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead className="hidden md:table-cell">Hora</TableHead>
-            <TableHead className="hidden lg:table-cell">Grupo</TableHead>
-            <TableHead className="hidden lg:table-cell">Tipo Actividad</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="w-12" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            ['s1', 's2', 's3', 's4', 's5'].map((key) => (
-              <TableRow key={key}>
-                <TableCell colSpan={9}>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Actividad</TableHead>
+                <TableHead className="hidden md:table-cell">Rol / Necesidad</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="hidden md:table-cell">Hora</TableHead>
+                <TableHead className="hidden lg:table-cell">Grupo</TableHead>
+                <TableHead className="hidden lg:table-cell">Tipo Actividad</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
-            ))
-          ) : !items.length ? (
-            <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
-                No se encontraron responsabilidades.
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((r) => {
-              const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
-
-              return (
-                <TableRow
-                  key={`${r.tipo}-${r.id}`}
-                  className={highlight ? 'bg-blue-50 dark:bg-blue-950/20' : undefined}
-                >
-                  <TableCell>
-                    <Badge variant={r.tipo === 'invitacion' ? 'default' : 'secondary'}>
-                      {r.tipo === 'invitacion' ? 'Invitacion' : 'Colaboracion'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/dashboard/actividades/${r.actividad.id}`}
-                      className="hover:underline"
-                    >
-                      {r.actividad.nombre}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {r.tipo === 'invitacion' ? (
-                      <Badge variant="outline">{r.rol?.nombre ?? '—'}</Badge>
-                    ) : (
-                      <span className="text-sm">
-                        {r.tipo_necesidad?.nombre ?? r.necesidad?.descripcion ?? '—'}
-                        {r.cantidad_ofrecida ? ` (${r.cantidad_ofrecida})` : ''}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {formatFecha(r.actividad.fecha)}
-                  </TableCell>
-                  <TableCell className="hidden whitespace-nowrap md:table-cell">
-                    {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">{r.grupo?.nombre ?? '—'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{r.tipo_actividad.nombre}</TableCell>
-                  <TableCell>
-                    {r.tipo === 'invitacion' ? (
-                      <Badge
-                        variant={r.estado_invitacion === 'pendiente' ? 'default' : 'secondary'}
-                      >
-                        {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Aceptada</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/actividades/${r.actividad.id}`}>
-                            <Eye className="size-4" />
-                            Ver actividad
-                          </Link>
-                        </DropdownMenuItem>
-                        {r.tipo === 'invitacion' && r.estado_invitacion === 'pendiente' && (
-                          <DropdownMenuItem onClick={() => onResponder(r)}>
-                            <Reply className="size-4" />
-                            Responder
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                ['s1', 's2', 's3', 's4', 's5'].map((key) => (
+                  <TableRow key={key}>
+                    <TableCell colSpan={9}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : !items.length ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-24 text-center">
+                    No se encontraron responsabilidades.
                   </TableCell>
                 </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
+              ) : (
+                items.map((r) => {
+                  const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
+
+                  return (
+                    <TableRow
+                      key={`${r.tipo}-${r.id}`}
+                      className={highlight ? 'bg-info/8' : undefined}
+                    >
+                      <TableCell>
+                        <Badge variant={r.tipo === 'invitacion' ? 'info' : 'secondary'}>
+                          {r.tipo === 'invitacion' ? 'Invitación' : 'Colaboración'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/dashboard/actividades/${r.actividad.id}`}
+                          className="hover:underline"
+                        >
+                          {r.actividad.nombre}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {r.tipo === 'invitacion' ? (
+                          <Badge variant="outline">{r.rol?.nombre ?? '—'}</Badge>
+                        ) : (
+                          <span className="text-sm">
+                            {r.tipo_necesidad?.nombre ?? r.necesidad?.descripcion ?? '—'}
+                            {r.cantidad_ofrecida ? ` (${r.cantidad_ofrecida})` : ''}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatFecha(r.actividad.fecha)}
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap md:table-cell">
+                        {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {r.grupo?.nombre ?? '—'}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {r.tipo_actividad.nombre}
+                      </TableCell>
+                      <TableCell>
+                        {r.tipo === 'invitacion' ? (
+                          <Badge
+                            variant={r.estado_invitacion === 'pendiente' ? 'warning' : 'success'}
+                          >
+                            {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="success">Aceptada</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/actividades/${r.actividad.id}`}>
+                                <Eye className="size-4" />
+                                Ver actividad
+                              </Link>
+                            </DropdownMenuItem>
+                            {r.tipo === 'invitacion' && r.estado_invitacion === 'pendiente' && (
+                              <DropdownMenuItem onClick={() => onResponder(r)}>
+                                <Reply className="size-4" />
+                                Responder
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+      </CardContent>
+    </Card>
   );
 }
-

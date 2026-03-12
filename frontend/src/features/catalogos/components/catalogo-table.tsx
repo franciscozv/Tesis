@@ -57,51 +57,53 @@ export function CatalogoTable<T>({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          {columns.map((col) => (
-            <TableHead key={String(col.key)}>{col.header}</TableHead>
-          ))}
-          {isAdmin && <TableHead className="w-[100px]">Acciones</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={String(item[idKey])}>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
             {columns.map((col) => (
-              <TableCell key={String(col.key)}>
-                {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '—')}
-              </TableCell>
+              <TableHead key={String(col.key)}>{col.header}</TableHead>
             ))}
-            {isAdmin && (
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  {onToggleEstado && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onToggleEstado(item)}
-                      title={(item as Record<string, unknown>).activo ? 'Desactivar' : 'Activar'}
-                    >
-                      <Power
-                        className={`h-4 w-4 ${(item as Record<string, unknown>).activo ? 'text-destructive' : 'text-green-600'}`}
-                      />
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            )}
+            {isAdmin && <TableHead className="w-[100px]">Acciones</TableHead>}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={String(item[idKey])}>
+              {columns.map((col) => (
+                <TableCell key={String(col.key)}>
+                  {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '—')}
+                </TableCell>
+              ))}
+              {isAdmin && (
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    {onToggleEstado && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onToggleEstado(item)}
+                        title={(item as Record<string, unknown>).activo ? 'Desactivar' : 'Activar'}
+                      >
+                        <Power
+                          className={`h-4 w-4 ${(item as Record<string, unknown>).activo ? 'text-destructive' : 'text-green-600'}`}
+                        />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -129,4 +131,3 @@ export function ColorCell({ color }: { color: string }) {
     </div>
   );
 }
-

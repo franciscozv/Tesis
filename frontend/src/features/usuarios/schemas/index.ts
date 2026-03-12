@@ -16,4 +16,3 @@ export const updateUsuarioSchema = z.object({
 
 export type CreateUsuarioFormData = z.infer<typeof createUsuarioSchema>;
 export type UpdateUsuarioFormData = z.infer<typeof updateUsuarioSchema>;
-

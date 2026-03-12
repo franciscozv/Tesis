@@ -31,27 +31,26 @@ export default function MiembrosPage() {
   const [estadoModal, setEstadoModal] = useState<Miembro | null>(null);
 
   const queryParams = useMemo(
-    () => ({ page, limit: PAGE_SIZE, search: search || undefined, estado_comunion: estadoFilter || undefined }),
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      search: search || undefined,
+      estado_comunion: estadoFilter || undefined,
+    }),
     [page, search, estadoFilter],
   );
 
   const { data, isLoading, isFetching } = useMiembrosPaginated(queryParams);
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      setSearch(value);
-      setPage(1);
-    },
-    [],
-  );
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
 
-  const handleEstadoFilter = useCallback(
-    (value: string) => {
-      setEstadoFilter(value === 'todos' ? '' : (value as EstadoComunion));
-      setPage(1);
-    },
-    [],
-  );
+  const handleEstadoFilter = useCallback((value: string) => {
+    setEstadoFilter(value === 'todos' ? '' : (value as EstadoComunion));
+    setPage(1);
+  }, []);
 
   const columns = useMemo(
     () => getMiembrosColumns({ isAdmin, onCambiarEstado: setEstadoModal }),
@@ -112,4 +111,3 @@ export default function MiembrosPage() {
     </div>
   );
 }
-

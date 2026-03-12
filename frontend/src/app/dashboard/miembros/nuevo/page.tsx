@@ -21,7 +21,9 @@ function cleanOptionalFields(data: CreateMiembroFormData) {
   };
 }
 
-function parseApiFieldErrors(message: string): Partial<Record<keyof CreateMiembroFormData, string>> {
+function parseApiFieldErrors(
+  message: string,
+): Partial<Record<keyof CreateMiembroFormData, string>> {
   const errors: Partial<Record<keyof CreateMiembroFormData, string>> = {};
   const parts = message.split('; ');
   for (const part of parts) {
@@ -36,7 +38,9 @@ function parseApiFieldErrors(message: string): Partial<Record<keyof CreateMiembr
 export default function NuevoMiembroPage() {
   const router = useRouter();
   const mutation = useCreateMiembro();
-  const [apiErrors, setApiErrors] = useState<Partial<Record<keyof CreateMiembroFormData, string>>>({});
+  const [apiErrors, setApiErrors] = useState<Partial<Record<keyof CreateMiembroFormData, string>>>(
+    {},
+  );
 
   function onSubmit(data: CreateMiembroFormData) {
     setApiErrors({});
@@ -78,4 +82,3 @@ export default function NuevoMiembroPage() {
     </div>
   );
 }
-

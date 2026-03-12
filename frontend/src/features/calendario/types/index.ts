@@ -14,4 +14,3 @@ export interface CalendarioEvento {
     nombre: string;
   } | null;
 }
-

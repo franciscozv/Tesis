@@ -8,7 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { GrupoForm } from '@/features/grupos-ministeriales/components/grupo-form';
 import { useGrupo } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useUpdateGrupo } from '@/features/grupos-ministeriales/hooks/use-update-grupo';
-import type { CreateGrupoFormData, UpdateGrupoFormData } from '@/features/grupos-ministeriales/schemas';
+import type {
+  CreateGrupoFormData,
+  UpdateGrupoFormData,
+} from '@/features/grupos-ministeriales/schemas';
 
 export default function EditarGrupoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,8 +29,9 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
           toast.success('Grupo actualizado exitosamente');
           router.push(`/dashboard/grupos/${grupoId}`);
         },
-        onError: () => {
-          toast.error('Error al actualizar grupo');
+        onError: (error: any) => {
+          const apiMessage = error.response?.data?.message;
+          toast.error(apiMessage || 'Error al actualizar grupo');
         },
       },
     );
@@ -72,6 +76,7 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
             }}
             onSubmit={onSubmit}
             isPending={mutation.isPending}
+            error={mutation.error}
             submitLabel="Actualizar"
           />
         </CardContent>

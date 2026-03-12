@@ -296,11 +296,7 @@ export function SugerirCargoModal({
                 <Settings2 className="size-4" />
                 Opciones avanzadas
               </span>
-              {showOpciones ? (
-                <ChevronUp className="size-4" />
-              ) : (
-                <ChevronDown className="size-4" />
-              )}
+              {showOpciones ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
 
             {showOpciones && (
@@ -416,9 +412,7 @@ export function SugerirCargoModal({
                 {'Orden de prioridad: '}
                 {usedCriterios.map((c, i) => (
                   <span key={c}>
-                    <span className="font-medium text-foreground">
-                      {CRITERIO_LABELS[c] ?? c}
-                    </span>
+                    <span className="font-medium text-foreground">{CRITERIO_LABELS[c] ?? c}</span>
                     {i < usedCriterios.length - 1 && (
                       <span className="mx-0.5 text-muted-foreground/60">→</span>
                     )}
@@ -448,5 +442,3 @@ export function SugerirCargoModal({
     </Dialog>
   );
 }
-
-

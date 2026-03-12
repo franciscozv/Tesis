@@ -19,4 +19,3 @@ export const candidatosApi = {
     return data.responseObject;
   },
 };
-

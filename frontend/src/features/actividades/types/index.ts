@@ -5,6 +5,7 @@ export interface Actividad {
   patron_id: number | null;
   tipo_actividad_id: number;
   tipo_actividad?: { nombre: string; color: string } | null;
+  grupo?: { nombre: string } | null;
   nombre: string;
   descripcion: string | null;
   fecha: string;
@@ -41,9 +42,24 @@ export interface CambiarEstadoActividadInput {
 }
 
 export interface ActividadFilters {
+  page?: number;
+  limit?: number;
   mes?: number;
   anio?: number;
   estado?: EstadoActividad;
   es_publica?: boolean;
+  search?: string;
+  grupo_id?: number;
 }
 
+export type ActividadesQueryParams = ActividadFilters;
+
+export interface PaginatedActividadesResponse {
+  data: Actividad[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}

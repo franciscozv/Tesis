@@ -9,4 +9,3 @@ export function usePatrones() {
     queryFn: patronesApi.getAll,
   });
 }
-

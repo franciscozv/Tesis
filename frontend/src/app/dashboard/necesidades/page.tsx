@@ -37,7 +37,6 @@ function formatHora(hora: string) {
 
 export default function NecesidadesAbiertasPage() {
   const { usuario } = useAuth();
-  const isAdmin = usuario?.rol === 'administrador';
   const miembroId = usuario?.miembro_id;
 
   const { data: necesidades, isLoading } = useNecesidadesAbiertas();
@@ -71,11 +70,6 @@ export default function NecesidadesAbiertasPage() {
             Necesidades abiertas para actividades de los próximos 60 días.
           </p>
         </div>
-        {isAdmin && (
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/necesidades/gestionar">Gestionar</Link>
-          </Button>
-        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -210,4 +204,3 @@ export default function NecesidadesAbiertasPage() {
     </div>
   );
 }
-

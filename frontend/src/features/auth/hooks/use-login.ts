@@ -27,4 +27,3 @@ export function useCambiarPassword() {
     mutationFn: authApi.cambiarPassword,
   });
 }
-

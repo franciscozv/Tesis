@@ -28,9 +28,7 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
   const tieneConflicto = !indicadores.disponible_en_fecha;
 
   return (
-    <Card
-      className={tieneConflicto ? 'border-destructive/60 bg-destructive/5' : ''}
-    >
+    <Card className={tieneConflicto ? 'border-destructive/60 bg-destructive/5' : ''}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -146,4 +144,3 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
     </Card>
   );
 }
-

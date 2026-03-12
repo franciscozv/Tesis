@@ -44,4 +44,3 @@ export interface CreateColaboradorInput {
 export interface DecidirOfertaInput {
   estado: 'aceptada' | 'rechazada';
 }
-

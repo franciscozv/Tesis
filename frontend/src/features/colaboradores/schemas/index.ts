@@ -6,4 +6,3 @@ export const ofrecerColaboracionSchema = z.object({
 });
 
 export type OfrecerColaboracionFormData = z.infer<typeof ofrecerColaboracionSchema>;
-

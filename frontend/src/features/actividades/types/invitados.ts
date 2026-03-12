@@ -27,4 +27,3 @@ export interface CreateInvitadoInput {
   responsabilidad_id: number;
   confirmado?: boolean;
 }
-

@@ -38,12 +38,14 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-sm shadow-md border-border/60">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
             <XCircle className="size-6 text-red-600 dark:text-red-400" />
           </div>
-          <CardTitle className="text-2xl">Enlace Inválido</CardTitle>
+          <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
+            Enlace inválido
+          </CardTitle>
           <CardDescription>El enlace de recuperación no es válido o ha expirado.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,12 +84,14 @@ function ResetPasswordForm() {
 
   if (exito) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-sm shadow-md border-border/60">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
             <CheckCircle className="size-6 text-green-600 dark:text-green-400" />
           </div>
-          <CardTitle className="text-2xl">Contraseña Restablecida</CardTitle>
+          <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
+            Contraseña restablecida
+          </CardTitle>
           <CardDescription>Tu contraseña ha sido actualizada exitosamente.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -100,9 +104,11 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-sm shadow-md border-border/60">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Nueva Contraseña</CardTitle>
+        <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
+          Nueva contraseña
+        </CardTitle>
         <CardDescription>Ingresa tu nueva contraseña</CardDescription>
       </CardHeader>
       <CardContent>
@@ -127,7 +133,7 @@ function ResetPasswordForm() {
                         size="icon-sm"
                         className="absolute right-2 top-1/2 -translate-y-1/2"
                         onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
+                        tabIndex={0}
                       >
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </Button>
@@ -159,7 +165,7 @@ function ResetPasswordForm() {
                         size="icon-sm"
                         className="absolute right-2 top-1/2 -translate-y-1/2"
                         onClick={() => setShowConfirm(!showConfirm)}
-                        tabIndex={-1}
+                        tabIndex={0}
                       >
                         {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </Button>
@@ -189,11 +195,12 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Suspense>
+    <div className="flex min-h-svh items-center justify-center p-6">
+      <Suspense
+        fallback={<div className="w-full max-w-sm h-64 rounded-lg bg-card animate-pulse" />}
+      >
         <ResetPasswordForm />
       </Suspense>
     </div>
   );
 }
-

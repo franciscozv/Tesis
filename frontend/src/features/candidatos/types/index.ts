@@ -89,4 +89,3 @@ export interface SugerirCargoInput {
   solo_con_experiencia?: boolean;
   criterios_prioridad?: string[];
 }
-

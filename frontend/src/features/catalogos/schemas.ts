@@ -21,8 +21,12 @@ export const createResponsabilidadActividadSchema = z.object({
 
 export const updateResponsabilidadActividadSchema = createResponsabilidadActividadSchema.partial();
 
-export type CreateResponsabilidadActividadFormData = z.infer<typeof createResponsabilidadActividadSchema>;
-export type UpdateResponsabilidadActividadFormData = z.infer<typeof updateResponsabilidadActividadSchema>;
+export type CreateResponsabilidadActividadFormData = z.infer<
+  typeof createResponsabilidadActividadSchema
+>;
+export type UpdateResponsabilidadActividadFormData = z.infer<
+  typeof updateResponsabilidadActividadSchema
+>;
 
 // --- Tipos Actividad ---
 export const createTipoActividadSchema = z.object({
@@ -46,4 +50,3 @@ export const updateTipoNecesidadSchema = createTipoNecesidadSchema.partial();
 
 export type CreateTipoNecesidadFormData = z.infer<typeof createTipoNecesidadSchema>;
 export type UpdateTipoNecesidadFormData = z.infer<typeof updateTipoNecesidadSchema>;
-

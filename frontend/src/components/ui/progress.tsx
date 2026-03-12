@@ -26,4 +26,3 @@ function Progress({
 }
 
 export { Progress };
-

@@ -1,12 +1,23 @@
 'use client';
 
-import { Eye, MoreHorizontal, Pencil, Plus, RefreshCw } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  MoreHorizontal,
+  Package,
+  Pencil,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { useDebounce } from '@/common/utils/use-debounce';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +43,7 @@ import {
 } from '@/components/ui/table';
 import { ActividadFormModal } from '@/features/actividades/components/actividad-form';
 import { CambiarEstadoActividadModal } from '@/features/actividades/components/cambiar-estado-actividad-modal';
-import { useActividades } from '@/features/actividades/hooks/use-actividades';
+import { useActividadesPaginated } from '@/features/actividades/hooks/use-actividades';
 import { useCreateActividad } from '@/features/actividades/hooks/use-create-actividad';
 import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
 import type { CreateActividadFormData } from '@/features/actividades/schemas';
@@ -40,6 +51,7 @@ import type { Actividad, ActividadFilters, EstadoActividad } from '@/features/ac
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { tiposActividadHooks } from '@/features/catalogos/hooks';
 import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
+import { useNecesidades } from '@/features/necesidades/hooks/use-necesidades';
 
 const estadoLabels: Record<EstadoActividad, string> = {
   programada: 'Programada',
@@ -47,9 +59,9 @@ const estadoLabels: Record<EstadoActividad, string> = {
   cancelada: 'Cancelada',
 };
 
-const estadoVariant: Record<EstadoActividad, 'default' | 'secondary' | 'destructive'> = {
-  programada: 'default',
-  realizada: 'secondary',
+const estadoVariant: Record<EstadoActividad, 'info' | 'success' | 'destructive' | 'secondary'> = {
+  programada: 'info',
+  realizada: 'success',
   cancelada: 'destructive',
 };
 
@@ -72,17 +84,26 @@ export default function ActividadesPage() {
   const router = useRouter();
   const isAdmin = usuario?.rol === 'administrador';
 
+  const [page, setPage] = useState(1);
   const [mesFilter, setMesFilter] = useState<string>('todos');
   const [anioFilter, setAnioFilter] = useState<string>(String(currentYear));
   const [estadoFilter, setEstadoFilter] = useState<string>('todos');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
 
-  const filters: ActividadFilters = {};
+  const filters: ActividadFilters = {
+    page,
+    limit: 10,
+  };
   if (mesFilter !== 'todos') filters.mes = Number(mesFilter);
   if (anioFilter !== 'todos') filters.anio = Number(anioFilter);
   if (estadoFilter !== 'todos') filters.estado = estadoFilter as EstadoActividad;
+  if (debouncedSearch) filters.search = debouncedSearch;
 
-  const { data: actividades, isLoading } = useActividades(filters);
+  const { data: paginatedData, isLoading } = useActividadesPaginated(filters);
+  const actividades = paginatedData?.data ?? [];
+  const meta = paginatedData?.meta;
+
   const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
   const { grupos } = useGruposPermitidos();
 
@@ -100,18 +121,18 @@ export default function ActividadesPage() {
 
   const gruposMap = useMemo(() => new Map(grupos?.map((g) => [g.id_grupo, g])), [grupos]);
 
-  const filtered = useMemo(() => {
-    if (!actividades) return [];
-    if (!search) return actividades;
-    const q = search.toLowerCase();
-    return actividades.filter(
-      (a) =>
-        a.nombre.toLowerCase().includes(q) ||
-        (a.tipo_actividad?.nombre ?? tiposMap.get(a.tipo_actividad_id)?.nombre ?? '')
-          .toLowerCase()
-          .includes(q),
-    );
-  }, [actividades, search, tiposMap]);
+  const { data: necesidadesAbiertas } = useNecesidades({ estado: 'abierta' });
+  const necesidadesMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const n of necesidadesAbiertas ?? []) {
+      map.set(n.actividad_id, (map.get(n.actividad_id) ?? 0) + 1);
+    }
+    return map;
+  }, [necesidadesAbiertas]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [mesFilter, anioFilter, estadoFilter, debouncedSearch]);
 
   useEffect(() => {
     if (usuario?.rol === 'usuario') {
@@ -173,7 +194,7 @@ export default function ActividadesPage() {
       }
     : undefined;
 
-  const colSpan = isAdmin ? 9 : 8;
+  const colSpan = isAdmin ? 10 : 9;
 
   return (
     <div className="grid gap-6">
@@ -243,109 +264,160 @@ export default function ActividadesPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead className="hidden md:table-cell">Hora</TableHead>
-              <TableHead className="hidden md:table-cell">Tipo</TableHead>
-              <TableHead className="hidden lg:table-cell">Grupo</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="hidden md:table-cell">Pública</TableHead>
-              {isAdmin && <TableHead className="w-12" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              ['s1', 's2', 's3', 's4', 's5'].map((key) => (
-                <TableRow key={key}>
-                  <TableCell colSpan={colSpan}>
-                    <Skeleton className="h-4 w-full" />
-                  </TableCell>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead className="hidden md:table-cell">Hora</TableHead>
+                  <TableHead className="hidden md:table-cell">Tipo</TableHead>
+                  <TableHead className="hidden lg:table-cell">Grupo</TableHead>
+                  <TableHead className="hidden lg:table-cell">Logística</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="hidden md:table-cell">Pública</TableHead>
+                  {isAdmin && <TableHead className="w-12" />}
                 </TableRow>
-              ))
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colSpan} className="h-24 text-center">
-                  No se encontraron actividades.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((actividad) => (
-                <TableRow key={actividad.id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/dashboard/actividades/${actividad.id}`}
-                      className="hover:underline"
-                    >
-                      {actividad.nombre}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {formatFecha(actividad.fecha)}
-                  </TableCell>
-                  <TableCell className="hidden whitespace-nowrap md:table-cell">
-                    {formatHora(actividad.hora_inicio)} - {formatHora(actividad.hora_fin)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {actividad.tipo_actividad?.nombre ??
-                      tiposMap.get(actividad.tipo_actividad_id)?.nombre ??
-                      actividad.tipo_actividad_id}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {actividad.grupo_id ? (gruposMap.get(actividad.grupo_id)?.nombre ?? '—') : '—'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={estadoVariant[actividad.estado]}>
-                      {estadoLabels[actividad.estado]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {actividad.es_publica ? (
-                      <Badge variant="outline">Sí</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">No</span>
-                    )}
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/actividades/${actividad.id}`}>
-                              <Eye className="size-4" />
-                              Ver detalle
-                            </Link>
-                          </DropdownMenuItem>
-                          {actividad.estado !== 'cancelada' && (
-                            <DropdownMenuItem onClick={() => openEdit(actividad)}>
-                              <Pencil className="size-4" />
-                              Editar
-                            </DropdownMenuItem>
-                          )}
-                          {(actividad.estado !== 'cancelada' || isAdmin) && (
-                            <DropdownMenuItem onClick={() => setEstadoModal(actividad)}>
-                              <RefreshCw className="size-4" />
-                              Cambiar estado
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  ['s1', 's2', 's3', 's4', 's5'].map((key) => (
+                    <TableRow key={key}>
+                      <TableCell colSpan={colSpan}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : actividades.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={colSpan} className="h-24 text-center">
+                      No se encontraron actividades.
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </TableRow>
+                ) : (
+                  actividades.map((actividad) => (
+                    <TableRow key={actividad.id}>
+                      <TableCell className="font-medium max-w-[200px]">
+                        <Link
+                          href={`/dashboard/actividades/${actividad.id}`}
+                          className="hover:underline truncate block"
+                        >
+                          {actividad.nombre}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatFecha(actividad.fecha)}
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap md:table-cell">
+                        {formatHora(actividad.hora_inicio)} - {formatHora(actividad.hora_fin)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {actividad.tipo_actividad?.nombre ??
+                          tiposMap.get(actividad.tipo_actividad_id)?.nombre ??
+                          actividad.tipo_actividad_id}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {actividad.grupo_id
+                          ? (gruposMap.get(actividad.grupo_id)?.nombre ?? '—')
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {(necesidadesMap.get(actividad.id) ?? 0) > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="gap-1 border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                          >
+                            <Package className="size-3" />
+                            {necesidadesMap.get(actividad.id)}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={estadoVariant[actividad.estado]}>
+                          {estadoLabels[actividad.estado]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {actividad.es_publica ? (
+                          <Badge variant="outline">Sí</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">No</span>
+                        )}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon-sm">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/actividades/${actividad.id}`}>
+                                  <Eye className="size-4" />
+                                  Ver detalle
+                                </Link>
+                              </DropdownMenuItem>
+                              {actividad.estado !== 'cancelada' && (
+                                <DropdownMenuItem onClick={() => openEdit(actividad)}>
+                                  <Pencil className="size-4" />
+                                  Editar
+                                </DropdownMenuItem>
+                              )}
+                              {(actividad.estado !== 'cancelada' || isAdmin) && (
+                                <DropdownMenuItem onClick={() => setEstadoModal(actividad)}>
+                                  <RefreshCw className="size-4" />
+                                  Cambiar estado
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {meta && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground px-2">
+          <span>
+            {meta.total === 0
+              ? 'Sin resultados'
+              : `${(page - 1) * meta.limit + 1}–${Math.min(page * meta.limit, meta.total)} de ${meta.total} actividades`}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1 || isLoading}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="min-w-[100px] text-center">
+              Página {page} de {meta.totalPages || 1}
+            </span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setPage(page + 1)}
+              disabled={page >= meta.totalPages || isLoading}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <ActividadFormModal
         open={formOpen}
@@ -366,4 +438,3 @@ export default function ActividadesPage() {
     </div>
   );
 }
-

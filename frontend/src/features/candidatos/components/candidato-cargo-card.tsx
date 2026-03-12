@@ -82,4 +82,3 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
     </Card>
   );
 }
-

@@ -3,9 +3,7 @@
 import {
   ArrowLeft,
   CheckCircle,
-  Package,
   Pencil,
-  Plus,
   RefreshCw,
   Sparkles,
   Trash2,
@@ -41,31 +39,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActividadFormModal } from '@/features/actividades/components/actividad-form';
-import { AgregarNecesidadModal } from '@/features/actividades/components/agregar-necesidad-modal';
 import { CambiarEstadoActividadModal } from '@/features/actividades/components/cambiar-estado-actividad-modal';
 import { InvitarParticipanteModal } from '@/features/actividades/components/invitar-participante-modal';
+import { LogisticaTab } from '@/features/actividades/components/logistica-tab';
 import { useActividad } from '@/features/actividades/hooks/use-actividades';
 import {
   useDeleteInvitado,
   useInvitadosActividad,
   useMarcarAsistencia,
 } from '@/features/actividades/hooks/use-invitados-actividad';
-import { useNecesidadesActividad } from '@/features/actividades/hooks/use-necesidades-actividad';
 import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
 import type { CreateActividadFormData } from '@/features/actividades/schemas';
 import type { EstadoActividad } from '@/features/actividades/types';
 import type { EstadoInvitado } from '@/features/actividades/types/invitados';
-import type { EstadoNecesidad } from '@/features/actividades/types/necesidades';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { SugerirCandidatoModal } from '@/features/candidatos/components/sugerir-candidato-modal';
 import { useSugerirCandidatosRol } from '@/features/candidatos/hooks/use-sugerir-candidatos-rol';
 import type { Candidato } from '@/features/candidatos/types';
-import {
-  responsabilidadesActividadHooks,
-  tiposActividadHooks,
-  tiposNecesidadHooks,
-} from '@/features/catalogos/hooks';
+import { responsabilidadesActividadHooks, tiposActividadHooks } from '@/features/catalogos/hooks';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
@@ -96,18 +89,6 @@ const invitadoEstadoVariant: Record<EstadoInvitado, 'default' | 'secondary' | 'd
   confirmado: 'default',
   pendiente: 'secondary',
   rechazado: 'destructive',
-};
-
-const necesidadEstadoLabels: Record<EstadoNecesidad, string> = {
-  abierta: 'Abierta',
-  cubierta: 'Cubierta',
-  cerrada: 'Cerrada',
-};
-
-const necesidadEstadoVariant: Record<EstadoNecesidad, 'default' | 'secondary' | 'outline'> = {
-  abierta: 'default',
-  cubierta: 'secondary',
-  cerrada: 'outline',
 };
 
 // ---------------------------------------------------------------------------
@@ -144,7 +125,6 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const { id } = use(params);
   const actividadId = Number(id);
 
-  // Auth (must be before backHref derivation)
   const { usuario } = useAuth();
 
   const searchParams = useSearchParams();
@@ -159,13 +139,10 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const { data: grupos } = useGrupos();
   const { data: misGrupos } = useMisGrupos();
   const { data: invitados, isLoading: loadingInvitados } = useInvitadosActividad(actividadId);
-  const { data: necesidades, isLoading: loadingNecesidades } = useNecesidadesActividad(actividadId);
   const { data: miembros } = useMiembros();
   const { data: responsabilidadesActividad } = responsabilidadesActividadHooks.useAllActivos();
-  const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
   const isAdmin = usuario?.rol === 'administrador';
 
-  // El encargado puede gestionar invitados/necesidades solo en actividades de sus grupos
   const misGruposIds = useMemo(() => new Set(misGrupos?.map((g) => g.id_grupo) ?? []), [misGrupos]);
   const canManageGestion =
     isAdmin || (isUsuario && !!actividad?.grupo_id && misGruposIds.has(actividad.grupo_id));
@@ -180,12 +157,16 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const [formOpen, setFormOpen] = useState(false);
   const [estadoOpen, setEstadoOpen] = useState(false);
   const [invitarOpen, setInvitarOpen] = useState(false);
-  const [necesidadOpen, setNecesidadOpen] = useState(false);
   const [sugerirOpen, setSugerirOpen] = useState(false);
   const [deletingInvitadoId, setDeletingInvitadoId] = useState<number | null>(null);
   const [invitarDefaults, setInvitarDefaults] = useState<
     { miembro_id?: number; responsabilidad_id?: number } | undefined
   >();
+
+  const responsabilidadesMap = useMemo(
+    () => new Map(responsabilidadesActividad?.map((r) => [r.id_responsabilidad, r])),
+    [responsabilidadesActividad],
+  );
 
   function handleInvitarFromCandidato(candidato: Candidato, responsabilidadId: number) {
     setSugerirOpen(false);
@@ -193,24 +174,6 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     setInvitarOpen(true);
   }
 
-  // Lookups
-  const tipoNombre =
-    actividad?.tipo_actividad?.nombre ??
-    tiposActividad?.find((t) => t.id_tipo === actividad?.tipo_actividad_id)?.nombre;
-  const grupoNombre = actividad?.grupo_id
-    ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
-    : null;
-
-  const responsabilidadesMap = useMemo(
-    () => new Map(responsabilidadesActividad?.map((r) => [r.id_responsabilidad, r])),
-    [responsabilidadesActividad],
-  );
-  const tiposNecesidadMap = useMemo(
-    () => new Map(tiposNecesidad?.map((t) => [t.id_tipo, t])),
-    [tiposNecesidad],
-  );
-
-  // Handlers
   function handleUpdate(data: CreateActividadFormData) {
     if (!actividad) return;
     updateMutation.mutate(
@@ -268,6 +231,13 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
 
   const isCancelada = actividad.estado === 'cancelada';
 
+  const tipoNombre =
+    actividad.tipo_actividad?.nombre ??
+    tiposActividad?.find((t) => t.id_tipo === actividad.tipo_actividad_id)?.nombre;
+  const grupoNombre = actividad.grupo_id
+    ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
+    : null;
+
   const editingDefaults = {
     tipo_actividad_id: actividad.tipo_actividad_id,
     nombre: actividad.nombre,
@@ -311,234 +281,197 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         )}
       </div>
 
-      {/* Info cards */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Información General</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <InfoRow label="Nombre" value={actividad.nombre} />
-            <Separator />
-            <InfoRow label="Tipo" value={tipoNombre} />
-            <Separator />
-            <InfoRow label="Fecha" value={formatFecha(actividad.fecha)} />
-            <Separator />
-            <InfoRow
-              label="Horario"
-              value={`${formatHora(actividad.hora_inicio)} - ${formatHora(actividad.hora_fin)}`}
-            />
-            <Separator />
-            <InfoRow label="Lugar" value={actividad.lugar} />
-            <Separator />
-            <InfoRow label="Descripción" value={actividad.descripcion} />
-          </CardContent>
-        </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Información General</TabsTrigger>
+          <TabsTrigger value="logistica">Logística</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Detalles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-2 py-2">
-              <span className="text-sm text-muted-foreground">Estado</span>
-              <span className="col-span-2">
-                <Badge variant={estadoVariant[actividad.estado]}>
-                  {estadoLabels[actividad.estado]}
-                </Badge>
-              </span>
-            </div>
-            <Separator />
-            <InfoRow label="Grupo" value={grupoNombre} />
-            <Separator />
-            <InfoRow label="Pública" value={actividad.es_publica ? 'Sí' : 'No'} />
-            <Separator />
-            <InfoRow
-              label="Creada"
-              value={new Date(actividad.fecha_creacion).toLocaleDateString('es-CL')}
-            />
-            {isCancelada && (
-              <>
+        {/* ---------------------------------------------------------------- */}
+        {/* Información General Tab                                           */}
+        {/* ---------------------------------------------------------------- */}
+        <TabsContent value="info" className="grid gap-6 mt-4">
+          {/* Info cards */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Información General</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <InfoRow label="Nombre" value={actividad.nombre} />
                 <Separator />
-                <InfoRow label="Motivo cancelación" value={actividad.motivo_cancelacion} />
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                <InfoRow label="Tipo" value={tipoNombre} />
+                <Separator />
+                <InfoRow label="Fecha" value={formatFecha(actividad.fecha)} />
+                <Separator />
+                <InfoRow
+                  label="Horario"
+                  value={`${formatHora(actividad.hora_inicio)} - ${formatHora(actividad.hora_fin)}`}
+                />
+                <Separator />
+                <InfoRow label="Lugar" value={actividad.lugar} />
+                <Separator />
+                <InfoRow label="Descripción" value={actividad.descripcion} />
+              </CardContent>
+            </Card>
 
-      {/* Invitados section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-base">
-            <span className="flex items-center gap-2">
-              <Users className="size-4" />
-              Invitados ({invitados?.length ?? 0})
-            </span>
-            {canManageGestion && !isCancelada && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setSugerirOpen(true)}>
-                  <Sparkles className="size-4" />
-                  Sugerir
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setInvitarDefaults(undefined);
-                    setInvitarOpen(true);
-                  }}
-                >
-                  <UserPlus className="size-4" />
-                  Invitar
-                </Button>
-              </div>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingInvitados ? (
-            <div className="grid gap-2">
-              {['a', 'b', 'c'].map((key) => (
-                <Skeleton key={key} className="h-8 w-full" />
-              ))}
-            </div>
-          ) : !invitados?.length ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No hay invitados en esta actividad.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Miembro</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Asistió</TableHead>
-                  {canManageGestion && <TableHead className="w-24">Acciones</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invitados.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">
-                      {inv.miembro
-                        ? `${inv.miembro.nombre} ${inv.miembro.apellido}`
-                        : `Miembro #${inv.miembro_id}`}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {inv.rol?.nombre ??
-                          responsabilidadesMap.get(inv.responsabilidad_id)?.nombre ??
-                          `Responsabilidad #${inv.responsabilidad_id}`}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={invitadoEstadoVariant[inv.estado]}>
-                        {invitadoEstadoLabels[inv.estado]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {canManageGestion && inv.estado === 'confirmado' ? (
-                        <Checkbox
-                          checked={inv.asistio}
-                          onCheckedChange={(checked) =>
-                            handleMarcarAsistencia(inv.id, checked === true)
-                          }
-                          disabled={asistenciaMutation.isPending}
-                          aria-label={inv.asistio ? 'Desmarcar asistencia' : 'Marcar asistencia'}
-                        />
-                      ) : inv.asistio ? (
-                        <CheckCircle className="size-4 text-green-600" />
-                      ) : (
-                        <XCircle className="size-4 text-muted-foreground" />
-                      )}
-                    </TableCell>
-                    {canManageGestion && (
-                      <TableCell>
-                        {inv.estado === 'pendiente' && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setDeletingInvitadoId(inv.id)}
-                            title="Eliminar invitación"
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Detalles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2 py-2">
+                  <span className="text-sm text-muted-foreground">Estado</span>
+                  <span className="col-span-2">
+                    <Badge variant={estadoVariant[actividad.estado]}>
+                      {estadoLabels[actividad.estado]}
+                    </Badge>
+                  </span>
+                </div>
+                <Separator />
+                <InfoRow label="Grupo" value={grupoNombre} />
+                <Separator />
+                <InfoRow label="Pública" value={actividad.es_publica ? 'Sí' : 'No'} />
+                <Separator />
+                <InfoRow
+                  label="Creada"
+                  value={new Date(actividad.fecha_creacion).toLocaleDateString('es-CL')}
+                />
+                {isCancelada && (
+                  <>
+                    <Separator />
+                    <InfoRow label="Motivo cancelación" value={actividad.motivo_cancelacion} />
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Necesidades section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-base">
-            <span className="flex items-center gap-2">
-              <Package className="size-4" />
-              Necesidades Logísticas ({necesidades?.length ?? 0})
-            </span>
-            {canManageGestion && !isCancelada && (
-              <Button size="sm" onClick={() => setNecesidadOpen(true)}>
-                <Plus className="size-4" />
-                Agregar
-              </Button>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingNecesidades ? (
-            <div className="grid gap-2">
-              {['a', 'b', 'c'].map((key) => (
-                <Skeleton key={key} className="h-8 w-full" />
-              ))}
-            </div>
-          ) : !necesidades?.length ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No hay necesidades logísticas registradas.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Cantidad Req.</TableHead>
-                  <TableHead>Cubierta</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {necesidades.map((nec) => (
-                  <TableRow key={nec.id}>
-                    <TableCell className="font-medium">
-                      {tiposNecesidadMap.get(nec.tipo_necesidad_id)?.nombre ??
-                        `Tipo #${nec.tipo_necesidad_id}`}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{nec.descripcion}</TableCell>
-                    <TableCell>
-                      {nec.cantidad_requerida} {nec.unidad_medida}
-                    </TableCell>
-                    <TableCell>
-                      {nec.cantidad_cubierta} / {nec.cantidad_requerida}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={necesidadEstadoVariant[nec.estado]}>
-                        {necesidadEstadoLabels[nec.estado]}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+          {/* Invitados section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-base">
+                <span className="flex items-center gap-2">
+                  <Users className="size-4" />
+                  Invitados ({invitados?.length ?? 0})
+                </span>
+                {canManageGestion && !isCancelada && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setSugerirOpen(true)}>
+                      <Sparkles className="size-4" />
+                      Sugerir
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setInvitarDefaults(undefined);
+                        setInvitarOpen(true);
+                      }}
+                    >
+                      <UserPlus className="size-4" />
+                      Invitar
+                    </Button>
+                  </div>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingInvitados ? (
+                <div className="grid gap-2">
+                  {['a', 'b', 'c'].map((key) => (
+                    <Skeleton key={key} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : !invitados?.length ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No hay invitados en esta actividad.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Miembro</TableHead>
+                        <TableHead>Responsabilidad</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Asistió</TableHead>
+                        {canManageGestion && <TableHead className="w-24">Acciones</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invitados.map((inv) => (
+                        <TableRow key={inv.id}>
+                          <TableCell className="font-medium">
+                            {inv.miembro
+                              ? `${inv.miembro.nombre} ${inv.miembro.apellido}`
+                              : `Miembro #${inv.miembro_id}`}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {inv.rol?.nombre ??
+                                responsabilidadesMap.get(inv.responsabilidad_id)?.nombre ??
+                                `Responsabilidad #${inv.responsabilidad_id}`}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={invitadoEstadoVariant[inv.estado]}>
+                              {invitadoEstadoLabels[inv.estado]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {canManageGestion && inv.estado === 'confirmado' ? (
+                              <Checkbox
+                                checked={inv.asistio}
+                                onCheckedChange={(checked) =>
+                                  handleMarcarAsistencia(inv.id, checked === true)
+                                }
+                                disabled={asistenciaMutation.isPending}
+                                aria-label={
+                                  inv.asistio ? 'Desmarcar asistencia' : 'Marcar asistencia'
+                                }
+                              />
+                            ) : inv.asistio ? (
+                              <CheckCircle className="size-4 text-green-600" />
+                            ) : (
+                              <XCircle className="size-4 text-muted-foreground" />
+                            )}
+                          </TableCell>
+                          {canManageGestion && (
+                            <TableCell>
+                              {inv.estado === 'pendiente' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => setDeletingInvitadoId(inv.id)}
+                                  title="Eliminar invitación"
+                                >
+                                  <Trash2 className="size-4 text-destructive" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Logística Tab                                                     */}
+        {/* ---------------------------------------------------------------- */}
+        <TabsContent value="logistica" className="mt-4">
+          <LogisticaTab
+            actividadId={actividadId}
+            canManage={canManageGestion}
+            isCancelada={isCancelada}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       <ActividadFormModal
@@ -577,13 +510,6 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         responsabilidadesActividad={responsabilidadesActividad}
         sugerirMutation={sugerirMutation}
         onInvitar={handleInvitarFromCandidato}
-      />
-
-      <AgregarNecesidadModal
-        actividadId={actividadId}
-        open={necesidadOpen}
-        onOpenChange={setNecesidadOpen}
-        tiposNecesidad={tiposNecesidad}
       />
 
       <AlertDialog

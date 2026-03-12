@@ -15,4 +15,3 @@ export function useGruposPermitidos() {
     misGruposIds: new Set(misGrupos?.map((g) => g.id_grupo) ?? []),
   };
 }
-

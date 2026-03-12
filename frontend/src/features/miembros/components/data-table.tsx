@@ -2,10 +2,10 @@
 
 import {
   type ColumnDef,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { useState } from 'react';
@@ -92,7 +92,7 @@ export function DataTable<TData>({
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -170,4 +170,3 @@ export function DataTable<TData>({
     </div>
   );
 }
-

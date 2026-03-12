@@ -25,4 +25,3 @@ export interface UpdateUsuarioInput {
 export interface PatchEstadoUsuarioInput {
   activo: boolean;
 }
-

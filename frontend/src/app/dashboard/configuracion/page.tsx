@@ -180,16 +180,12 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
     {
       key: 'es_directiva',
       header: 'Directiva',
-      render: (r) => (
-        <BooleanBadge value={r.es_directiva} trueLabel="Sí" falseLabel="No" />
-      ),
+      render: (r) => <BooleanBadge value={r.es_directiva} trueLabel="Sí" falseLabel="No" />,
     },
     {
       key: 'es_unico',
       header: 'Único',
-      render: (r) => (
-        <BooleanBadge value={r.es_unico} trueLabel="Sí" falseLabel="No" />
-      ),
+      render: (r) => <BooleanBadge value={r.es_unico} trueLabel="Sí" falseLabel="No" />,
     },
     {
       key: 'requiere_plena_comunion',
@@ -207,7 +203,8 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
       name: 'es_directiva',
       label: 'Cargo de directiva',
       type: 'checkbox',
-      description: 'Los miembros con este rol tienen privilegios de gestión sobre el grupo (actividades, invitados, etc.)',
+      description:
+        'Los miembros con este rol tienen privilegios de gestión sobre el grupo (actividades, invitados, etc.)',
     },
     {
       name: 'es_unico',
@@ -235,7 +232,10 @@ function RolesGrupoTab({ isAdmin }: { isAdmin: boolean }) {
 // =============================================================================
 
 function RolesActividadTab({ isAdmin }: { isAdmin: boolean }) {
-  const tab = useCatalogoTab<ResponsabilidadActividad, z.infer<typeof createResponsabilidadActividadSchema>>({
+  const tab = useCatalogoTab<
+    ResponsabilidadActividad,
+    z.infer<typeof createResponsabilidadActividadSchema>
+  >({
     hooks: responsabilidadesActividadHooks,
     schema: createResponsabilidadActividadSchema,
     getId: (r) => r.id_responsabilidad,
@@ -466,7 +466,9 @@ export default function ConfiguracionPage() {
       <Tabs defaultValue="roles-grupo">
         <TabsList>
           <TabsTrigger value="roles-grupo">Roles de Grupo</TabsTrigger>
-          <TabsTrigger value="responsabilidades-actividad">Responsabilidades de Actividad</TabsTrigger>
+          <TabsTrigger value="responsabilidades-actividad">
+            Responsabilidades de Actividad
+          </TabsTrigger>
           <TabsTrigger value="tipos-actividad">Tipos de Actividad</TabsTrigger>
           <TabsTrigger value="tipos-necesidad">Tipos de Necesidad</TabsTrigger>
         </TabsList>
@@ -490,5 +492,3 @@ export default function ConfiguracionPage() {
     </div>
   );
 }
-
-

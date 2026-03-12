@@ -2,9 +2,20 @@
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
-import { CalendarPlus, ChevronLeft, ChevronRight, Eye, Pencil, RefreshCw } from 'lucide-react';
+import {
+  CalendarPlus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Eye,
+  Pencil,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useId, useMemo, useState } from 'react';
+import * as React from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Calendar, dayjsLocalizer, type View } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { toast } from 'sonner';
@@ -18,7 +29,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ActividadFormModal } from '@/features/actividades/components/actividad-form';
 import { CambiarEstadoActividadModal } from '@/features/actividades/components/cambiar-estado-actividad-modal';
 import { useActividades } from '@/features/actividades/hooks/use-actividades';
@@ -34,9 +47,22 @@ import type { TipoActividad } from '@/features/catalogos/types';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
 import { GenerarInstanciasModal } from '@/features/patrones-actividad/components/generar-instancias-modal';
+import { cn } from '@/lib/utils';
 
 dayjs.locale('es');
 const localizer = dayjsLocalizer(dayjs);
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 const estadoLabels: Record<EstadoActividad, string> = {
   programada: 'Programada',
@@ -52,9 +78,10 @@ const estadoColors: Record<EstadoActividad, string> = {
 
 // Convierte CalendarioEvento (consolidado) al shape Actividad que usa el calendario
 function toCalendarActividad(evento: CalendarioEvento): Actividad {
+  const prefix = evento.grupo_organizador ? `[${evento.grupo_organizador.nombre}] ` : '';
   return {
     id: evento.id,
-    nombre: evento.nombre,
+    nombre: `${prefix}${evento.nombre}`,
     tipo_actividad_id: evento.tipo_actividad.id,
     tipo_actividad: null,
     fecha: evento.fecha,
@@ -103,23 +130,30 @@ export default function CalendarioPage() {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
   const isUsuario = !!usuario && !isAdmin;
+  const isMobile = useIsMobile();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('month');
   const [soloPublicas, setSoloPublicas] = useState(false);
+  const [selectedGrupoId, setSelectedGrupoId] = useState<number | undefined>(undefined);
 
   const mes = currentDate.getMonth() + 1;
   const anio = currentDate.getFullYear();
 
   const filters: ActividadFilters = { mes, anio };
   if (soloPublicas) filters.es_publica = true;
+  if (selectedGrupoId) filters.grupo_id = selectedGrupoId;
 
   const { data: actividadesAll } = useActividades(filters, { enabled: !!usuario && isAdmin });
-  const { data: consolidado } = useCalendarioConsolidado(mes, anio, { enabled: isUsuario });
+  const { data: consolidado } = useCalendarioConsolidado(mes, anio, selectedGrupoId, {
+    enabled: isUsuario,
+  });
+  
   const actividades = useMemo(
     () => (isUsuario ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
     [isUsuario, consolidado, actividadesAll],
   );
+
   const { data: tiposActividad } = tiposActividadHooks.useAll();
   const { data: tiposActividadActivos } = tiposActividadHooks.useAllActivos();
   const { data: todosLosGrupos } = useGrupos();
@@ -151,15 +185,20 @@ export default function CalendarioPage() {
     return actividades.map((a) => {
       const start = new Date(`${a.fecha}T${a.hora_inicio}`);
       const end = new Date(`${a.fecha}T${a.hora_fin}`);
+      // Asegurarnos que si es admin también tenga el prefijo
+      const grupo = a.grupo_id ? gruposMap.get(a.grupo_id) : null;
+      const prefix = grupo ? `[${grupo.nombre}] ` : '';
+      const title = a.nombre.startsWith('[') ? a.nombre : `${prefix}${a.nombre}`;
+
       return {
         id: a.id,
-        title: a.nombre,
+        title,
         start,
         end,
         resource: a,
       };
     });
-  }, [actividades]);
+  }, [actividades, gruposMap]);
 
   const eventStyleGetter = useCallback(
     (event: CalendarEvent) => {
@@ -205,9 +244,11 @@ export default function CalendarioPage() {
   function openEdit(actividad: Actividad) {
     setDetalleOpen(false);
     setEditing(actividad);
+    // Limpiar el prefijo si existe para editar el nombre limpio
+    const nombreLimpio = actividad.nombre.replace(/^\[.*?\]\s/, '');
     setFormDefaults({
       tipo_actividad_id: actividad.tipo_actividad_id,
-      nombre: actividad.nombre,
+      nombre: nombreLimpio,
       descripcion: actividad.descripcion ?? '',
       fecha: actividad.fecha,
       hora_inicio: formatHora(actividad.hora_inicio),
@@ -294,6 +335,7 @@ export default function CalendarioPage() {
           } satisfies TipoActividad)
         : undefined))
     : undefined;
+
   const detalleGrupo = detalleActividad?.grupo_id
     ? gruposMap.get(detalleActividad.grupo_id)
     : undefined;
@@ -320,28 +362,49 @@ export default function CalendarioPage() {
         onNavigate={handleNavigate}
         soloPublicas={soloPublicas}
         onSoloPublicasChange={setSoloPublicas}
+        gruposPermitidos={gruposPermitidos}
+        selectedGrupoId={selectedGrupoId}
+        onGrupoChange={setSelectedGrupoId}
       />
 
-      <div className="calendar-wrapper rounded-md border bg-background p-2">
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          date={currentDate}
-          view={view}
-          onNavigate={setCurrentDate}
-          onView={setView}
-          selectable={canCreate}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={eventStyleGetter}
-          messages={messages}
-          toolbar={false}
-          style={{ height: 650 }}
-          popup
-        />
-      </div>
+      {isMobile ? (
+        <div className="rounded-md border bg-background p-4">
+          <MobileCalendarList
+            events={events}
+            currentDate={currentDate}
+            tiposMap={tiposMap}
+            gruposMap={gruposMap}
+            onSelectEvent={handleSelectEvent}
+            canCreate={canCreate}
+            onAddActivity={(date) => {
+              setEditing(null);
+              setFormDefaults({ fecha: dayjs(date).format('YYYY-MM-DD') });
+              setFormOpen(true);
+            }}
+          />
+        </div>
+      ) : (
+        <div className="calendar-wrapper rounded-md border bg-background p-2">
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            date={currentDate}
+            view={view}
+            onNavigate={setCurrentDate}
+            onView={setView}
+            selectable={canCreate}
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+            eventPropGetter={eventStyleGetter}
+            messages={messages}
+            toolbar={false}
+            style={{ height: 650 }}
+            popup
+          />
+        </div>
+      )}
 
       {actividades.length > 0 && <CalendarLegend actividades={actividades} tiposMap={tiposMap} />}
 
@@ -388,6 +451,9 @@ interface CalendarToolbarProps {
   onNavigate: (action: 'PREV' | 'NEXT' | 'TODAY') => void;
   soloPublicas: boolean;
   onSoloPublicasChange: (val: boolean) => void;
+  gruposPermitidos: any[] | undefined;
+  selectedGrupoId: number | undefined;
+  onGrupoChange: (id: number | undefined) => void;
 }
 
 function CalendarToolbar({
@@ -397,6 +463,9 @@ function CalendarToolbar({
   onNavigate,
   soloPublicas,
   onSoloPublicasChange,
+  gruposPermitidos,
+  selectedGrupoId,
+  onGrupoChange,
 }: CalendarToolbarProps) {
   const checkboxId = useId();
   const label = dayjs(currentDate).format(
@@ -404,6 +473,19 @@ function CalendarToolbar({
   );
 
   const weekEnd = view === 'week' ? dayjs(currentDate).endOf('week').format('D MMM YYYY') : '';
+
+  // Combobox para filtrar por grupo
+  const [openCombobox, setOpenCombobox] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const filteredGroups = useMemo(() => {
+    if (!gruposPermitidos) return [];
+    return gruposPermitidos.filter((g) =>
+      g.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [gruposPermitidos, searchTerm]);
+
+  const selectedGrupo = gruposPermitidos?.find((g) => g.id_grupo === selectedGrupoId);
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -423,19 +505,87 @@ function CalendarToolbar({
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Selector de Grupo Inteligente */}
+        {(gruposPermitidos?.length ?? 0) > 0 && (
+          <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                role="combobox"
+                aria-expanded={openCombobox}
+                className="justify-between min-w-[150px]"
+              >
+                {selectedGrupoId ? selectedGrupo?.nombre : 'Todos los grupos'}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-0" align="end">
+              <div className="flex items-center border-b px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <Input
+                  placeholder="Buscar grupo..."
+                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-none focus-visible:ring-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="max-h-[200px] overflow-y-auto p-1">
+                <div
+                  className={cn(
+                    'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                    !selectedGrupoId && 'bg-accent text-accent-foreground',
+                  )}
+                  onClick={() => {
+                    onGrupoChange(undefined);
+                    setOpenCombobox(false);
+                  }}
+                >
+                  <Check
+                    className={cn('mr-2 h-4 w-4', !selectedGrupoId ? 'opacity-100' : 'opacity-0')}
+                  />
+                  Ver todos los grupos
+                </div>
+                {filteredGroups.map((g) => (
+                  <div
+                    key={g.id_grupo}
+                    className={cn(
+                      'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                      selectedGrupoId === g.id_grupo && 'bg-accent text-accent-foreground',
+                    )}
+                    onClick={() => {
+                      onGrupoChange(g.id_grupo);
+                      setOpenCombobox(false);
+                      setSearchTerm('');
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        selectedGrupoId === g.id_grupo ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    {g.nombre}
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        <div className="flex items-center gap-2 border-l pl-3 ml-1">
           <Checkbox
             id={checkboxId}
             checked={soloPublicas}
             onCheckedChange={(checked) => onSoloPublicasChange(!!checked)}
           />
-          <Label htmlFor={checkboxId} className="text-sm">
+          <Label htmlFor={checkboxId} className="text-xs whitespace-nowrap">
             Solo públicas
           </Label>
         </div>
 
-        <div className="flex rounded-md border">
+        <div className="hidden lg:flex rounded-md border">
           {(['month', 'week', 'day'] as const).map((v) => (
             <Button
               key={v}
@@ -487,11 +637,14 @@ function DetalleRapidoModal({
     year: 'numeric',
   });
 
+  // Limpiar el prefijo para mostrar el nombre limpio en el modal
+  const nombreLimpio = actividad.nombre.replace(/^\[.*?\]\s/, '');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{actividad.nombre}</DialogTitle>
+          <DialogTitle>{nombreLimpio}</DialogTitle>
           <DialogDescription>{fecha}</DialogDescription>
         </DialogHeader>
 
@@ -535,7 +688,9 @@ function DetalleRapidoModal({
           {grupoNombre && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Grupo</span>
-              <span>{grupoNombre}</span>
+              <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary">
+                {grupoNombre}
+              </Badge>
             </div>
           )}
           {actividad.descripcion && (
@@ -577,6 +732,163 @@ function DetalleRapidoModal({
   );
 }
 
+// --- Mobile List View ---
+
+interface MobileCalendarListProps {
+  events: CalendarEvent[];
+  currentDate: Date;
+  tiposMap: Map<number, TipoActividad>;
+  gruposMap: Map<number, any>;
+  onSelectEvent: (event: CalendarEvent) => void;
+  canCreate: boolean;
+  onAddActivity: (date: Date) => void;
+}
+
+function MobileCalendarList({
+  events,
+  currentDate,
+  tiposMap,
+  gruposMap,
+  onSelectEvent,
+  canCreate,
+  onAddActivity,
+}: MobileCalendarListProps) {
+  const today = dayjs();
+  const monthStart = dayjs(currentDate).startOf('month');
+  const monthEnd = dayjs(currentDate).endOf('month');
+
+  const monthEvents = events.filter((e) => {
+    const d = dayjs(e.start);
+    return d.isAfter(monthStart.subtract(1, 'day')) && d.isBefore(monthEnd.add(1, 'day'));
+  });
+
+  // Group by day key
+  const grouped = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (const event of monthEvents) {
+      const key = dayjs(event.start).format('YYYY-MM-DD');
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(event);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, currentDate]);
+
+  const sortedDays = [...grouped.keys()].sort();
+
+  if (sortedDays.length === 0) {
+    return (
+      <p className="text-muted-foreground py-8 text-center text-sm">No hay actividades este mes.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {sortedDays.map((dayKey) => {
+        const dayEvents = grouped.get(dayKey)!;
+        const dayjsDate = dayjs(dayKey);
+        const isToday = dayjsDate.isSame(today, 'day');
+
+        return (
+          <div key={dayKey}>
+            {/* Day header */}
+            <div className="mb-2 flex items-center gap-3">
+              <div
+                className={cn(
+                  'flex size-9 shrink-0 flex-col items-center justify-center rounded-full text-xs font-bold leading-none',
+                  isToday ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                )}
+              >
+                <span className="uppercase" style={{ fontSize: '0.6rem' }}>
+                  {dayjsDate.format('ddd')}
+                </span>
+                <span className="text-sm">{dayjsDate.format('D')}</span>
+              </div>
+              <div className="flex flex-col">
+                <span
+                  className={cn(
+                    'text-sm font-semibold capitalize',
+                    isToday ? 'text-primary' : 'text-foreground',
+                  )}
+                >
+                  {dayjsDate.format('dddd')}
+                </span>
+                <span className="text-muted-foreground text-xs capitalize">
+                  {dayjsDate.format('D [de] MMMM [de] YYYY')}
+                </span>
+              </div>
+              {canCreate && (
+                <button
+                  onClick={() => onAddActivity(dayjsDate.toDate())}
+                  className="text-muted-foreground hover:text-foreground ml-auto text-xs underline-offset-2 hover:underline"
+                >
+                  + Agregar
+                </button>
+              )}
+            </div>
+
+            {/* Events */}
+            <div className="flex flex-col gap-2 pl-12">
+              {dayEvents
+                .sort((a, b) => a.start.getTime() - b.start.getTime())
+                .map((event) => {
+                  const tipo = tiposMap.get(event.resource.tipo_actividad_id);
+                  const color = tipo?.color ?? estadoColors[event.resource.estado];
+                  const isCancelled = event.resource.estado === 'cancelada';
+                  const grupo = event.resource.grupo_id ? gruposMap.get(event.resource.grupo_id) : null;
+
+                  return (
+                    <button
+                      key={event.id}
+                      onClick={() => onSelectEvent(event)}
+                      className={cn(
+                        'flex items-start gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-accent w-full',
+                        isCancelled && 'opacity-60',
+                      )}
+                    >
+                      {/* Color bar */}
+                      <div
+                        className="mt-0.5 w-1 self-stretch shrink-0 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                           <p className="truncate text-sm font-medium">{event.title.replace(/^\[.*?\]\s/, '')}</p>
+                           {grupo && (
+                             <Badge variant="secondary" className="px-1 py-0 text-[9px] h-3.5 leading-none">
+                               {grupo.nombre}
+                             </Badge>
+                           )}
+                        </div>
+                        <p className="text-muted-foreground text-xs">
+                          {formatHora(event.resource.hora_inicio)} –{' '}
+                          {formatHora(event.resource.hora_fin)}
+                          {event.resource.lugar && ` · ${event.resource.lugar}`}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          event.resource.estado === 'programada'
+                            ? 'default'
+                            : event.resource.estado === 'realizada'
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                        className="ml-auto shrink-0 text-xs"
+                      >
+                        {estadoLabels[event.resource.estado]}
+                      </Badge>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // --- Legend ---
 
 function CalendarLegend({
@@ -615,4 +927,3 @@ function CalendarLegend({
     </div>
   );
 }
-

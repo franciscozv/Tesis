@@ -36,7 +36,7 @@ import { useCreateInvitado } from '../hooks/use-invitados-actividad';
 
 const invitarSchema = z.object({
   miembro_id: z.coerce.number().int().positive('Seleccione un miembro'),
-  responsabilidad_id: z.coerce.number().int().positive('Seleccione un rol'),
+  responsabilidad_id: z.coerce.number().int().positive('Seleccione una responsabilidad'),
   confirmado: z.boolean().default(false),
 });
 
@@ -115,7 +115,9 @@ export function InvitarParticipanteModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invitar Participante</DialogTitle>
-          <DialogDescription>Seleccione un miembro y asígnele un rol.</DialogDescription>
+          <DialogDescription>
+            Seleccione un miembro y asígnele una responsabilidad.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -152,14 +154,14 @@ export function InvitarParticipanteModal({
               name="responsabilidad_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rol *</FormLabel>
+                  <FormLabel>Responsabilidad *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value ? String(field.value) : ''}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar rol" />
+                        <SelectValue placeholder="Seleccionar responsabilidad" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -205,4 +207,3 @@ export function InvitarParticipanteModal({
     </Dialog>
   );
 }
-

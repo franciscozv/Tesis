@@ -47,6 +47,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   resource: Actividad;
+  grupoNombre?: string;
 }
 
 function formatHora(hora: string) {
@@ -65,6 +66,17 @@ function formatFechaLarga(fecha: string) {
 async function fetchPublicas() {
   const { data } = await publicApiClient.get<ApiResponse<Actividad[]>>('/actividades/publicas');
   return data.responseObject;
+}
+
+function CalendarEventComponent({ event }: { event: CalendarEvent }) {
+  return (
+    <div className="overflow-hidden leading-tight">
+      <div className="truncate text-xs font-semibold">{event.title}</div>
+      {event.grupoNombre && (
+        <div className="truncate text-[10px] opacity-80">{event.grupoNombre}</div>
+      )}
+    </div>
+  );
 }
 
 export default function CalendarioPublicoPage() {
@@ -86,6 +98,7 @@ export default function CalendarioPublicoPage() {
       start: new Date(`${a.fecha}T${a.hora_inicio}`),
       end: new Date(`${a.fecha}T${a.hora_fin}`),
       resource: a,
+      grupoNombre: a.grupo?.nombre ?? undefined,
     }));
   }, [actividades]);
 
@@ -172,7 +185,7 @@ export default function CalendarioPublicoPage() {
         ) : (
           <>
             {/* Desktop calendar */}
-            <div className="calendar-wrapper hidden rounded-md border bg-background p-2 sm:block">
+            <div className="calendar-wrapper hidden min-w-0 rounded-md border bg-background p-2 sm:block">
               <Calendar
                 localizer={localizer}
                 events={events}
@@ -183,6 +196,7 @@ export default function CalendarioPublicoPage() {
                 onNavigate={setCurrentDate}
                 onSelectEvent={handleSelectEvent}
                 eventPropGetter={eventStyleGetter}
+                components={{ event: CalendarEventComponent }}
                 messages={messages}
                 toolbar={false}
                 style={{ height: 550 }}
@@ -225,6 +239,11 @@ export default function CalendarioPublicoPage() {
                           <p className="text-xs text-muted-foreground">
                             {formatHora(a.hora_inicio)} - {formatHora(a.hora_fin)}
                           </p>
+                          {ev.grupoNombre && (
+                            <p className="truncate text-xs font-medium text-muted-foreground">
+                              {ev.grupoNombre}
+                            </p>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -287,4 +306,3 @@ function DetallePublicoModal({
     </Dialog>
   );
 }
-

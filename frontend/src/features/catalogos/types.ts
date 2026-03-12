@@ -64,5 +64,3 @@ export interface CreateTipoNecesidadInput {
 }
 
 export type UpdateTipoNecesidadInput = Partial<CreateTipoNecesidadInput>;
-
-

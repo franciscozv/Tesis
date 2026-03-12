@@ -10,4 +10,3 @@ export function useInvitados(filters?: InvitadoFilters) {
     queryFn: () => invitadosApi.getAll(filters),
   });
 }
-

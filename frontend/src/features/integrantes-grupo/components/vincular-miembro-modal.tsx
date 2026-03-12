@@ -1,12 +1,23 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BadgeCheck, Info, Loader2, ShieldCheck, UserCheck } from 'lucide-react';
+import {
+  BadgeCheck,
+  Check,
+  ChevronsUpDown,
+  Info,
+  Loader2,
+  Search,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
+import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +34,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -30,9 +42,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ApiResponse } from '@/features/auth/types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import type { ApiResponse } from '@/features/auth/types';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
+import { cn } from '@/lib/utils';
 import { useIntegrantesGrupo } from '../hooks/use-integrantes-grupo';
 import { useRolesGrupo } from '../hooks/use-roles-grupo';
 import { useVincularMiembro } from '../hooks/use-vincular-miembro';
@@ -42,11 +55,21 @@ interface VincularMiembroModalProps {
   grupoId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Si es true, solo muestra roles donde es_directiva=false (para la sección Nómina) */
+  soloNoDirectiva?: boolean;
 }
 
-export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMiembroModalProps) {
+export function VincularMiembroModal({
+  grupoId,
+  open,
+  onOpenChange,
+  soloNoDirectiva = false,
+}: VincularMiembroModalProps) {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [openCombobox, setOpenCombobox] = React.useState(false);
+
   const { usuario } = useAuth();
-  const { data: miembros } = useMiembros();
+  const { data: miembros, isLoading: isLoadingMiembros } = useMiembros();
   const { data: miembrosGrupo } = useIntegrantesGrupo(grupoId);
   const { data: roles } = useRolesGrupo();
   const mutation = useVincularMiembro();
@@ -56,8 +79,14 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
   const miembrosActivos = (miembros?.filter((m) => m.activo) ?? []).filter(
     (m) => !miembrosYaEnGrupo.has(m.id),
   );
-  const rolesActivos = (roles?.filter((r) => r.activo) ?? []).filter(
-    (r) => esAdmin || !r.es_directiva,
+
+  const miembrosFiltrados = miembrosActivos.filter((m) => {
+    const fullSearch = `${m.nombre} ${m.apellido}`.toLowerCase();
+    return fullSearch.includes(searchTerm.toLowerCase());
+  });
+
+  const rolesActivos = (roles?.filter((r) => r.activo) ?? []).filter((r) =>
+    soloNoDirectiva ? !r.es_directiva : esAdmin || !r.es_directiva,
   );
 
   const form = useForm<VincularMiembroFormData>({
@@ -92,6 +121,7 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
           toast.success('Miembro vinculado exitosamente');
           onOpenChange(false);
           form.reset();
+          setSearchTerm('');
         },
         onError: (err: any) => {
           const backendMsg = (err?.response?.data as ApiResponse | undefined)?.message;
@@ -101,18 +131,26 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
     );
   }
 
+  // Limpiar búsqueda al abrir/cerrar modal
+  React.useEffect(() => {
+    if (!open) {
+      setSearchTerm('');
+      setOpenCombobox(false);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Vincular Miembro al Grupo</DialogTitle>
+          <DialogTitle>Agregar Integrante</DialogTitle>
           <DialogDescription>
-            Seleccione un miembro y asigne un rol dentro del grupo.
+            Busque un miembro y asígnele un rol de nómina en el grupo.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            {!esAdmin && (
+            {!esAdmin && !soloNoDirectiva && (
               <Alert className="py-2 px-3 border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200">
                 <ShieldCheck className="size-4 text-blue-600 dark:text-blue-400" />
                 <AlertTitle className="text-sm font-semibold">Cargos de Directiva</AlertTitle>
@@ -122,52 +160,110 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
               </Alert>
             )}
             {mostrarAdvertenciaPlenaComunion && (
-              <Alert variant="destructive" className="py-2 px-3 border-amber-500 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
+              <Alert
+                variant="destructive"
+                className="py-2 px-3 border-amber-500 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200"
+              >
                 <Info className="size-4 text-amber-600 dark:text-amber-400" />
                 <AlertTitle className="text-sm font-semibold">Aviso de Requisito</AlertTitle>
                 <AlertDescription className="text-xs">
-                  Este rol requiere que el miembro tenga <strong>Plena Comunión</strong>.
-                  El miembro seleccionado actualmente es <strong>{selectedMiembro?.estado_comunion.replace('_', ' ')}</strong>.
+                  Este rol requiere que el miembro tenga <strong>Plena Comunión</strong>. El miembro
+                  seleccionado actualmente es{' '}
+                  <strong>{selectedMiembro?.estado_comunion.replace('_', ' ')}</strong>.
                 </AlertDescription>
               </Alert>
             )}
+
             <FormField
               control={form.control}
               name="miembro_id"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Miembro *</FormLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(Number(v))}
-                    value={field.value ? String(field.value) : ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar miembro" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {miembrosActivos.length === 0 && (
-                        <SelectItem value="-1" disabled>
-                          No hay miembros disponibles para vincular
-                        </SelectItem>
-                      )}
-                      {miembrosActivos.map((m) => (
-                        <SelectItem key={m.id} value={String(m.id)}>
-                          <div className="flex items-center justify-between w-full gap-2">
-                            <span>{m.nombre} {m.apellido}</span>
-                            <Badge variant="outline" className="text-[10px] h-4 py-0 font-normal">
-                              {m.estado_comunion.replace('_', ' ')}
-                            </Badge>
+                  <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openCombobox}
+                          className={cn(
+                            'w-full justify-between font-normal',
+                            !field.value && 'text-muted-foreground',
+                          )}
+                          disabled={isLoadingMiembros}
+                        >
+                          {field.value
+                            ? `${selectedMiembro?.nombre} ${selectedMiembro?.apellido}`
+                            : 'Buscar miembro por nombre...'}
+                          {isLoadingMiembros ? (
+                            <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin opacity-50" />
+                          ) : (
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          )}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                      align="start"
+                    >
+                      <div className="flex items-center border-b px-3">
+                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                        <Input
+                          placeholder="Escriba para buscar..."
+                          className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto overflow-x-hidden p-1">
+                        {miembrosFiltrados.length === 0 ? (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No se encontraron miembros disponibles.
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        ) : (
+                          miembrosFiltrados.map((m) => (
+                            <div
+                              key={m.id}
+                              className={cn(
+                                'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                                field.value === m.id && 'bg-accent text-accent-foreground',
+                              )}
+                              onClick={() => {
+                                form.setValue('miembro_id', m.id);
+                                setOpenCombobox(false);
+                                setSearchTerm('');
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  field.value === m.id ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              <div className="flex items-center justify-between w-full gap-2">
+                                <span className="font-medium">
+                                  {m.nombre} {m.apellido}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] h-4 py-0 font-normal bg-muted/50"
+                                >
+                                  {m.estado_comunion.replace('_', ' ')}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="rol_grupo_id"
@@ -189,20 +285,20 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
                           <div className="flex flex-col gap-0.5">
                             <span className="font-medium text-sm">{r.nombre}</span>
                             <div className="flex flex-wrap gap-1">
-                              {r.es_directiva && (
-                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none">
-                                  <ShieldCheck className="size-2.5" />
-                                  Directiva
-                                </Badge>
-                              )}
                               {r.es_unico && (
-                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none">
+                                <Badge
+                                  variant="secondary"
+                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                                >
                                   <UserCheck className="size-2.5" />
                                   Único
                                 </Badge>
                               )}
                               {r.requiere_plena_comunion && (
-                                <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none">
+                                <Badge
+                                  variant="secondary"
+                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                                >
                                   <BadgeCheck className="size-2.5" />
                                   Plena Comunión
                                 </Badge>
@@ -221,21 +317,19 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
               control={form.control}
               name="fecha_vinculacion"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Fecha de Vinculación *</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <DatePicker value={field.value} onChange={field.onChange} />
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending && <Loader2 className="animate-spin" />}
+                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Vincular
               </Button>
             </div>
@@ -245,5 +339,3 @@ export function VincularMiembroModal({ grupoId, open, onOpenChange }: VincularMi
     </Dialog>
   );
 }
-
-

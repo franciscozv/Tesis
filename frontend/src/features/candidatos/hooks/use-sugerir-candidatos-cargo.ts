@@ -7,4 +7,3 @@ export function useSugerirCandidatosCargo() {
     mutationFn: candidatosApi.sugerirCargo,
   });
 }
-

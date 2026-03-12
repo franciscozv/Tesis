@@ -9,32 +9,22 @@ export const gruposApi = {
   },
 
   getById: async (id: number) => {
-    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial>>(
-      `/grupos/${id}`,
-    );
+    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial>>(`/grupos/${id}`);
     return data.responseObject;
   },
 
   create: async (input: CreateGrupoInput) => {
-    const { data } = await apiClient.post<ApiResponse<GrupoMinisterial>>(
-      '/grupos',
-      input,
-    );
+    const { data } = await apiClient.post<ApiResponse<GrupoMinisterial>>('/grupos', input);
     return data.responseObject;
   },
 
   update: async (id: number, input: UpdateGrupoInput) => {
-    const { data } = await apiClient.put<ApiResponse<GrupoMinisterial>>(
-      `/grupos/${id}`,
-      input,
-    );
+    const { data } = await apiClient.put<ApiResponse<GrupoMinisterial>>(`/grupos/${id}`, input);
     return data.responseObject;
   },
 
   getMisGrupos: async () => {
-    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>(
-      '/grupos/mis-grupos',
-    );
+    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>('/grupos/mis-grupos');
     return data.responseObject;
   },
 
@@ -42,4 +32,3 @@ export const gruposApi = {
     await apiClient.delete(`/grupos/${id}`);
   },
 };
-

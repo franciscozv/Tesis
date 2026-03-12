@@ -41,8 +41,8 @@ const rolLabels: Record<string, string> = {
   usuario: 'Usuario',
 };
 
-const rolVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-  administrador: 'default',
+const rolVariant: Record<string, 'info' | 'secondary' | 'outline'> = {
+  administrador: 'info',
   usuario: 'secondary',
 };
 
@@ -130,7 +130,7 @@ export default function UsuariosPage() {
 
       {isLoading ? (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-0">
             {['a', 'b', 'c', 'd', 'e'].map((key) => (
               <Skeleton key={key} className="mb-3 h-8 w-full" />
             ))}
@@ -145,77 +145,79 @@ export default function UsuariosPage() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Miembro vinculado</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Último acceso</TableHead>
-                  <TableHead className="w-28">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {usuarios.map((u) => {
-                  const miembro = u.miembro_id ? miembrosMap.get(u.miembro_id) : null;
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={rolVariant[u.rol]}>{rolLabels[u.rol]}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {miembro
-                          ? `${miembro.nombre} ${miembro.apellido}`
-                          : u.miembro_id
-                            ? `#${u.miembro_id}`
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Rol</TableHead>
+                    <TableHead>Miembro vinculado</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Último acceso</TableHead>
+                    <TableHead className="w-28">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usuarios.map((u) => {
+                    const miembro = u.miembro_id ? miembrosMap.get(u.miembro_id) : null;
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={rolVariant[u.rol]}>{rolLabels[u.rol]}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {miembro
+                            ? `${miembro.nombre} ${miembro.apellido}`
+                            : u.miembro_id
+                              ? `#${u.miembro_id}`
+                              : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={u.activo ? 'success' : 'destructive'}>
+                            {u.activo ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {u.ultimo_acceso
+                            ? new Date(u.ultimo_acceso).toLocaleDateString('es-CL', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
                             : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={u.activo ? 'default' : 'destructive'}>
-                          {u.activo ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {u.ultimo_acceso
-                          ? new Date(u.ultimo_acceso).toLocaleDateString('es-CL', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => openEdit(u)}
-                            title="Editar"
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setToggling(u)}
-                            title={u.activo ? 'Desactivar' : 'Activar'}
-                          >
-                            <Power
-                              className={`size-4 ${u.activo ? 'text-destructive' : 'text-green-600'}`}
-                            />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openEdit(u)}
+                              title="Editar"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => setToggling(u)}
+                              title={u.activo ? 'Desactivar' : 'Activar'}
+                            >
+                              <Power
+                                className={`size-4 ${u.activo ? 'text-destructive' : 'text-green-600'}`}
+                              />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -256,4 +258,3 @@ export default function UsuariosPage() {
     </div>
   );
 }
-

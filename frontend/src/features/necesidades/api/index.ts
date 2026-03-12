@@ -56,4 +56,3 @@ export const necesidadesApi = {
     await apiClient.delete(`/necesidades/${id}`);
   },
 };
-

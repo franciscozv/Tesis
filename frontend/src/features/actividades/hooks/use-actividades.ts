@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { actividadesApi } from '../api';
 import type { ActividadFilters } from '../types';
 
@@ -9,6 +9,14 @@ export function useActividades(filters?: ActividadFilters, options?: { enabled?:
     queryKey: [ACTIVIDADES_QUERY_KEY, filters],
     queryFn: () => actividadesApi.getAll(filters),
     enabled: options?.enabled,
+  });
+}
+
+export function useActividadesPaginated(params: ActividadFilters) {
+  return useQuery({
+    queryKey: [ACTIVIDADES_QUERY_KEY, 'paginated', params],
+    queryFn: () => actividadesApi.getAllPaginated(params),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -27,4 +35,3 @@ export function useActividad(id: number) {
     enabled: !!id,
   });
 }
-

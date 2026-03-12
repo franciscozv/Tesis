@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, History, Pencil, UserMinus, UsersRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, History, Pencil, UserMinus, UsersRound } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-de
 import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import type { EstadoComunion } from '@/features/miembros/types';
+import { cn } from '@/lib/utils';
 
 const estadoLabels: Record<EstadoComunion, string> = {
   asistente: 'Asistente',
@@ -192,62 +193,67 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
               Este miembro no tiene historial de grupos.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Grupo</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Vinculación</TableHead>
-                  <TableHead>Desvinculación</TableHead>
-                  {isAdmin && <TableHead className="w-12" />}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {todas.map((mg) => {
-                  const activo = !mg.fecha_desvinculacion;
-                  return (
-                    <TableRow key={mg.id} className={activo ? '' : 'opacity-60'}>
-                      <TableCell className="font-medium">
-                        <Link href={`/dashboard/grupos/${mg.grupo.id}`} className="hover:underline">
-                          {mg.grupo.nombre}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{mg.rol.nombre}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={activo ? 'default' : 'outline'}>
-                          {activo ? 'Activo' : 'Desvinculado'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(mg.fecha_vinculacion).toLocaleDateString('es-CL')}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {mg.fecha_desvinculacion
-                          ? new Date(mg.fecha_desvinculacion).toLocaleDateString('es-CL')
-                          : '—'}
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell>
-                          {activo && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleDesvincular(mg.id)}
-                              disabled={desvincularMutation.isPending}
-                            >
-                              <UserMinus className="size-4" />
-                            </Button>
-                          )}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Grupo</TableHead>
+                    <TableHead>Rol</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Vinculación</TableHead>
+                    <TableHead>Desvinculación</TableHead>
+                    {isAdmin && <TableHead className="w-12" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {todas.map((mg) => {
+                    const activo = !mg.fecha_desvinculacion;
+                    return (
+                      <TableRow key={mg.id} className={activo ? '' : 'opacity-60'}>
+                        <TableCell className="font-medium">
+                          <Link
+                            href={`/dashboard/grupos/${mg.grupo.id}`}
+                            className="hover:underline"
+                          >
+                            {mg.grupo.nombre}
+                          </Link>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell>
+                          <Badge variant="secondary">{mg.rol.nombre}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={activo ? 'default' : 'outline'}>
+                            {activo ? 'Activo' : 'Desvinculado'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(mg.fecha_vinculacion).toLocaleDateString('es-CL')}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {mg.fecha_desvinculacion
+                            ? new Date(mg.fecha_desvinculacion).toLocaleDateString('es-CL')
+                            : '—'}
+                        </TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            {activo && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleDesvincular(mg.id)}
+                                disabled={desvincularMutation.isPending}
+                              >
+                                <UserMinus className="size-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -258,13 +264,24 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
           <CardTitle className="flex items-center gap-2 text-base">
             <History className="size-4" />
             Historial de Estados
+            {historialOrdenado.length > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {historialOrdenado.length}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingHistorial ? (
-            <div className="grid gap-2">
+            <div className="flex flex-col gap-4">
               {['a', 'b', 'c'].map((key) => (
-                <Skeleton key={key} className="h-8 w-full" />
+                <div key={key} className="flex gap-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <Skeleton className="size-3 rounded-full" />
+                    <Skeleton className="h-12 w-px" />
+                  </div>
+                  <Skeleton className="mb-4 h-16 flex-1" />
+                </div>
               ))}
             </div>
           ) : historialOrdenado.length === 0 ? (
@@ -272,42 +289,60 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
               No hay cambios de estado registrados.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Estado Anterior</TableHead>
-                  <TableHead>Estado Nuevo</TableHead>
-                  <TableHead>Motivo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {historialOrdenado.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                      {new Date(h.fecha_cambio).toLocaleDateString('es-CL', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={estadoVariant[h.estado_anterior]}>
-                        {estadoLabels[h.estado_anterior]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={estadoVariant[h.estado_nuevo]}>
-                        {estadoLabels[h.estado_nuevo]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[300px] text-sm">{h.motivo}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ol className="flex flex-col">
+              {historialOrdenado.map((h, index) => {
+                const isLast = index === historialOrdenado.length - 1;
+                const dotColor: Record<EstadoComunion, string> = {
+                  plena_comunion: 'bg-primary',
+                  probando: 'bg-secondary-foreground/40',
+                  asistente: 'bg-muted-foreground/40',
+                };
+                return (
+                  <li key={h.id} className="flex gap-4">
+                    {/* Línea + punto */}
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={cn(
+                          'mt-1 size-3 shrink-0 rounded-full ring-2 ring-background',
+                          dotColor[h.estado_nuevo],
+                        )}
+                      />
+                      {!isLast && <div className="bg-border w-px flex-1 my-1" />}
+                    </div>
+
+                    {/* Contenido */}
+                    <div className={cn('flex flex-col gap-1 pb-6', isLast && 'pb-0')}>
+                      {/* Transición de estados */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={estadoVariant[h.estado_anterior]}>
+                          {estadoLabels[h.estado_anterior]}
+                        </Badge>
+                        <ArrowRight className="text-muted-foreground size-3 shrink-0" />
+                        <Badge variant={estadoVariant[h.estado_nuevo]}>
+                          {estadoLabels[h.estado_nuevo]}
+                        </Badge>
+                      </div>
+
+                      {/* Fecha */}
+                      <p className="text-muted-foreground text-xs">
+                        {new Date(h.fecha_cambio).toLocaleDateString('es-CL', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+
+                      {/* Motivo */}
+                      {h.motivo && (
+                        <p className="text-sm text-muted-foreground italic">"{h.motivo}"</p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           )}
         </CardContent>
       </Card>

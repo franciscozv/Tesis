@@ -19,9 +19,9 @@ const estadoLabels: Record<EstadoComunion, string> = {
   plena_comunion: 'Plena Comunión',
 };
 
-const estadoVariant: Record<EstadoComunion, 'default' | 'secondary' | 'outline'> = {
-  plena_comunion: 'default',
-  probando: 'secondary',
+const estadoVariant: Record<EstadoComunion, 'success' | 'warning' | 'outline'> = {
+  plena_comunion: 'success',
+  probando: 'warning',
   asistente: 'outline',
 };
 
@@ -30,14 +30,15 @@ interface ColumnOptions {
   onCambiarEstado: (miembro: Miembro) => void;
 }
 
-export function getMiembrosColumns({ isAdmin, onCambiarEstado }: ColumnOptions): ColumnDef<Miembro>[] {
+export function getMiembrosColumns({
+  isAdmin,
+  onCambiarEstado,
+}: ColumnOptions): ColumnDef<Miembro>[] {
   return [
     {
       accessorKey: 'rut',
       header: 'RUT',
-      cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.getValue('rut')}</span>
-      ),
+      cell: ({ row }) => <span className="font-mono text-sm">{row.getValue('rut')}</span>,
     },
     {
       id: 'nombre_completo',
@@ -115,4 +116,3 @@ export function getMiembrosColumns({ isAdmin, onCambiarEstado }: ColumnOptions):
     },
   ];
 }
-

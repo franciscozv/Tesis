@@ -26,4 +26,3 @@ export const updateGrupoSchema = z.object({
 
 export type CreateGrupoFormData = z.infer<typeof createGrupoSchema>;
 export type UpdateGrupoFormData = z.infer<typeof updateGrupoSchema>;
-

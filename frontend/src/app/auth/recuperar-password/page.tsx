@@ -48,10 +48,12 @@ export default function RecuperarPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-svh items-center justify-center p-6">
+      <Card className="w-full max-w-sm shadow-md border-border/60">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Recuperar Contraseña</CardTitle>
+          <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
+            {enviado ? 'Correo enviado' : 'Recuperar contraseña'}
+          </CardTitle>
           <CardDescription>
             {enviado
               ? 'Revisa tu bandeja de entrada'
@@ -110,4 +112,3 @@ export default function RecuperarPasswordPage() {
     </div>
   );
 }
-

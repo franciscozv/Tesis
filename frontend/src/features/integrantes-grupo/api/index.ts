@@ -39,4 +39,3 @@ export const integranteGrupoApi = {
     return data.responseObject;
   },
 };
-

@@ -50,4 +50,3 @@ export interface UpdateNecesidadInput {
 export interface CambiarEstadoNecesidadInput {
   estado: EstadoNecesidad;
 }
-

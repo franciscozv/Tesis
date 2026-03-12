@@ -15,4 +15,3 @@ export const responderInvitacionSchema = z
   );
 
 export type ResponderInvitacionFormData = z.infer<typeof responderInvitacionSchema>;
-

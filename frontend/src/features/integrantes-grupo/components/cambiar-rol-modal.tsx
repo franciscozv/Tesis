@@ -1,7 +1,16 @@
 'use client';
 
-import { BadgeCheck, Info, Loader2, ShieldCheck, UserCheck } from 'lucide-react';
-import { useState } from 'react';
+import {
+  BadgeCheck,
+  Check,
+  ChevronsUpDown,
+  Info,
+  Loader2,
+  Search,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
+import * as React from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -13,17 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RolGrupo } from '@/features/catalogos/types';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
+import { cn } from '@/lib/utils';
 import { useCambiarRol } from '../hooks/use-cambiar-rol';
 
 interface CambiarRolModalProps {
@@ -39,15 +44,26 @@ export function CambiarRolModal({
   comunion,
   rolesGrupo,
 }: CambiarRolModalProps) {
-  const [nuevoRolId, setNuevoRolId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [openCombobox, setOpenCombobox] = React.useState(false);
+  const [nuevoRolId, setNuevoRolId] = React.useState<number>(0);
+  
   const mutation = useCambiarRol();
   const { usuario } = useAuth();
 
   const esAdmin = usuario?.rol === 'administrador';
+  
+  // FILTRO: Solo roles activos que NO sean de directiva y que no sea el rol actual
   const rolesDisponibles =
     rolesGrupo?.filter(
-      (r) => r.activo && r.id_rol_grupo !== comunion?.rol.id && (esAdmin || !r.es_directiva),
+      (r) => r.activo && r.id_rol_grupo !== comunion?.rol.id && !r.es_directiva,
     ) ?? [];
+
+  const rolesFiltrados = rolesDisponibles.filter((r) =>
+    r.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  const selectedRol = rolesDisponibles.find((r) => r.id_rol_grupo === nuevoRolId);
 
   const nombreMiembro = comunion?.miembro
     ? `${comunion.miembro.nombre} ${comunion.miembro.apellido}`
@@ -57,12 +73,13 @@ export function CambiarRolModal({
     if (!comunion || !nuevoRolId) return;
 
     mutation.mutate(
-      { id: comunion.id, input: { rol_grupo_id: Number(nuevoRolId) } },
+      { id: comunion.id, input: { rol_grupo_id: nuevoRolId } },
       {
         onSuccess: () => {
           toast.success('Rol cambiado exitosamente');
           onOpenChange(false);
-          setNuevoRolId('');
+          setNuevoRolId(0);
+          setSearchTerm('');
         },
         onError: (err: any) => {
           toast.error(err?.response?.data?.message || 'Error al cambiar el rol');
@@ -71,79 +88,127 @@ export function CambiarRolModal({
     );
   }
 
+  // Limpiar estados al cerrar
+  React.useEffect(() => {
+    if (!open) {
+      setNuevoRolId(0);
+      setSearchTerm('');
+      setOpenCombobox(false);
+    }
+  }, [open]);
+
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v);
-        if (!v) setNuevoRolId('');
       }}
     >
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Cambiar Rol</DialogTitle>
-          <DialogDescription>Cambiar el rol de {nombreMiembro} en el grupo.</DialogDescription>
+          <DialogDescription>
+            Seleccione un nuevo rol operativo para {nombreMiembro}.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          {!esAdmin && (
-            <Alert className="py-2 px-3 border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200">
-              <Info className="size-4 text-blue-600 dark:text-blue-400" />
-              <AlertTitle className="text-sm font-semibold">Cargos de Directiva</AlertTitle>
-              <AlertDescription className="text-xs">
-                Los cargos de directiva están reservados para la administración general.
-              </AlertDescription>
-            </Alert>
-          )}
-          <div>
-            <Label className="text-muted-foreground text-sm font-normal">Rol actual</Label>
-            <div className="mt-1">
-              <Badge variant="outline">{comunion?.rol.nombre}</Badge>
+          <div className="flex items-center gap-4 rounded-lg border p-3 bg-muted/30">
+            <div className="flex-1">
+              <Label className="text-muted-foreground text-xs font-normal uppercase tracking-wider">
+                Rol actual
+              </Label>
+              <div className="mt-0.5 font-medium">{comunion?.rol.nombre}</div>
             </div>
+            <Info className="size-4 text-muted-foreground opacity-50" />
           </div>
+
           <div className="grid gap-2">
-            <Label>Nuevo rol *</Label>
-            <Select value={nuevoRolId} onValueChange={setNuevoRolId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar nuevo rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {rolesDisponibles.map((r) => (
-                  <SelectItem key={r.id_rol_grupo} value={String(r.id_rol_grupo)}>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-sm">{r.nombre}</span>
-                      <div className="flex flex-wrap gap-1">
-                        {r.es_directiva && (
-                          <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none">
-                            <ShieldCheck className="size-2.5" />
-                            Directiva
-                          </Badge>
-                        )}
-                        {r.es_unico && (
-                          <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none">
-                            <UserCheck className="size-2.5" />
-                            Único
-                          </Badge>
-                        )}
-                        {r.requiere_plena_comunion && (
-                          <Badge variant="secondary" className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none">
-                            <BadgeCheck className="size-2.5" />
-                            Plena Comunión
-                          </Badge>
-                        )}
-                      </div>
+            <Label>Nuevo rol operativo *</Label>
+            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCombobox}
+                  className="w-full justify-between font-normal"
+                >
+                  {nuevoRolId ? selectedRol?.nombre : 'Seleccionar nuevo rol...'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <div className="flex items-center border-b px-3">
+                  <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Input
+                    placeholder="Buscar rol..."
+                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-none focus-visible:ring-0"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="max-h-[200px] overflow-y-auto p-1">
+                  {rolesFiltrados.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      No se encontraron roles disponibles.
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  ) : (
+                    rolesFiltrados.map((r) => (
+                      <div
+                        key={r.id_rol_grupo}
+                        className={cn(
+                          'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                          nuevoRolId === r.id_rol_grupo && 'bg-accent text-accent-foreground',
+                        )}
+                        onClick={() => {
+                          setNuevoRolId(r.id_rol_grupo);
+                          setOpenCombobox(false);
+                          setSearchTerm('');
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            nuevoRolId === r.id_rol_grupo ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium">{r.nombre}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {r.es_unico && (
+                              <Badge
+                                variant="secondary"
+                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                              >
+                                <UserCheck className="size-2.5" />
+                                Único
+                              </Badge>
+                            )}
+                            {r.requiere_plena_comunion && (
+                              <Badge
+                                variant="secondary"
+                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                              >
+                                <BadgeCheck className="size-2.5" />
+                                Plena Comunión
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-          <div className="flex justify-end gap-2">
+
+          <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button onClick={handleSubmit} disabled={mutation.isPending || !nuevoRolId}>
-              {mutation.isPending && <Loader2 className="animate-spin" />}
-              Guardar
+              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Guardar Cambios
             </Button>
           </div>
         </div>
@@ -151,5 +216,3 @@ export function CambiarRolModal({
     </Dialog>
   );
 }
-
-

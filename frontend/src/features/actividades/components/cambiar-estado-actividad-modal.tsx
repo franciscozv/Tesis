@@ -85,10 +85,7 @@ export function CambiarEstadoActividadModal({
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
 
-  const opciones = useMemo(
-    () => getOpcionesDisponibles(actividad, isAdmin),
-    [actividad, isAdmin],
-  );
+  const opciones = useMemo(() => getOpcionesDisponibles(actividad, isAdmin), [actividad, isAdmin]);
 
   const form = useForm<CambiarEstadoActividadFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: refine creates input type mismatch with zodResolver
@@ -205,4 +202,3 @@ export function CambiarEstadoActividadModal({
     </Dialog>
   );
 }
-

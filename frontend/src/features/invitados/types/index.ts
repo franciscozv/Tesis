@@ -45,4 +45,3 @@ export interface ResponderInvitacionInput {
   estado: 'confirmado' | 'rechazado';
   motivo_rechazo?: string;
 }
-

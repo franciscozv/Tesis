@@ -17,6 +17,9 @@ const badgeVariants = cva(
           'border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
         ghost: '[a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 [a&]:hover:underline',
+        success: 'bg-success text-success-foreground border-transparent [a&]:hover:bg-success/90',
+        warning: 'bg-warning text-warning-foreground border-transparent [a&]:hover:bg-warning/90',
+        info: 'bg-info text-info-foreground border-transparent [a&]:hover:bg-info/90',
       },
     },
     defaultVariants: {
@@ -44,4 +47,3 @@ function Badge({
 }
 
 export { Badge, badgeVariants };
-

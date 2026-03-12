@@ -18,4 +18,3 @@ export const updateNecesidadSchema = z.object({
 });
 
 export type UpdateNecesidadFormData = z.infer<typeof updateNecesidadSchema>;
-

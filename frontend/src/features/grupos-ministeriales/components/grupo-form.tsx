@@ -1,9 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -27,6 +30,7 @@ interface GrupoFormProps {
   onSubmit: (data: CreateGrupoFormData | UpdateGrupoFormData) => void;
   isPending: boolean;
   submitLabel?: string;
+  error?: any;
 }
 
 export function GrupoForm({
@@ -35,6 +39,7 @@ export function GrupoForm({
   onSubmit,
   isPending,
   submitLabel = 'Guardar',
+  error,
 }: GrupoFormProps) {
   const schema = mode === 'edit' ? updateGrupoSchema : createGrupoSchema;
 
@@ -47,6 +52,15 @@ export function GrupoForm({
       ...defaultValues,
     },
   });
+
+  useEffect(() => {
+    if (error && isAxiosError(error) && error.response?.status === 409) {
+      const apiMessage = (error.response.data as any).message;
+      if (apiMessage.toLowerCase().includes('nombre')) {
+        form.setError('nombre', { type: 'manual', message: apiMessage });
+      }
+    }
+  }, [error, form.setError]);
 
   return (
     <Form {...form}>
@@ -81,11 +95,9 @@ export function GrupoForm({
           control={form.control}
           name="fecha_creacion"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Fecha de Creación *</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
+              <DatePicker value={field.value} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
           )}
@@ -100,4 +112,3 @@ export function GrupoForm({
     </Form>
   );
 }
-

@@ -10,4 +10,3 @@ export const historialEstadoApi = {
     return data.responseObject;
   },
 };
-

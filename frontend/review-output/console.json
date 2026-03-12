@@ -1,0 +1,74 @@
+[
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[HMR] connected"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] rebuilding"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] done in 140ms"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[HMR] connected"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] rebuilding"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] done in 117ms"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[HMR] connected"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] rebuilding"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] done in 160ms"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] rebuilding"
+  },
+  {
+    "type": "log",
+    "text": "[Fast Refresh] done in 181ms"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[HMR] connected"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[HMR] connected"
+  }
+]

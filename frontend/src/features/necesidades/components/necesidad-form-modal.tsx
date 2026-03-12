@@ -2,9 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,35 +31,39 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { TipoNecesidad } from '@/features/catalogos/types';
-import { useCreateNecesidad } from '../hooks/use-necesidades-actividad';
+import {
+  type UpdateNecesidadFormData,
+  updateNecesidadSchema,
+} from '@/features/necesidades/schemas';
+import type { NecesidadLogistica } from '@/features/necesidades/types';
 
-const necesidadSchema = z.object({
-  tipo_necesidad_id: z.coerce.number().int().positive('Seleccione un tipo'),
-  descripcion: z.string().min(1, 'La descripción es requerida').max(1000, 'Máximo 1000 caracteres'),
-  cantidad_requerida: z.coerce.number().positive('Debe ser mayor a 0'),
-  unidad_medida: z.string().min(1, 'La unidad es requerida').max(50, 'Máximo 50 caracteres'),
-});
-
-type NecesidadFormData = z.infer<typeof necesidadSchema>;
-
-interface AgregarNecesidadModalProps {
-  actividadId: number;
+interface NecesidadFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** ID de la actividad al crear. Se inyecta automáticamente; el formulario no lo muestra. */
+  actividadId: number;
+  editing: NecesidadLogistica | null;
   tiposNecesidad: TipoNecesidad[] | undefined;
+  // biome-ignore lint/suspicious/noExplicitAny: mutation types vary between create/update
+  createMutation: any;
+  // biome-ignore lint/suspicious/noExplicitAny: mutation types vary between create/update
+  updateMutation: any;
 }
 
-export function AgregarNecesidadModal({
-  actividadId,
+export function NecesidadFormModal({
   open,
   onOpenChange,
+  actividadId,
+  editing,
   tiposNecesidad,
-}: AgregarNecesidadModalProps) {
-  const mutation = useCreateNecesidad();
+  createMutation,
+  updateMutation,
+}: NecesidadFormModalProps) {
+  const isEditing = !!editing;
 
-  const form = useForm<NecesidadFormData>({
+  const form = useForm<UpdateNecesidadFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce creates input type mismatch with zodResolver
-    resolver: zodResolver(necesidadSchema) as any,
+    resolver: zodResolver(updateNecesidadSchema) as any,
     defaultValues: {
       tipo_necesidad_id: 0,
       descripcion: '',
@@ -68,30 +72,63 @@ export function AgregarNecesidadModal({
     },
   });
 
-  function onSubmit(data: NecesidadFormData) {
-    mutation.mutate(
-      {
-        actividad_id: actividadId,
-        ...data,
-      },
-      {
-        onSuccess: () => {
-          toast.success('Necesidad agregada exitosamente');
-          onOpenChange(false);
-          form.reset();
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        editing
+          ? {
+              tipo_necesidad_id: editing.tipo_necesidad_id,
+              descripcion: editing.descripcion,
+              cantidad_requerida: editing.cantidad_requerida,
+              unidad_medida: editing.unidad_medida,
+            }
+          : {
+              tipo_necesidad_id: 0,
+              descripcion: '',
+              cantidad_requerida: 1,
+              unidad_medida: '',
+            },
+      );
+    }
+  }, [open, editing, form]);
+
+  function onSubmit(data: UpdateNecesidadFormData) {
+    if (isEditing) {
+      updateMutation.mutate(
+        { id: editing.id, input: data },
+        {
+          onSuccess: () => {
+            toast.success('Necesidad actualizada');
+            onOpenChange(false);
+          },
+          onError: () => toast.error('Error al actualizar necesidad'),
         },
-        onError: () => toast.error('Error al agregar necesidad'),
-      },
-    );
+      );
+    } else {
+      createMutation.mutate(
+        { ...data, actividad_id: actividadId },
+        {
+          onSuccess: () => {
+            toast.success('Necesidad creada');
+            onOpenChange(false);
+          },
+          onError: () => toast.error('Error al crear necesidad'),
+        },
+      );
+    }
   }
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Agregar Necesidad Logística</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Necesidad' : 'Nueva Necesidad Logística'}</DialogTitle>
           <DialogDescription>
-            Registre una necesidad logística para esta actividad.
+            {isEditing
+              ? 'Modifique los datos de la necesidad.'
+              : 'Registre una necesidad logística para esta actividad.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -172,9 +209,9 @@ export function AgregarNecesidadModal({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending && <Loader2 className="animate-spin" />}
-                Agregar
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="animate-spin" />}
+                {isEditing ? 'Guardar Cambios' : 'Crear Necesidad'}
               </Button>
             </div>
           </form>
@@ -183,4 +220,3 @@ export function AgregarNecesidadModal({
     </Dialog>
   );
 }
-

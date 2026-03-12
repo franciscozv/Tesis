@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-  Loader2,
-  Search,
-  Settings2,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, GripVertical, Loader2, Search, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -235,9 +228,14 @@ export function SugerirCandidatoModal({
               </Select>
             </div>
 
-            <div className="w-40">
+            <div className="w-44">
               <Label className="mb-1.5 block">Fecha</Label>
-              <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+              <DatePicker
+                value={fecha}
+                onChange={setFecha}
+                fromYear={new Date().getFullYear() - 1}
+                toYear={new Date().getFullYear() + 5}
+              />
             </div>
 
             <Button onClick={handleBuscar} disabled={!rolId || !fecha || sugerirMutation.isPending}>
@@ -451,9 +449,7 @@ export function SugerirCandidatoModal({
                 {'Orden de prioridad: '}
                 {usedPrioridad.map((c, i) => (
                   <span key={c}>
-                    <span className="font-medium text-foreground">
-                      {CRITERIO_LABELS[c] ?? c}
-                    </span>
+                    <span className="font-medium text-foreground">{CRITERIO_LABELS[c] ?? c}</span>
                     {i < usedPrioridad.length - 1 && (
                       <span className="mx-0.5 text-muted-foreground/60">→</span>
                     )}
@@ -477,4 +473,3 @@ export function SugerirCandidatoModal({
     </Dialog>
   );
 }
-

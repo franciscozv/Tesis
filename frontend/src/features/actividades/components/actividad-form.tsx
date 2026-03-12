@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import {
   Select,
   SelectContent,
@@ -162,11 +164,17 @@ export function ActividadFormModal({
               control={form.control}
               name="fecha"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Fecha *</FormLabel>
-                  <FormControl>
-                    <Input type="date" min={isEditing ? undefined : today} {...field} />
-                  </FormControl>
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabledDays={
+                      isEditing ? undefined : (date) => date < new Date(today + 'T00:00:00')
+                    }
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear() + 5}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -176,11 +184,9 @@ export function ActividadFormModal({
               control={form.control}
               name="hora_inicio"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Hora Inicio *</FormLabel>
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
+                  <TimePicker value={field.value} onChange={field.onChange} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -190,11 +196,9 @@ export function ActividadFormModal({
               control={form.control}
               name="hora_fin"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Hora Fin *</FormLabel>
-                  <FormControl>
-                    <Input type="time" {...field} />
-                  </FormControl>
+                  <TimePicker value={field.value} onChange={field.onChange} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -286,4 +290,3 @@ export function ActividadFormModal({
     </Dialog>
   );
 }
-

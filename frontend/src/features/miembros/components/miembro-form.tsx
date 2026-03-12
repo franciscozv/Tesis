@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -138,11 +139,14 @@ export function MiembroForm({
           control={form.control}
           name="fecha_nacimiento"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Fecha de Nacimiento</FormLabel>
-              <FormControl>
-                <Input type="date" max={new Date().toISOString().split('T')[0]} {...field} />
-              </FormControl>
+              <DatePicker
+                value={field.value}
+                onChange={field.onChange}
+                disabledDays={(date) => date > new Date()}
+                toYear={new Date().getFullYear()}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -209,11 +213,14 @@ export function MiembroForm({
           control={form.control}
           name="fecha_ingreso"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Fecha de Ingreso *</FormLabel>
-              <FormControl>
-                <Input type="date" max={new Date().toISOString().split('T')[0]} {...field} />
-              </FormControl>
+              <DatePicker
+                value={field.value}
+                onChange={field.onChange}
+                disabledDays={(date) => date > new Date()}
+                toYear={new Date().getFullYear()}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -228,4 +235,3 @@ export function MiembroForm({
     </Form>
   );
 }
-

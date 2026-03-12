@@ -9,4 +9,3 @@ export interface HistorialEstado {
   usuario_id: number;
   fecha_cambio: string;
 }
-

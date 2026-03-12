@@ -8,4 +8,3 @@ export const misResponsabilidadesApi = {
     return data.responseObject;
   },
 };
-

@@ -26,4 +26,3 @@ export function useMiembrosPaginated(params: MiembrosQueryParams) {
     placeholderData: keepPreviousData,
   });
 }
-

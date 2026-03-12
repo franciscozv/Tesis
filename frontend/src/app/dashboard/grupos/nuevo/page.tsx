@@ -18,8 +18,9 @@ export default function NuevoGrupoPage() {
           toast.success('Grupo creado exitosamente');
           router.push('/dashboard/grupos');
         },
-        onError: () => {
-          toast.error('Error al crear grupo');
+        onError: (error: any) => {
+          const apiMessage = error.response?.data?.message;
+          toast.error(apiMessage || 'Error al crear grupo');
         },
       },
     );
@@ -33,10 +34,14 @@ export default function NuevoGrupoPage() {
           <CardDescription>Registrar un nuevo grupo en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
-          <GrupoForm onSubmit={onSubmit} isPending={mutation.isPending} submitLabel="Crear Grupo" />
+          <GrupoForm
+            onSubmit={onSubmit}
+            isPending={mutation.isPending}
+            error={mutation.error}
+            submitLabel="Crear Grupo"
+          />
         </CardContent>
       </Card>
     </div>
   );
 }
-
