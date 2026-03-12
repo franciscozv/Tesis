@@ -37,4 +37,5 @@ coverage/
 .biome/
 
 .claude
-.CLAUDE.md
+CLAUDE.md
+.mcp.json
