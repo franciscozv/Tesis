@@ -107,7 +107,7 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
           toast.success(`${opts.entityName} actualizado`);
           setModalOpen(false);
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
           const msg = extractApiMessage(error, `Error al actualizar ${opts.entityName.toLowerCase()}`);
           setServerError(msg);
         },
@@ -118,7 +118,7 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
           toast.success(`${opts.entityName} creado`);
           setModalOpen(false);
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
           const msg = extractApiMessage(error, `Error al crear ${opts.entityName.toLowerCase()}`);
           setServerError(msg);
         },
