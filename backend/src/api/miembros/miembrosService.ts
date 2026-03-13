@@ -276,13 +276,13 @@ export class MiembrosService {
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
       // Obtener el miembro actual para saber el estado anterior
-      const miembroResponse = await this.findById(id);
+      const miembroActual = await this.miembrosRepository.findByIdAsync(id);
 
-      if (!miembroResponse.success || !miembroResponse.responseObject) {
+      if (!miembroActual) {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      const estado_anterior = miembroResponse.responseObject.estado_comunion;
+      const estado_anterior = miembroActual.estado_comunion;
 
       // Validar que el nuevo estado sea distinto al actual
       if (estado_nuevo === estado_anterior) {
@@ -311,9 +311,9 @@ export class MiembrosService {
       }
 
       // Obtener el miembro actualizado para devolverlo
-      const miembroActualizadoResponse = await this.findById(id);
+      const miembroActualizado = await this.miembrosRepository.findByIdAsync(id);
 
-      if (!miembroActualizadoResponse.success || !miembroActualizadoResponse.responseObject) {
+      if (!miembroActualizado) {
         return ServiceResponse.failure(
           'Estado actualizado pero error al recuperar datos del miembro',
           null,
@@ -323,7 +323,7 @@ export class MiembrosService {
 
       return ServiceResponse.success<Miembro>(
         'Estado de comunión actualizado exitosamente',
-        miembroActualizadoResponse.responseObject,
+        miembroActualizado,
       );
     } catch (ex) {
       const errorMessage = `Error al cambiar estado de comunión del miembro con id ${id}: ${(ex as Error).message}`;
