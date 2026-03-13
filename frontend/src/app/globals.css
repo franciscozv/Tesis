@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,9 +40,9 @@
   --sidebar-ring: oklch(0.32 0.1 228);
 
   /* Fuentes (usando las variables de next/font) */
-  --font-sans: var(--font-libre-baskerville), serif;
-  --font-serif: var(--font-lora), serif;
-  --font-mono: var(--font-ibm-plex-mono), monospace;
+  --font-sans: 'Libre Baskerville', serif;
+  --font-serif: 'Lora', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   /* Radio */
   --radius: 0.5rem;
@@ -118,9 +119,9 @@
   --info-foreground: oklch(0.86 0.05 228);
 
   /* Fuentes (idénticas a :root) */
-  --font-sans: var(--font-libre-baskerville), serif;
-  --font-serif: var(--font-lora), serif;
-  --font-mono: var(--font-ibm-plex-mono), monospace;
+  --font-sans: 'Libre Baskerville', serif;
+  --font-serif: 'Lora', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   --radius: 0.5rem;
 
