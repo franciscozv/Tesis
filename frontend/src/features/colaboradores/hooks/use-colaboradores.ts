@@ -9,5 +9,6 @@ export function useColaboradores(filters?: ColaboradorFilters, options?: { enabl
     queryKey: [COLABORADORES_QUERY_KEY, filters],
     queryFn: () => colaboradoresApi.getAll(filters),
     enabled: options?.enabled ?? true,
+    retry: false,
   });
 }

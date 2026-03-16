@@ -65,7 +65,7 @@ export default function NecesidadesAbiertasPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Necesidades Logísticas</h1>
+          <h1 className="text-2xl font-light tracking-tight">Necesidades Logísticas</h1>
           <p className="text-muted-foreground">
             Necesidades abiertas para actividades de los próximos 60 días.
           </p>

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -48,6 +48,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { candidatosApi } from '@/features/candidatos/api';
+import { extractApiMessage } from '@/lib/api-error';
 import type { CandidatoCargo } from '@/features/candidatos/types';
 import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import type { RolGrupo } from '@/features/catalogos/types';
@@ -88,9 +89,32 @@ const CRITERIOS_INFO = [
 
 const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
 
+function getNextSunday(): string {
+  const today = new Date();
+  const day = today.getDay(); // 0 = domingo
+  const diff = day === 0 ? 0 : 7 - day;
+  const next = new Date(today);
+  next.setDate(today.getDate() + diff);
+  return next.toISOString().slice(0, 10);
+}
+
 function getNombre(mg: MiembroGrupo): string {
   const m = mg.miembro;
   return m ? `${m.nombre} ${m.apellido}` : `Miembro #${mg.miembro_id}`;
+}
+
+function getEtiquetaDirectiva(c: CandidatoCargo, grupoNombre: string): string {
+  const historial = c.indicadores.historial_otros_cargos ?? [];
+  const grupoNombreLower = grupoNombre.trim().toLowerCase();
+  const activosOtros = historial.filter(
+    (h) => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() !== grupoNombreLower,
+  );
+  const activosEste = historial.filter(
+    (h) => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() === grupoNombreLower,
+  );
+  if (activosOtros.length > 0) return `Directiva en otro grupo (${activosOtros.length})`;
+  if (activosEste.length > 0) return 'Directiva actual';
+  return 'Ex-Directiva';
 }
 
 export default function RenovacionDirectivaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -108,7 +132,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
   // --- Estado del Formulario ---
   const [selecciones, setSelecciones] = useState<Map<number, number>>(new Map());
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(() => getNextSunday());
 
   // --- Configuración del Algoritmo ---
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>(String(grupoId));
@@ -116,7 +140,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
   const [prioridad, setPrioridad] = useState<string[]>(PRIORIDAD_DEFAULT);
   const [soloConExperiencia, setSoloConExperiencia] = useState(false);
   const [soloConPlenaComunion, setSoloConPlenaComunion] = useState(false);
-  const [showConfig, setShowConfig] = useState(true); // Siempre visible o colapsable
+  const [showConfig, setShowConfig] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const DRAFT_KEY = `renovacion_draft_${grupoId}`;
@@ -141,8 +165,8 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           description: 'Se han cargado tus selecciones anteriores.',
           duration: 3000,
         });
-      } catch (e) {
-        console.error('Error al cargar borrador', e);
+      } catch {
+        // borrador inválido o corrupto, se ignora
       }
     }
     setIsLoaded(true);
@@ -181,7 +205,14 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
   const renovarMutation = useRenovarDirectiva(grupoId);
 
   // Filtrar roles directivos y miembros activos
-  const rolesDirectiva = rolesGrupo?.filter((r) => r.es_directiva && r.activo) ?? [];
+  const rolesDirectiva = useMemo(
+    () => rolesGrupo?.filter((r) => r.es_directiva && r.activo) ?? [],
+    [rolesGrupo],
+  );
+  const rolesDirectivaIds = useMemo(
+    () => rolesDirectiva.map((r) => r.id_rol_grupo).join(','),
+    [rolesDirectiva],
+  );
   const activos = miembrosGrupo?.filter((mg) => !mg.fecha_desvinculacion) ?? [];
   const holderByRolId = new Map(
     activos.filter((mg) => mg.rol.es_directiva).map((mg) => [mg.rol.id, mg]),
@@ -206,6 +237,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
     if (rolesDirectiva.length === 0) return;
 
     setLoadingSugerencias(true);
+    let huboErrores = false;
 
     Promise.all(
       rolesDirectiva.map(async (cargo) => {
@@ -220,6 +252,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           });
           return { cargoId: cargo.id_rol_grupo, candidatos: res.candidatos ?? [] };
         } catch {
+          huboErrores = true;
           return { cargoId: cargo.id_rol_grupo, candidatos: [] };
         }
       }),
@@ -228,10 +261,13 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
       results.forEach(({ cargoId, candidatos }) => map.set(cargoId, candidatos));
       setSugerencias(map);
       setLoadingSugerencias(false);
+      if (huboErrores) {
+        toast.warning('Algunas sugerencias no pudieron cargarse');
+      }
     });
   }, [
     selectedGrupoId,
-    rolesDirectiva.map((r) => r.id_rol_grupo).join(','),
+    rolesDirectivaIds,
     periodoMeses,
     soloConExperiencia,
     soloConPlenaComunion,
@@ -279,8 +315,8 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           toast.success('Directiva renovada exitosamente');
           router.push(`/dashboard/grupos/${grupoId}`);
         },
-        onError: (err: any) => {
-          toast.error(err?.response?.data?.message || 'Error al renovar la directiva');
+        onError: (err: unknown) => {
+          toast.error(extractApiMessage(err, 'Error al renovar la directiva'));
           setShowConfirmModal(false);
         },
       },
@@ -325,7 +361,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Renovación Masiva de Directiva</h1>
+            <h1 className="text-2xl font-light tracking-tight">Renovación Masiva de Directiva</h1>
             <p className="text-muted-foreground text-sm">{grupo.nombre}</p>
           </div>
         </div>
@@ -333,6 +369,16 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           <Button variant="outline" asChild>
             <Link href={`/dashboard/grupos/${grupoId}`}>Cancelar</Link>
           </Button>
+          {totalSelecciones > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelecciones(new Map())}
+              className="text-muted-foreground"
+            >
+              Limpiar todo
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={totalSelecciones === 0 || renovarMutation.isPending}
@@ -366,19 +412,44 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 <DatePicker
                   value={fecha}
                   onChange={setFecha}
-                  disabledDays={(date) => date > new Date()}
+                  disabledDays={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Tarjeta de Algoritmo */}
+          {/* Filtros rápidos siempre visibles */}
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">Filtros rápidos</Label>
+            <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2.5">
+              <Checkbox
+                id="solo-exp-page"
+                checked={soloConExperiencia}
+                onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
+              />
+              <Label htmlFor="solo-exp-page" className="cursor-pointer text-xs font-medium leading-none">
+                Solo con experiencia previa en el cargo
+              </Label>
+            </div>
+            <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2.5">
+              <Checkbox
+                id="solo-plena-page"
+                checked={soloConPlenaComunion}
+                onCheckedChange={(v) => setSoloConPlenaComunion(Boolean(v))}
+              />
+              <Label htmlFor="solo-plena-page" className="cursor-pointer text-xs font-medium leading-none">
+                Solo con Plena Comunión
+              </Label>
+            </div>
+          </div>
+
+          {/* Tarjeta de criterios avanzados */}
           <Card className="border-primary/20 bg-primary/5 dark:border-primary/20 dark:bg-primary/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Settings2 className="size-4 text-primary" />
-                  Configurar Algoritmo
+                  Ajustar criterios
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -389,7 +460,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                   {showConfig ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </Button>
               </div>
-              <CardDescription>Ajusta los criterios para las sugerencias.</CardDescription>
+              <CardDescription>Período, alcance y orden de prioridad.</CardDescription>
             </CardHeader>
             {showConfig && (
               <CardContent className="space-y-6">
@@ -402,21 +473,25 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos los grupos (Global)</SelectItem>
-                      <SelectItem value={String(grupoId)}>Este grupo</SelectItem>
-                      <Separator className="my-1" />
-                      {todosLosGrupos
-                        ?.filter((g) => g.id_grupo !== grupoId)
-                        .map((g) => (
-                          <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
-                            {g.nombre}
-                          </SelectItem>
-                        ))}
+                      <SelectItem value={String(grupoId)}>Solo este grupo</SelectItem>
+                      <SelectItem value="all">Toda la congregación</SelectItem>
+                      {todosLosGrupos?.filter((g) => g.id_grupo !== grupoId).length ? (
+                        <>
+                          <Separator className="my-1" />
+                          <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Otro grupo específico
+                          </p>
+                          {todosLosGrupos
+                            ?.filter((g) => g.id_grupo !== grupoId)
+                            .map((g) => (
+                              <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
+                                {g.nombre}
+                              </SelectItem>
+                            ))}
+                        </>
+                      ) : null}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    Busca candidatos en el grupo actual o a través de toda la congregación.
-                  </p>
                 </div>
 
                 <Separator />
@@ -438,43 +513,15 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                     </SelectContent>
                   </Select>
                   <p className="text-[11px] text-muted-foreground">
-                    Define el rango de tiempo para calcular el % de asistencia.
+                    Rango de tiempo para calcular asistencia y experiencia.
                   </p>
-                </div>
-
-                <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2.5">
-                  <Checkbox
-                    id="solo-exp-page"
-                    checked={soloConExperiencia}
-                    onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
-                  />
-                  <Label
-                    htmlFor="solo-exp-page"
-                    className="cursor-pointer text-xs font-medium leading-none"
-                  >
-                    Priorizar solo con experiencia previa
-                  </Label>
-                </div>
-
-                <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2.5">
-                  <Checkbox
-                    id="solo-plena-page"
-                    checked={soloConPlenaComunion}
-                    onCheckedChange={(v) => setSoloConPlenaComunion(Boolean(v))}
-                  />
-                  <Label
-                    htmlFor="solo-plena-page"
-                    className="cursor-pointer text-xs font-medium leading-none"
-                  >
-                    Solo con Plena Comunión
-                  </Label>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Prioridades de búsqueda
+                    Orden de prioridad
                   </Label>
                   <div className="grid gap-2">
                     {prioridad.map((key, index) => {
@@ -541,7 +588,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 const titular = holderByRolId.get(cargo.id_rol_grupo);
                 const titularNombre = titular ? getNombre(titular) : null;
                 const seleccionado = selecciones.get(cargo.id_rol_grupo);
-                const candidatosCargo = (sugerencias.get(cargo.id_rol_grupo) ?? []).slice(0, 3);
+                const candidatosCargo = (sugerencias.get(cargo.id_rol_grupo) ?? []).slice(0, 5);
 
                 // Todos los miembros activos del grupo pueden ser candidatos (incluyendo directiva actual para reelección)
                 const opcionesSelect = activos;
@@ -607,7 +654,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                           value={seleccionado?.toString() ?? ''}
                           onValueChange={(val) => {
                             const next = new Map(selecciones);
-                            if (val) {
+                            if (val && val !== '__none__') {
                               next.set(cargo.id_rol_grupo, Number(val));
                             } else {
                               next.delete(cargo.id_rol_grupo);
@@ -616,9 +663,13 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                           }}
                         >
                           <SelectTrigger className="h-10 bg-background">
-                            <SelectValue placeholder="— Seleccionar miembro de la nómina —" />
+                            <SelectValue placeholder="— Seleccionar miembro —" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="__none__" className="text-muted-foreground">
+                              — Sin asignar —
+                            </SelectItem>
+                            <Separator className="my-1" />
                             {opcionesSelect.length === 0 ? (
                               <SelectItem value="__empty__" disabled>
                                 Sin integrantes disponibles en la nómina
@@ -638,7 +689,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                       <div className="rounded-lg border bg-muted/30 p-4">
                         <div className="mb-3 flex items-center justify-between">
                           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                            Sugerencias del Algoritmo
+                            Sugerencias automáticas
                           </p>
                           {loadingSugerencias && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
                         </div>
@@ -679,7 +730,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {cargo.requiere_plena_comunion && !c.indicadores.plena_comunion && (
-                                        <Badge variant="destructive" className="h-4 px-1.5 text-[9px] uppercase animate-pulse">
+                                        <Badge variant="destructive" className="h-4 px-1.5 text-[9px] uppercase">
                                           Sin Plena Comunión
                                         </Badge>
                                       )}
@@ -687,16 +738,10 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                       {c.indicadores.historial_otros_cargos?.some((h) => h.es_directiva) && (
                                         <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-primary/60 text-primary bg-primary/10 gap-1">
                                           <Crown className="size-2.5" />
-                                          {(() => {
-                                            const activosOtros = c.indicadores.historial_otros_cargos?.filter(h => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() !== grupo.nombre?.trim().toLowerCase());
-                                            const activosEste = c.indicadores.historial_otros_cargos?.filter(h => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() === grupo.nombre?.trim().toLowerCase());
-                                            if (activosOtros && activosOtros.length > 0) return `Directiva en otro grupo (${activosOtros.length})`;
-                                            if (activosEste && activosEste.length > 0) return "Directiva actual";
-                                            return "Ex-Directiva";
-                                          })()}
+                                          {getEtiquetaDirectiva(c, grupo.nombre ?? '')}
                                         </Badge>
                                       )}
-                                      {isSelected && <RefreshCw className="size-3 text-primary animate-spin-slow" />}
+                                      {isSelected && <RefreshCw className="size-3 text-primary" />}
                                     </div>
                                   </div>
                                   
@@ -717,10 +762,10 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                       <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">Participa actualmente en:</p>
                                       {c.indicadores.historial_otros_cargos
                                         .filter(h => !h.fecha_fin)
-                                        .map((h, idx) => {
+                                        .map((h) => {
                                           const esDirectiva = h.es_directiva;
                                           return (
-                                            <p key={idx} className={`flex items-center gap-1 pl-1 border-l ${
+                                            <p key={`${h.grupo_nombre}-${h.cargo_nombre}`} className={`flex items-center gap-1 pl-1 border-l ${
                                               esDirectiva
                                                 ? 'border-primary/60 text-primary font-semibold'
                                                 : 'border-primary/60 text-primary dark:text-primary font-medium'
@@ -734,20 +779,22 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                   )}
 
                                   {/* 2. Historial Pasado (Trayectoria) */}
-                                  {c.indicadores.historial_otros_cargos && c.indicadores.historial_otros_cargos.some(h => h.fecha_fin) && (
-                                    <div className="mt-1.5 text-[10px] text-muted-foreground leading-tight space-y-0.5">
-                                      <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">Trayectoria Anterior:</p>
-                                      {c.indicadores.historial_otros_cargos
-                                        .filter(h => h.fecha_fin) // Solo los que terminaron
-                                        .sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime())
-                                        .map((h, idx) => {
-                                          const nombreCargoExhibido = h.cargo_nombre || 'Integrante'; 
+                                  {c.indicadores.historial_otros_cargos && c.indicadores.historial_otros_cargos.some(h => h.fecha_fin) && (() => {
+                                    const pasados = c.indicadores.historial_otros_cargos
+                                      .filter(h => h.fecha_fin)
+                                      .sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
+                                    const visible = pasados.slice(0, 3);
+                                    const resto = pasados.length - visible.length;
+                                    return (
+                                      <div className="mt-1.5 text-[10px] text-muted-foreground leading-tight space-y-0.5">
+                                        <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">Trayectoria Anterior:</p>
+                                        {visible.map((h) => {
+                                          const nombreCargoExhibido = h.cargo_nombre || 'Integrante';
                                           const inicio = h.fecha_inicio ? new Date(h.fecha_inicio).getFullYear() : '?';
                                           const fin = new Date(h.fecha_fin!).getFullYear();
                                           const esDirectiva = h.es_directiva;
-
                                           return (
-                                            <p key={idx} className={`flex items-center gap-1 pl-1 border-l ${
+                                            <p key={`${h.grupo_nombre}-${h.cargo_nombre}-${h.fecha_inicio}`} className={`flex items-center gap-1 pl-1 border-l ${
                                               esDirectiva
                                                 ? 'border-primary/60 text-primary font-medium'
                                                 : 'border-muted-foreground/20'
@@ -757,8 +804,12 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                             </p>
                                           );
                                         })}
-                                    </div>
-                                  )}
+                                        {resto > 0 && (
+                                          <p className="text-muted-foreground/60 pl-1">+{resto} más</p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
 
                                   {/* Resumen de Actividades - Siempre Visible */}
                                   <div className="mt-2 w-full space-y-1">

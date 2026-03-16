@@ -1,22 +1,21 @@
 import { Navbar } from '@/components/layout/navbar';
 import { RouteGuard } from '@/components/layout/route-guard';
-import { Sidebar } from '@/components/layout/sidebar';
+import { SidebarWrapper } from '@/components/layout/sidebar-wrapper';
+import { SidebarProvider } from '@/providers/sidebar-provider';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RouteGuard>
-      <div className="flex h-svh overflow-hidden">
-        {/* Sidebar — visible solo en desktop */}
-        <div className="hidden w-64 shrink-0 lg:flex">
-          <Sidebar className="h-full w-full" />
-        </div>
+    <SidebarProvider>
+      <RouteGuard>
+        <div className="flex h-svh overflow-hidden">
+          <SidebarWrapper />
 
-        {/* Contenido principal */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-y-auto">
-          <Navbar />
-          <main className="flex-1 p-4 lg:p-6">{children}</main>
+          <div className="flex flex-1 flex-col min-w-0 overflow-y-auto">
+            <Navbar />
+            <main className="flex-1 p-4 lg:p-6">{children}</main>
+          </div>
         </div>
-      </div>
-    </RouteGuard>
+      </RouteGuard>
+    </SidebarProvider>
   );
 }

@@ -31,7 +31,6 @@ apiClient.interceptors.response.use(
       window.location.href = '/auth/login';
     }
 
-    console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   },
 );

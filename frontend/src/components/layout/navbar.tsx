@@ -60,13 +60,13 @@ export function Navbar() {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0 border-0">
           <SheetTitle className="sr-only">Navegación</SheetTitle>
-          <Sidebar className="h-full" />
+          <Sidebar className="h-full" forceExpanded />
         </SheetContent>
       </Sheet>
 
       {/* Page title — desktop */}
       {pageTitle && (
-        <h1 className="hidden lg:block text-sm font-semibold text-foreground">{pageTitle}</h1>
+        <h1 className="hidden lg:block text-sm font-medium text-foreground">{pageTitle}</h1>
       )}
 
       {/* Spacer */}

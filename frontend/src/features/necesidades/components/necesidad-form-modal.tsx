@@ -168,7 +168,7 @@ export function NecesidadFormModal({
                 <FormItem>
                   <FormLabel>Descripción *</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Pan para la santa cena" {...field} />
+                    <Textarea {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

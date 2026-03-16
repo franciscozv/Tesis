@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { extractApiMessage } from '@/lib/api-error';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import {
@@ -57,7 +58,7 @@ type MutateFn = (...args: any[]) => void;
 
 interface UseCatalogoTabOptions<T, TForm extends FieldValues> {
   hooks: {
-    useAll: () => { data: T[] | undefined; isLoading: boolean };
+    useAll: () => { data: T[] | undefined; isLoading: boolean; isError: boolean };
     useCreate: () => { mutate: MutateFn; isPending: boolean };
     useUpdate: () => { mutate: MutateFn; isPending: boolean };
     useDelete: () => { mutate: MutateFn; isPending: boolean };
@@ -70,7 +71,7 @@ interface UseCatalogoTabOptions<T, TForm extends FieldValues> {
 }
 
 function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOptions<T, TForm>) {
-  const { data, isLoading } = opts.hooks.useAll();
+  const { data, isLoading, isError } = opts.hooks.useAll();
   const createMutation = opts.hooks.useCreate();
   const updateMutation = opts.hooks.useUpdate();
   const deleteMutation = opts.hooks.useDelete();
@@ -92,11 +93,6 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
     setEditing(item);
     setServerError(null);
     setModalOpen(true);
-  }
-
-  // biome-ignore lint/suspicious/noExplicitAny: Axios error shape
-  function extractApiMessage(error: any, fallback: string): string {
-    return error?.response?.data?.message ?? fallback;
   }
 
   function handleSubmit(formData: TForm) {
@@ -152,6 +148,7 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
   return {
     data,
     isLoading,
+    isError,
     modalOpen,
     setModalOpen,
     editing,
@@ -404,6 +401,7 @@ function CatalogoTabContent<T, TForm extends FieldValues>({
         columns={columns}
         idKey={idKey}
         isLoading={tab.isLoading}
+        isError={tab.isError}
         isAdmin={isAdmin}
         onEdit={tab.openEdit}
         onDelete={tab.setDeleting}
@@ -476,7 +474,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+        <h1 className="text-2xl font-light tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">Gestiona los catálogos del sistema.</p>
       </div>
 

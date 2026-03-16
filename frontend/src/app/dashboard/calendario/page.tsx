@@ -144,10 +144,11 @@ export default function CalendarioPage() {
   if (soloPublicas) filters.es_publica = true;
   if (selectedGrupoId) filters.grupo_id = selectedGrupoId;
 
-  const { data: actividadesAll } = useActividades(filters, { enabled: !!usuario && isAdmin });
-  const { data: consolidado } = useCalendarioConsolidado(mes, anio, selectedGrupoId, {
+  const { data: actividadesAll, isError: isErrorAdmin } = useActividades(filters, { enabled: !!usuario && isAdmin });
+  const { data: consolidado, isError: isErrorUsuario } = useCalendarioConsolidado(mes, anio, selectedGrupoId, {
     enabled: isUsuario,
   });
+  const isError = isErrorAdmin || isErrorUsuario;
   
   const actividades = useMemo(
     () => (isUsuario ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
@@ -349,7 +350,7 @@ export default function CalendarioPage() {
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Calendario</h1>
+          <h1 className="text-2xl font-light tracking-tight">Calendario</h1>
           <p className="text-muted-foreground">Vista de actividades de la iglesia.</p>
         </div>
         {isAdmin && (
@@ -359,6 +360,12 @@ export default function CalendarioPage() {
           </Button>
         )}
       </div>
+
+      {isError && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Error al cargar las actividades. Verifique su conexión e intente nuevamente.
+        </div>
+      )}
 
       <CalendarToolbar
         currentDate={currentDate}

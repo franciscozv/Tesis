@@ -3,14 +3,12 @@
 import {
   ChevronLeft,
   ChevronRight,
-  Eye,
   MoreHorizontal,
   Package,
   Pencil,
   Plus,
   RefreshCw,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -114,6 +112,15 @@ export default function ActividadesPage() {
   const [editing, setEditing] = useState<Actividad | null>(null);
   const [estadoModal, setEstadoModal] = useState<Actividad | null>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setEditing(null);
+      setFormOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const tiposMap = useMemo(
     () => new Map(tiposActividad?.map((t) => [t.id_tipo, t])),
     [tiposActividad],
@@ -136,6 +143,7 @@ export default function ActividadesPage() {
 
   useEffect(() => {
     if (usuario?.rol === 'usuario') {
+      toast.info('Redirigiendo al calendario...');
       router.replace('/dashboard/calendario');
     }
   }, [usuario, router]);
@@ -200,7 +208,7 @@ export default function ActividadesPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Actividades</h1>
+          <h1 className="text-2xl font-light tracking-tight">Actividades</h1>
           <p className="text-muted-foreground">Gestión de actividades de la iglesia.</p>
         </div>
         {isAdmin && (
@@ -298,14 +306,13 @@ export default function ActividadesPage() {
                   </TableRow>
                 ) : (
                   actividades.map((actividad) => (
-                    <TableRow key={actividad.id}>
-                      <TableCell className="font-medium max-w-[200px]">
-                        <Link
-                          href={`/dashboard/actividades/${actividad.id}`}
-                          className="hover:underline truncate block"
-                        >
-                          {actividad.nombre}
-                        </Link>
+                    <TableRow
+                      key={actividad.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/dashboard/actividades/${actividad.id}`)}
+                    >
+                      <TableCell className="font-medium max-w-[200px] truncate">
+                        {actividad.nombre}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatFecha(actividad.fecha)}
@@ -349,7 +356,7 @@ export default function ActividadesPage() {
                         )}
                       </TableCell>
                       {isAdmin && (
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">
@@ -357,12 +364,6 @@ export default function ActividadesPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/actividades/${actividad.id}`}>
-                                  <Eye className="size-4" />
-                                  Ver detalle
-                                </Link>
-                              </DropdownMenuItem>
                               {actividad.estado !== 'cancelada' && (
                                 <DropdownMenuItem onClick={() => openEdit(actividad)}>
                                   <Pencil className="size-4" />

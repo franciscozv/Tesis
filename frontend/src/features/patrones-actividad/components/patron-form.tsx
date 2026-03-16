@@ -183,7 +183,7 @@ export function PatronFormModal({
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Nombre *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Culto dominical matutino" {...field} />
+                    <Input placeholder="Nombre del patrón" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -318,7 +318,7 @@ export function PatronFormModal({
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Lugar *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Templo principal" {...field} />
+                    <Input placeholder="Lugar de la actividad" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -25,6 +25,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+
+const PRESET_COLORS = [
+  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7',
+  '#EC4899', '#EF4444', '#F97316', '#EAB308',
+  '#22C55E', '#14B8A6', '#06B6D4', '#64748B',
+];
 
 export interface FieldConfig<T extends FieldValues> {
   name: Path<T>;
@@ -132,19 +139,44 @@ export function CatalogoFormModal<T extends FieldValues>({
                               placeholder={fieldConfig.placeholder}
                             />
                           ) : fieldConfig.type === 'color' ? (
-                            <div className="flex gap-2">
-                              <Input
-                                {...field}
-                                value={(field.value as string) ?? ''}
-                                placeholder={fieldConfig.placeholder ?? '#3B82F6'}
-                                className="flex-1"
-                              />
-                              <input
-                                type="color"
-                                value={(field.value as string) || '#000000'}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                className="h-9 w-9 cursor-pointer rounded border p-0.5"
-                              />
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-6 gap-2">
+                                {PRESET_COLORS.map((color) => {
+                                  const isSelected =
+                                    (field.value as string)?.toLowerCase() ===
+                                    color.toLowerCase();
+                                  return (
+                                    <button
+                                      key={color}
+                                      type="button"
+                                      onClick={() => field.onChange(color)}
+                                      title={color}
+                                      className={cn(
+                                        'h-8 w-full rounded-md border-2 transition-all hover:scale-105',
+                                        isSelected
+                                          ? 'border-foreground shadow-sm scale-105'
+                                          : 'border-transparent hover:border-muted-foreground/40',
+                                      )}
+                                      style={{ backgroundColor: color }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="size-9 shrink-0 rounded-md border"
+                                  style={{
+                                    backgroundColor: (field.value as string) || '#3B82F6',
+                                  }}
+                                />
+                                <Input
+                                  {...field}
+                                  value={(field.value as string) ?? ''}
+                                  placeholder={fieldConfig.placeholder ?? '#3B82F6'}
+                                  className="flex-1 font-mono text-sm"
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </div>
                             </div>
                           ) : fieldConfig.type === 'custom' && fieldConfig.customRender ? (
                             fieldConfig.customRender(field)

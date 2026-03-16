@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Plus, Power, ShieldCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { extractApiMessage } from '@/lib/api-error';
 import { useMiembrosPaginated } from '@/features/miembros/hooks/use-miembros';
 import { UsuarioFormModal, type SuccessCredentials } from '@/features/usuarios/components/usuario-form-modal';
 import {
@@ -55,17 +56,21 @@ export default function UsuariosPage() {
   const estadoMutation = useCambiarEstadoUsuario();
 
   const [formOpen, setFormOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setEditing(null);
+      setFormOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   const [editing, setEditing] = useState<Usuario | null>(null);
   const [toggling, setToggling] = useState<Usuario | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successCredentials, setSuccessCredentials] = useState<SuccessCredentials | null>(null);
 
   const miembrosMap = useMemo(() => new Map(miembros?.map((m) => [m.id, m])), [miembros]);
-
-  // biome-ignore lint/suspicious/noExplicitAny: Axios error shape
-  function extractApiMessage(error: any, fallback: string): string {
-    return error?.response?.data?.message ?? fallback;
-  }
 
   function handleCreate(data: CreateUsuarioFormData) {
     const input = {
@@ -131,7 +136,7 @@ export default function UsuariosPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usuarios</h1>
+          <h1 className="text-2xl font-light tracking-tight">Usuarios</h1>
           <p className="text-muted-foreground">Gestión de cuentas de acceso al sistema.</p>
         </div>
         <Button onClick={openCreate}>
@@ -143,7 +148,7 @@ export default function UsuariosPage() {
       {isLoading ? (
         <Card>
           <CardContent className="p-0">
-            {['a', 'b', 'c', 'd', 'e'].map((key) => (
+            {['s1', 's2', 's3', 's4', 's5'].map((key) => (
               <Skeleton key={key} className="mb-3 h-8 w-full" />
             ))}
           </CardContent>

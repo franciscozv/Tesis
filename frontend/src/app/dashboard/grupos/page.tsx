@@ -1,9 +1,10 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Eye, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,12 +41,21 @@ import { MIS_GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
 
 export default function GruposPage() {
+  const router = useRouter();
   const { grupos, isLoading, isAdmin } = useGruposPermitidos();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<GrupoMinisterial | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setCreateOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => gruposApi.delete(id),
@@ -67,7 +77,7 @@ export default function GruposPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Grupos Ministeriales</h1>
+          <h1 className="text-2xl font-light tracking-tight">Grupos Ministeriales</h1>
           <p className="text-muted-foreground">Gestión de grupos de la iglesia</p>
         </div>
         {isAdmin && (
@@ -116,7 +126,11 @@ export default function GruposPage() {
                   </TableRow>
                 ) : (
                   filtered.map((grupo) => (
-                    <TableRow key={grupo.id_grupo}>
+                    <TableRow
+                      key={grupo.id_grupo}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/dashboard/grupos/${grupo.id_grupo}`)}
+                    >
                       <TableCell className="font-medium">{grupo.nombre}</TableCell>
                       <TableCell className="text-muted-foreground hidden max-w-xs truncate md:table-cell">
                         {grupo.descripcion ?? '—'}
@@ -126,40 +140,32 @@ export default function GruposPage() {
                           {grupo.activo ? 'Activo' : 'Inactivo'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/grupos/${grupo.id_grupo}`}>
-                                <Eye className="size-4" />
-                                Ver detalle
-                              </Link>
-                            </DropdownMenuItem>
-                            {isAdmin && (
-                              <>
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/grupos/${grupo.id_grupo}/editar`}>
-                                    <Pencil className="size-4" />
-                                    Editar
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => setDeleteTarget(grupo)}
-                                >
-                                  <Trash2 className="size-4" />
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon-sm">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/grupos/${grupo.id_grupo}/editar`}>
+                                  <Pencil className="size-4" />
+                                  Editar
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => setDeleteTarget(grupo)}
+                              >
+                                <Trash2 className="size-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}

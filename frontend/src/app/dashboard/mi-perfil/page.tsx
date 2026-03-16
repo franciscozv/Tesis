@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Loader2, Lock, UserPen } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { authApi } from '@/features/auth/api';
+import { extractApiMessage } from '@/lib/api-error';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { type CambiarPasswordFormData, cambiarPasswordSchema } from '@/features/auth/schemas';
 import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
@@ -76,9 +77,8 @@ export default function MiPerfilPage() {
       },
       {
         onSuccess: () => toast.success('Perfil actualizado exitosamente'),
-        onError: (error: any) => {
-          const message = error.response?.data?.message || 'Error al actualizar el perfil';
-          toast.error(message);
+        onError: (error: unknown) => {
+          toast.error(extractApiMessage(error, 'Error al actualizar el perfil'));
         },
       },
     );
@@ -87,7 +87,7 @@ export default function MiPerfilPage() {
   if (!usuario?.miembro_id) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Mi Perfil</h1>
+        <h1 className="text-2xl font-light">Mi Perfil</h1>
         <Card>
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
@@ -118,7 +118,7 @@ export default function MiPerfilPage() {
   if (!miembro) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Mi Perfil</h1>
+        <h1 className="text-2xl font-light">Mi Perfil</h1>
         <Card>
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">No se encontraron datos del miembro.</p>
@@ -132,10 +132,7 @@ export default function MiPerfilPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <UserPen className="size-6" />
-        <h1 className="text-2xl font-bold">Mi Perfil</h1>
-      </div>
+      <h1 className="text-2xl font-light">Mi Perfil</h1>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Datos de solo lectura */}
@@ -263,8 +260,8 @@ function CambiarPasswordCard() {
       await authApi.cambiarPassword(data);
       toast.success('Contraseña actualizada exitosamente');
       form.reset();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Error al cambiar la contraseña');
+    } catch (error: unknown) {
+      toast.error(extractApiMessage(error, 'Error al cambiar la contraseña'));
     } finally {
       setIsPending(false);
     }

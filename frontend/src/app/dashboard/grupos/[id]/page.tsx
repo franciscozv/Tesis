@@ -219,7 +219,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{grupo.nombre}</h1>
+            <h1 className="text-2xl font-light tracking-tight">{grupo.nombre}</h1>
             <p className="text-muted-foreground text-sm">Grupo Ministerial</p>
           </div>
         </div>
@@ -295,30 +295,28 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
               No hay cargos directivos configurados para este grupo.
             </p>
           ) : (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {rolesDirectiva.map((cargo) => {
-                  const holder = holderByRolId.get(cargo.id_rol_grupo);
-                  const holderNombre = holder ? getMiembroNombre(holder) : null;
-                  return (
-                    <DirectivaCard
-                      key={cargo.id_rol_grupo}
-                      cargo={cargo}
-                      holder={holder}
-                      holderNombre={holderNombre}
-                    />
-                  );
-                })}
-              </div>
-              {isAdmin && (
-                <div className="mt-6 border-t pt-4">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Roles Configurados para este Grupo
-                  </p>
-                  <GestionarRolesGrupo grupoId={grupoId} />
-                </div>
-              )}
-            </>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {rolesDirectiva.map((cargo) => {
+                const holder = holderByRolId.get(cargo.id_rol_grupo);
+                const holderNombre = holder ? getMiembroNombre(holder) : null;
+                return (
+                  <DirectivaCard
+                    key={cargo.id_rol_grupo}
+                    cargo={cargo}
+                    holder={holder}
+                    holderNombre={holderNombre}
+                  />
+                );
+              })}
+            </div>
+          )}
+          {isAdmin && (
+            <div className="mt-6 border-t pt-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Roles Configurados para este Grupo
+              </p>
+              <GestionarRolesGrupo grupoId={grupoId} />
+            </div>
           )}
         </CardContent>
       </Card>

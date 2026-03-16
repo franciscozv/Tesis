@@ -10,6 +10,7 @@ import {
 import { ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -34,6 +35,7 @@ interface DataTableProps<TData> {
   isLoading: boolean;
   page: number;
   onPageChange: (page: number) => void;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData>({
@@ -43,6 +45,7 @@ export function DataTable<TData>({
   isLoading,
   page,
   onPageChange,
+  onRowClick,
 }: DataTableProps<TData>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -92,7 +95,8 @@ export function DataTable<TData>({
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -124,9 +128,16 @@ export function DataTable<TData>({
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={onRowClick ? 'cursor-pointer' : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      onClick={cell.column.id === 'acciones' ? (e) => e.stopPropagation() : undefined}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -135,7 +146,8 @@ export function DataTable<TData>({
             )}
           </TableBody>
         </Table>
-      </div>
+        </CardContent>
+      </Card>
 
       {meta && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">

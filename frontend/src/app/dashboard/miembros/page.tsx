@@ -2,7 +2,8 @@
 
 import axios from 'axios';
 import { Plus, ShieldOff } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,6 +24,7 @@ import type { EstadoComunion, Miembro } from '@/features/miembros/types';
 const PAGE_SIZE = 10;
 
 export default function MiembrosPage() {
+  const router = useRouter();
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
 
@@ -31,6 +33,14 @@ export default function MiembrosPage() {
   const [estadoFilter, setEstadoFilter] = useState<EstadoComunion | ''>('');
   const [estadoModal, setEstadoModal] = useState<Miembro | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setCreateOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const queryParams = useMemo(
     () => ({
@@ -79,7 +89,7 @@ export default function MiembrosPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Miembros</h1>
+          <h1 className="text-2xl font-light tracking-tight">Miembros</h1>
           <p className="text-muted-foreground">Gestión de miembros de la iglesia</p>
         </div>
         {isAdmin && (
@@ -117,6 +127,7 @@ export default function MiembrosPage() {
         isLoading={isLoading || isFetching}
         page={page}
         onPageChange={setPage}
+        onRowClick={(miembro) => router.push(`/dashboard/miembros/${miembro.id}`)}
       />
 
       <MiembroFormModal open={createOpen} onOpenChange={setCreateOpen} />

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -46,9 +46,11 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActividad } from '@/features/actividades/hooks/use-actividades';
+import { useInvitadosActividad } from '@/features/actividades/hooks/use-invitados-actividad';
 import { useSugerirResponsabilidades } from '@/features/actividades/hooks/use-sugerir-responsabilidades';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { candidatosApi } from '@/features/candidatos/api';
+import { extractApiMessage } from '@/lib/api-error';
 import type { Candidato } from '@/features/candidatos/types';
 import { responsabilidadesActividadHooks } from '@/features/catalogos/hooks';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
@@ -114,7 +116,17 @@ export default function SugerirResponsabilidadesPage({
   const { data: actividad, isLoading: loadingActividad } = useActividad(actividadId);
   const { data: responsabilidades, isLoading: loadingResp } =
     responsabilidadesActividadHooks.useAllActivos();
+  const { data: invitados } = useInvitadosActividad(actividadId);
   const { data: grupos } = useGrupos();
+
+  // IDs de responsabilidades que ya tienen alguien asignado en la actividad
+  const respIdsConAsignado = useMemo(() => {
+    const s = new Set<number>();
+    for (const inv of invitados ?? []) {
+      if (inv.estado !== 'rechazado') s.add(inv.responsabilidad_id);
+    }
+    return s;
+  }, [invitados]);
 
   // --- Search state (one responsabilidad at a time, same as modal) ---
   const [responsabilidadId, setResponsabilidadId] = useState<string>('');
@@ -205,11 +217,11 @@ export default function SugerirResponsabilidadesPage({
     excluirConflictos,
   ]);
 
-  // Reactividad: Buscar automáticamente cuando cambien los filtros
+  // Reactividad: Buscar automáticamente cuando cambien los filtros (con debounce)
   useEffect(() => {
-    if (responsabilidadId && actividad) {
-      handleBuscar();
-    }
+    if (!responsabilidadId || !actividad) return;
+    const timer = setTimeout(() => handleBuscar(), 300);
+    return () => clearTimeout(timer);
   }, [handleBuscar, responsabilidadId, actividad]);
 
   function handleSeleccionarCandidato(candidato: Candidato) {
@@ -257,9 +269,7 @@ export default function SugerirResponsabilidadesPage({
         router.push(`/dashboard/actividades/${actividadId}`);
       },
       onError: (err: unknown) => {
-        // biome-ignore lint/suspicious/noExplicitAny: error shape from axios
-        const msg = (err as any)?.response?.data?.message || 'Error al asignar responsabilidades';
-        toast.error(msg);
+        toast.error(extractApiMessage(err, 'Error al asignar responsabilidades'));
         setShowConfirmModal(false);
       },
     });
@@ -312,7 +322,7 @@ export default function SugerirResponsabilidadesPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Sugerir Responsabilidades</h1>
+            <h1 className="text-2xl font-light tracking-tight">Sugerir Responsabilidades</h1>
             <p className="text-sm text-muted-foreground">
               {actividad.nombre} · {formatFecha(actividad.fecha)}
             </p>
@@ -323,6 +333,11 @@ export default function SugerirResponsabilidadesPage({
           <Button variant="outline" asChild>
             <Link href={`/dashboard/actividades/${actividadId}`}>Cancelar</Link>
           </Button>
+          {selecciones.size > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {selecciones.size} asignada{selecciones.size !== 1 ? 's' : ''}
+            </Badge>
+          )}
           <Button
             onClick={() => setShowConfirmModal(true)}
             disabled={selecciones.size === 0 || asignarMutation.isPending}
@@ -354,7 +369,14 @@ export default function SugerirResponsabilidadesPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Responsabilidad</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Responsabilidad</Label>
+                  {respIdsConAsignado.size > 0 && (
+                    <span className="text-[11px] text-muted-foreground">
+                      {respIdsConAsignado.size} ya asignada{respIdsConAsignado.size !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
                 <Select
                   value={responsabilidadId}
                   onValueChange={(val) => {
@@ -366,20 +388,76 @@ export default function SugerirResponsabilidadesPage({
                     <SelectValue placeholder="Seleccionar responsabilidad" />
                   </SelectTrigger>
                   <SelectContent>
-                    {responsabilidades?.map((r) => (
-                      <SelectItem key={r.id_responsabilidad} value={String(r.id_responsabilidad)}>
-                        <span className="flex items-center gap-2">
-                          {r.nombre}
-                          {selecciones.has(r.id_responsabilidad) && (
-                            <Badge className="h-4 px-1.5 text-[9px] bg-successtext-success-foreground">
-                              Asignado
-                            </Badge>
-                          )}
-                        </span>
-                      </SelectItem>
-                    ))}
+                    {responsabilidades
+                      ?.filter((r) => !respIdsConAsignado.has(r.id_responsabilidad))
+                      .map((r) => (
+                        <SelectItem key={r.id_responsabilidad} value={String(r.id_responsabilidad)}>
+                          <span className="flex items-center gap-2">
+                            {r.nombre}
+                            {selecciones.has(r.id_responsabilidad) && (
+                              <Badge className="h-4 px-1.5 text-[9px] bg-success text-success-foreground">
+                                Asignado
+                              </Badge>
+                            )}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    {responsabilidades?.some((r) => respIdsConAsignado.has(r.id_responsabilidad)) && (
+                      <>
+                        <Separator className="my-1" />
+                        <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Ya tienen responsable
+                        </p>
+                        {responsabilidades
+                          ?.filter((r) => respIdsConAsignado.has(r.id_responsabilidad))
+                          .map((r) => (
+                            <SelectItem
+                              key={r.id_responsabilidad}
+                              value={String(r.id_responsabilidad)}
+                              className="text-muted-foreground"
+                            >
+                              {r.nombre}
+                            </SelectItem>
+                          ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Filtros rápidos siempre visibles */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground">Filtros rápidos</Label>
+                <div className="grid gap-1.5">
+                  {[
+                    {
+                      id: 'excluir-conflictos',
+                      label: 'Excluir con conflictos de agenda',
+                      checked: excluirConflictos,
+                      onChange: setExcluirConflictos,
+                    },
+                    {
+                      id: 'plena-comunion',
+                      label: 'Solo Plena Comunión',
+                      checked: filtroPlenaComun,
+                      onChange: setFiltroPlenaComun,
+                    },
+                  ].map(({ id, label, checked, onChange }) => (
+                    <div
+                      key={id}
+                      className="flex items-center gap-2 rounded-md border bg-background px-3 py-2"
+                    >
+                      <Checkbox
+                        id={id}
+                        checked={checked}
+                        onCheckedChange={(v) => onChange(Boolean(v))}
+                      />
+                      <Label htmlFor={id} className="cursor-pointer text-xs font-medium leading-none">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -390,7 +468,7 @@ export default function SugerirResponsabilidadesPage({
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Settings2 className="size-4 text-primary" />
-                  Configurar Algoritmo
+                  Ajustar criterios
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -428,24 +506,12 @@ export default function SugerirResponsabilidadesPage({
                   </Select>
                 </div>
 
-                {/* Opciones */}
+                {/* Opciones avanzadas */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Opciones
+                    Filtros avanzados
                   </Label>
                   {[
-                    {
-                      id: 'excluir-conflictos',
-                      label: 'Excluir con conflictos',
-                      checked: excluirConflictos,
-                      onChange: setExcluirConflictos,
-                    },
-                    {
-                      id: 'plena-comunion',
-                      label: 'Solo Plena Comunión',
-                      checked: filtroPlenaComun,
-                      onChange: setFiltroPlenaComun,
-                    },
                     {
                       id: 'solo-experiencia',
                       label: 'Solo con experiencia previa',
@@ -645,11 +711,14 @@ export default function SugerirResponsabilidadesPage({
             <div className="grid gap-3">
               {/* Banner info */}
               <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-                <p className="font-medium">
-                  {resultados.length} candidato{resultados.length !== 1 ? 's' : ''} encontrado
-                  {resultados.length !== 1 ? 's' : ''}{' '}
-                  <span className="text-muted-foreground">· últimos {periodoMeses} meses</span>
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium">
+                    {resultados.length} candidato{resultados.length !== 1 ? 's' : ''} encontrado
+                    {resultados.length !== 1 ? 's' : ''}{' '}
+                    <span className="text-muted-foreground">· últimos {periodoMeses} meses</span>
+                  </p>
+                  {buscando && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
+                </div>
                 {!excluirConflictos && (
                   <p className="mt-1 text-xs text-warning-foreground dark:text-warning-foreground">
                     Candidatos con conflicto incluidos — aparecen resaltados.
@@ -723,13 +792,14 @@ export default function SugerirResponsabilidadesPage({
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Star className="size-3 text-muted-foreground" />
-                        {c.indicadores.experiencia_rol_total}× exp. total
+                        {c.indicadores.experiencia_rol_total}{' '}
+                        {c.indicadores.experiencia_rol_total === 1 ? 'vez realizado' : 'veces realizado'}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <CalendarDays className="size-3 text-muted-foreground" />
                         {c.indicadores.dias_desde_ultimo_uso === null
                           ? 'nunca lo ha realizado'
-                          : `hace ${c.indicadores.dias_desde_ultimo_uso}d`}
+                          : `último: hace ${c.indicadores.dias_desde_ultimo_uso} días`}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="size-3 text-primary" />
@@ -841,7 +911,7 @@ export default function SugerirResponsabilidadesPage({
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold">{nombre}</p>
                       {confirmado && (
-                        <Badge className="h-4 bg-successpx-1.5 text-[9px] text-success-foreground">
+                        <Badge className="h-4 px-1.5 text-[9px] bg-success text-success-foreground">
                           Confirmado
                         </Badge>
                       )}

@@ -24,6 +24,7 @@ interface CatalogoTableProps<T> {
   columns: ColumnConfig<T>[];
   idKey: keyof T;
   isLoading: boolean;
+  isError?: boolean;
   isAdmin: boolean;
   onEdit: (item: T) => void;
   onDelete: (item: T) => void;
@@ -35,6 +36,7 @@ export function CatalogoTable<T>({
   columns,
   idKey,
   isLoading,
+  isError,
   isAdmin,
   onEdit,
   onDelete,
@@ -49,6 +51,14 @@ export function CatalogoTable<T>({
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="py-8 text-center text-destructive">
+        Error al cargar los datos. Intente nuevamente.
+      </p>
     );
   }
 

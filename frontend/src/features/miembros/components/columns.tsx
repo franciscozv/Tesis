@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, MoreHorizontal, Pencil, RefreshCw } from 'lucide-react';
+import { MoreHorizontal, Pencil, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,12 +89,6 @@ export function getMiembrosColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/miembros/${miembro.id}`}>
-                  <Eye className="size-4" />
-                  Ver detalle
-                </Link>
-              </DropdownMenuItem>
               {isAdmin && (
                 <>
                   <DropdownMenuItem asChild>

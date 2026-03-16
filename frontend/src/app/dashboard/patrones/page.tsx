@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarPlus, MoreHorizontal, Pencil, Plus, Power } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,7 @@ function formatHora(hora: string) {
 }
 
 export default function PatronesPage() {
-  const { data: patrones, isLoading } = usePatrones();
+  const { data: patrones, isLoading, isError } = usePatrones();
   const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
   const { data: grupos } = useGrupos();
   const { usuario } = useAuth();
@@ -71,6 +71,15 @@ export default function PatronesPage() {
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setEditing(null);
+      setFormOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   const [editing, setEditing] = useState<PatronActividad | null>(null);
   const [generarOpen, setGenerarOpen] = useState(false);
 
@@ -155,7 +164,7 @@ export default function PatronesPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Patrones de Actividad</h1>
+          <h1 className="text-2xl font-light tracking-tight">Patrones de Actividad</h1>
           <p className="text-muted-foreground">
             Define patrones recurrentes para generar actividades automáticamente.
           </p>
@@ -209,6 +218,15 @@ export default function PatronesPage() {
                       </TableCell>
                     </TableRow>
                   ))
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={isAdmin ? 9 : 8}
+                      className="h-24 text-center text-destructive"
+                    >
+                      Error al cargar los patrones. Intente nuevamente.
+                    </TableCell>
+                  </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 9 : 8} className="h-24 text-center">

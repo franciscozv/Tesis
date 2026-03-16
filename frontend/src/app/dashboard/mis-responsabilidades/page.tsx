@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ClipboardList, Eye, X } from 'lucide-react';
+import { Check, Eye, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -114,7 +114,7 @@ export default function MisResponsabilidadesPage() {
   if (!usuario?.miembro_id) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Mis Responsabilidades</h1>
+        <h1 className="text-2xl font-light">Mis Responsabilidades</h1>
         <Card>
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
@@ -127,10 +127,7 @@ export default function MisResponsabilidadesPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <div className="flex items-center gap-3">
-          <ClipboardList className="size-6" />
-          <h1 className="text-2xl font-bold tracking-tight">Mis Responsabilidades</h1>
-        </div>
+        <h1 className="text-2xl font-light tracking-tight">Mis Responsabilidades</h1>
         <p className="text-muted-foreground mt-1">
           Tus invitaciones confirmadas/pendientes y colaboraciones aceptadas en actividades.
         </p>

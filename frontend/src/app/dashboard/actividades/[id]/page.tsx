@@ -278,7 +278,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{actividad.nombre}</h1>
+            <h1 className="text-2xl font-light tracking-tight">{actividad.nombre}</h1>
             <p className="text-sm text-muted-foreground">{formatFecha(actividad.fecha)}</p>
           </div>
         </div>

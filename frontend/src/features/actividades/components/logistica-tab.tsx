@@ -219,8 +219,8 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
       { id: col.id, input: { estado } },
       {
         onSuccess: () =>
-          toast.success(estado === 'aceptada' ? 'Oferta aceptada' : 'Oferta rechazada'),
-        onError: () => toast.error('Error al procesar oferta'),
+          toast.success(estado === 'aceptada' ? 'Colaboración aceptada' : 'Colaboración rechazada'),
+        onError: () => toast.error('Error al procesar colaboración'),
       },
     );
   }
@@ -231,7 +231,7 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
         <TabsList>
           <TabsTrigger value="necesidades">Necesidades ({necesidades?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="ofertas">
-            Ofertas{pendingCount > 0 ? ` (${pendingCount})` : ''}
+            Colaboraciones{pendingCount > 0 ? ` (${pendingCount})` : ''}
           </TabsTrigger>
         </TabsList>
 
@@ -349,7 +349,7 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
                               )}
                               <DropdownMenuItem onClick={() => handleVerOfertas(nec.id)}>
                                 <Eye className="size-4" />
-                                Ver Ofertas{ofertasCount > 0 ? ` (${ofertasCount})` : ''}
+                                Ver Colaboraciones{ofertasCount > 0 ? ` (${ofertasCount})` : ''}
                               </DropdownMenuItem>
                               {canManage && nec.estado === 'abierta' && !isCancelada && (
                                 <>
@@ -376,7 +376,7 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
         </TabsContent>
 
         {/* ---------------------------------------------------------------- */}
-        {/* Ofertas Tab                                                       */}
+        {/* Colaboraciones Tab                                                 */}
         {/* ---------------------------------------------------------------- */}
         <TabsContent value="ofertas" className="grid gap-4">
           <div className="flex items-center gap-2 flex-wrap">
@@ -438,7 +438,7 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
                       colSpan={canManage ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No se encontraron ofertas.
+                      No se encontraron colaboraciones.
                     </TableCell>
                   </TableRow>
                 ) : (

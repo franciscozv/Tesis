@@ -61,7 +61,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const miembroId = Number(id);
   const { data: miembro, isLoading } = useMiembro(miembroId);
-  const { data: comunions, isLoading: loadingcomunions } = useAsignacionesMiembro(miembroId);
+  const { data: comunions, isLoading: loadingComunions } = useAsignacionesMiembro(miembroId);
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
 
@@ -116,7 +116,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-light tracking-tight">
               {miembro.nombre} {miembro.apellido}
             </h1>
             <p className="text-muted-foreground font-mono text-sm">{miembro.rut}</p>
@@ -161,7 +161,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Membresía</CardTitle>
+            <CardTitle className="text-base">Estado en la Iglesia</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-2 py-2">
@@ -198,7 +198,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadingcomunions ? (
+          {loadingComunions ? (
             <div className="grid gap-2">
               {['a', 'b', 'c'].map((key) => (
                 <Skeleton key={key} className="h-8 w-full" />

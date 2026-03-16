@@ -81,15 +81,15 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
       },
       {
         onSuccess: () => {
-          toast.success('Oferta de colaboración registrada');
+          toast.success('Colaboración registrada');
           onOpenChange(false);
           form.reset();
         },
         onError: (error) => {
           if (isAxiosError(error) && error.response?.status === 409) {
-            toast.error(error.response.data.message || 'Esta oferta ya fue registrada.');
+            toast.error(error.response.data.message || 'Esta colaboración ya fue registrada.');
           } else {
-            toast.error('Error al registrar la oferta.');
+            toast.error('Error al registrar la colaboración.');
           }
         },
       },
@@ -100,12 +100,12 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ofrecerse como Colaborador</DialogTitle>
+          <DialogTitle>Participar como colaborador</DialogTitle>
           <DialogDescription>
             {necesidad?.actividad
               ? `${necesidad.actividad.nombre} · ${formatFecha(necesidad.actividad.fecha)}, ${formatHora(necesidad.actividad.hora_inicio)}`
               : (necesidad?.descripcion ??
-                'Registre su oferta de colaboración para esta necesidad.')}
+                'Registre su colaboración para esta necesidad.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,7 +168,7 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Cantidad a ofrecer ({necesidad?.unidad_medida ?? 'unidades'}) *
+                    Puedo llevar ({necesidad?.unidad_medida ?? 'unidades'}) *
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -209,7 +209,7 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
                 aria-label={
                   necesidad?.actividad
                     ? `Ofrecerme para ${necesidad.actividad.nombre}, ${formatFecha(necesidad.actividad.fecha)}, ${necesidad.tipo_necesidad?.nombre ?? 'necesidad logística'}`
-                    : 'Confirmar oferta de colaboración'
+                    : 'Confirmar colaboración'
                 }
               >
                 {mutation.isPending && <Loader2 className="animate-spin" />}
