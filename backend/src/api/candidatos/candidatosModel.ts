@@ -60,7 +60,6 @@ export const IndicadoresResponsabilidadSchema = z.object({
       example: [{ actividad: 'Culto Dominical', rol: 'Músico', fecha: '2025-03-16' }],
     }),
   asistencia_ratio_periodo: z.number().openapi({ example: 0.95 }),
-  asistencias_count: z.number().openapi({ example: 20 }),
   confirmadas_count: z.number().openapi({ example: 22 }),
   antiguedad_anios: z.number().openapi({ example: 5 }),
   resumen_servicios: z
@@ -101,7 +100,7 @@ export const ExperienciaCargoHistorialSchema = z.object({
   grupo_nombre: z.string().openapi({ example: 'Coro Instrumental' }),
   fecha_inicio: z.string().openapi({ example: '2023-01-15' }),
   fecha_fin: z.string().nullable().openapi({ example: '2024-01-15' }),
-  es_directiva: z.boolean().optional().default(false),
+  es_directiva: z.boolean().optional(),
 });
 
 export type ExperienciaCargoHistorial = z.infer<typeof ExperienciaCargoHistorialSchema>;
@@ -177,7 +176,7 @@ export type CandidatoCargo = z.infer<typeof CandidatoCargoSchema>;
  * Metadata de la respuesta de sugerir-cargo
  */
 export const SugerirCargoMetadataSchema = z.object({
-  grupo_id_usado: z.number().int().openapi({ example: 1 }),
+  grupo_id_usado: z.number().int().optional().openapi({ example: 1 }),
   periodo_meses_usado: z.number().int().openapi({ example: 12 }),
   cargo_id: z.number().int().openapi({ example: 3 }),
   requiere_plena_comunion: z.boolean().openapi({ example: false }),

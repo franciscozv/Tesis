@@ -145,7 +145,7 @@ export function RenovarDirectivaModal({
             grupo_id: grupoId,
             periodo_meses: Number(periodoMeses),
             solo_con_experiencia: soloConExperiencia,
-            solo_con_plena_comunion: soloConPlenaComunion,
+            solo_con_plena_comunion: false,
             criterios_prioridad: prioridad,
           });
           return { cargoId: cargo.id_rol_grupo, candidatos: res.candidatos ?? [] };
@@ -165,7 +165,6 @@ export function RenovarDirectivaModal({
     rolesDirectiva.map((r) => r.id_rol_grupo).join(','),
     periodoMeses,
     soloConExperiencia,
-    soloConPlenaComunion,
     prioridad.join(','),
   ]);
 

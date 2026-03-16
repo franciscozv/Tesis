@@ -51,7 +51,6 @@ import { candidatosApi } from '@/features/candidatos/api';
 import { extractApiMessage } from '@/lib/api-error';
 import type { CandidatoCargo } from '@/features/candidatos/types';
 import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
-import type { RolGrupo } from '@/features/catalogos/types';
 import { useGrupo, useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { useRenovarDirectiva } from '@/features/integrantes-grupo/hooks/use-renovar-directiva';
@@ -702,7 +701,6 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                         ) : candidatosCargo.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {candidatosCargo.map((c) => {
-                              const pct = Math.round(c.indicadores.asistencia_ratio_periodo * 100);
                               const isSelected = seleccionado === c.miembro_id;
                               return (
                                 <button

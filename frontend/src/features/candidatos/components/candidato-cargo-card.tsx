@@ -11,7 +11,6 @@ interface CandidatoCargoCardProps {
 
 export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
   const { indicadores } = candidato;
-  const pct = Math.round(indicadores.asistencia_ratio_periodo * 100);
   const gruposVariant = indicadores.grupos_activos_count <= 1 ? 'secondary' : 'outline';
 
   return (

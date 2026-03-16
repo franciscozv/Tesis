@@ -3,7 +3,6 @@
 import { ChevronDown, ChevronUp, Clock, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistorialDirectivaEntry } from '../types';
 

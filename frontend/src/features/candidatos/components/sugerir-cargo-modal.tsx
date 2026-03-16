@@ -30,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RolGrupo } from '@/features/catalogos/types';
@@ -125,7 +124,7 @@ export function SugerirCargoModal({
   // Criterios usados en la última búsqueda (para el banner de metadata)
   const [usedCriterios, setUsedCriterios] = useState<string[]>([]);
   const [usedSoloExp, setUsedSoloExp] = useState(false);
-  const [usedSoloPlena, setUsedSoloPlena] = useState(false);
+  const [, setUsedSoloPlena] = useState(false);
 
   // El botón se habilita cuando hay cargo elegido (el grupo es opcional ahora)
   const puedeHaceQuery = Boolean(cargoId);
@@ -380,7 +379,7 @@ export function SugerirCargoModal({
                           <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold leading-none">{criterio.label}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{criterio.desc}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{criterio.description}</p>
                           </div>
                           
                           <div className="flex items-center gap-1 shrink-0 ml-1">
