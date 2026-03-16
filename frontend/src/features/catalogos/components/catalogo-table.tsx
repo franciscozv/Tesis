@@ -89,7 +89,7 @@ export function CatalogoTable<T>({
                         title={(item as Record<string, unknown>).activo ? 'Desactivar' : 'Activar'}
                       >
                         <Power
-                          className={`h-4 w-4 ${(item as Record<string, unknown>).activo ? 'text-destructive' : 'text-green-600'}`}
+                          className={`h-4 w-4 ${(item as Record<string, unknown>).activo ? 'text-destructive' : 'text-success-foreground'}`}
                         />
                       </Button>
                     )}

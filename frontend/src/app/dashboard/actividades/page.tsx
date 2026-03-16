@@ -327,7 +327,7 @@ export default function ActividadesPage() {
                         {(necesidadesMap.get(actividad.id) ?? 0) > 0 ? (
                           <Badge
                             variant="outline"
-                            className="gap-1 border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                            className="gap-1 border-warning-foreground/60 bg-warning text-warning-foreground dark:bg-warning/20 dark:text-warning-foreground"
                           >
                             <Package className="size-3" />
                             {necesidadesMap.get(actividad.id)}

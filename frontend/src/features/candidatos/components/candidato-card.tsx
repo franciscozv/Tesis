@@ -40,7 +40,7 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
 
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             {indicadores.disponible_en_fecha ? (
-              <Badge variant="outline" className="border-green-600 text-green-600">
+              <Badge variant="outline" className="border-success-foreground text-success-foreground">
                 <CheckCircle2 className="mr-1 size-3" />
                 Disponible
               </Badge>
@@ -84,29 +84,29 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
         {/* Indicadores crudos */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           <div className="flex items-center gap-1.5 text-sm">
-            <Star className="size-3.5 shrink-0 text-amber-500" />
+            <Star className="size-3.5 shrink-0 text-warning-foreground" />
             <span className="text-muted-foreground">Exp. total:</span>
             <span className="ml-auto font-medium">{indicadores.experiencia_rol_total}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
-            <Tag className="size-3.5 shrink-0 text-blue-500" />
+            <Tag className="size-3.5 shrink-0 text-primary" />
             <span className="text-muted-foreground">En este tipo:</span>
             <span className="ml-auto font-medium">{indicadores.experiencia_rol_en_tipo}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
-            <CheckCircle2 className="size-3.5 shrink-0 text-green-500" />
+            <CheckCircle2 className="size-3.5 shrink-0 text-success-foreground" />
             <span className="text-muted-foreground">Actividad en Servicios:</span>
             <span className="ml-auto font-medium">{indicadores.asistencias_count} serv.</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
-            <Clock className="size-3.5 shrink-0 text-purple-500" />
+            <Clock className="size-3.5 shrink-0 text-accent-foreground" />
             <span className="text-muted-foreground">Antigüedad:</span>
             <span className="ml-auto font-medium">{indicadores.antiguedad_anios} años</span>
           </div>
 
           {/* Indicadores de rotación y carga semanal */}
           <div className="col-span-2 flex items-start gap-1.5 text-sm">
-            <CalendarDays className="mt-0.5 size-3.5 shrink-0 text-orange-500" />
+            <CalendarDays className="mt-0.5 size-3.5 shrink-0 text-warning-foreground" />
             <span className="text-muted-foreground">Último uso:</span>
             <span className="ml-auto text-right font-medium">
               {indicadores.dias_desde_ultimo_uso === null ? (
@@ -129,7 +129,7 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
             <Briefcase className="mt-0.5 size-3.5 shrink-0 text-sky-500" />
             <span className="text-muted-foreground">Esta semana:</span>
             <span
-              className={`ml-auto text-right font-medium ${indicadores.servicios_esta_semana > 1 ? 'text-amber-600 dark:text-amber-400' : ''}`}
+              className={`ml-auto text-right font-medium ${indicadores.servicios_esta_semana > 1 ? 'text-warning-foreground dark:text-warning-foreground' : ''}`}
             >
               {indicadores.servicios_esta_semana === 0 ? (
                 '0 servicios'

@@ -107,15 +107,12 @@ export default function DashboardPage() {
     <div className="grid gap-6 max-w-5xl">
       {/* Banner de bienvenida */}
       <Card
-        className="border-0 shadow-md overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, oklch(0.22 0.10 230) 0%, oklch(0.32 0.10 225) 100%)',
-        }}
+        className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80"
       >
         <CardContent className="p-6 flex flex-col gap-1">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">{hoyCapitalizado}</p>
-          <h1 className="text-2xl font-semibold text-white">Bienvenido, {nombre}</h1>
-          <p className="text-white/55 text-sm mt-0.5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-primary-foreground/45">{hoyCapitalizado}</p>
+          <h1 className="text-2xl font-semibold text-primary-foreground">Bienvenido, {nombre}</h1>
+          <p className="text-primary-foreground/55 text-sm mt-0.5">
             Sistema de Gestión Ministerial &mdash; Iglesia Evangélica Pentecostal
           </p>
         </CardContent>

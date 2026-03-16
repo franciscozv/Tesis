@@ -309,7 +309,7 @@ function ResponsabilidadesTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 text-green-600 hover:bg-green-50 hover:text-green-700"
+                            className="size-8 text-success-foreground hover:bg-success hover:text-success-foreground"
                             title="Aceptar invitación"
                             onClick={() => onResponder(r, 'aceptar')}
                           >
@@ -318,7 +318,7 @@ function ResponsabilidadesTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             title="Rechazar invitación"
                             onClick={() => onResponder(r, 'rechazar')}
                           >

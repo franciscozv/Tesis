@@ -19,9 +19,9 @@ const estadoLabels: Record<EstadoComunion, string> = {
   plena_comunion: 'Plena Comunión',
 };
 
-const estadoVariant: Record<EstadoComunion, 'success' | 'warning' | 'outline'> = {
+const estadoVariant: Record<EstadoComunion, 'success' | 'secondary' | 'outline'> = {
   plena_comunion: 'success',
-  probando: 'warning',
+  probando: 'secondary',
   asistente: 'outline',
 };
 

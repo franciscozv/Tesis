@@ -6,25 +6,12 @@ export default function LoginPage() {
     <div className="min-h-svh flex">
       {/* Panel izquierdo — Identidad institucional */}
       <div
-        className="hidden md:flex md:w-[42%] flex-col items-center justify-center relative overflow-hidden"
-        style={{ backgroundColor: 'oklch(0.20 0.09 228)' }}
+        className="hidden md:flex md:w-[42%] flex-col items-center justify-center relative overflow-hidden bg-primary"
       >
-        {/* Ornamento superior derecho */}
-        <div
-          className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
-          style={{ backgroundColor: 'oklch(0.70 0.12 200)', transform: 'translate(40%, -40%)' }}
-        />
-        {/* Ornamento inferior izquierdo */}
-        <div
-          className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-5"
-          style={{ backgroundColor: 'oklch(0.65 0.10 228)', transform: 'translate(-40%, 40%)' }}
-        />
-
-        <div className="relative flex flex-col items-center gap-8 px-14 text-white">
+        <div className="relative flex flex-col items-center gap-8 px-14 text-primary-foreground">
           {/* Logo */}
           <div
-            className="rounded-full p-1.5 ring-1 ring-white/15"
-            style={{ backgroundColor: 'oklch(1 0 0 / 0.06)' }}
+            className="rounded-full p-1.5 ring-1 ring-primary-foreground/15 bg-primary-foreground/5"
           >
             <Image
               src="/logo_iep.png"
@@ -39,28 +26,25 @@ export default function LoginPage() {
           {/* Textos */}
           <div className="text-center space-y-3">
             <h1
-              className="text-2xl font-semibold leading-snug tracking-wide"
-              style={{ fontFamily: 'var(--font-serif)' }}
+              className="text-2xl font-semibold leading-snug tracking-wide font-serif"
             >
               Iglesia Evangélica
               <br />
               Pentecostal
             </h1>
             <p
-              className="text-[11px] tracking-[0.22em] uppercase"
-              style={{ color: 'oklch(1 0 0 / 0.45)' }}
+              className="text-[11px] tracking-[0.22em] uppercase text-primary-foreground/45"
             >
               Sistema de Gestión Ministerial
             </p>
           </div>
 
           {/* Divisor */}
-          <div className="w-12 h-px" style={{ backgroundColor: 'oklch(1 0 0 / 0.18)' }} />
+          <div className="w-12 h-px bg-primary-foreground/15" />
 
           {/* Descripción */}
           <p
-            className="text-sm text-center max-w-[240px] leading-relaxed"
-            style={{ color: 'oklch(1 0 0 / 0.62)' }}
+            className="text-sm text-center max-w-[240px] leading-relaxed text-primary-foreground/60"
           >
             Administración de miembros, grupos ministeriales y actividades de la comunidad.
           </p>
@@ -68,8 +52,7 @@ export default function LoginPage() {
 
         {/* Pie del panel */}
         <div
-          className="absolute bottom-6 text-[11px] tracking-widest uppercase"
-          style={{ color: 'oklch(1 0 0 / 0.22)' }}
+          className="absolute bottom-6 text-[11px] tracking-widest uppercase text-primary-foreground/25"
         >
           IEP &mdash; Uso interno
         </div>

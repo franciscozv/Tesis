@@ -63,8 +63,8 @@ export default function RecuperarPasswordPage() {
         <CardContent>
           {enviado ? (
             <div className="grid gap-4 text-center">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <Mail className="size-6 text-green-600 dark:text-green-400" />
+              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/20 dark:bg-success/30">
+                <Mail className="size-6 text-success-foreground dark:text-success-foreground" />
               </div>
               <p className="text-muted-foreground text-sm">
                 Si el email está registrado, recibirás un enlace para restablecer tu contraseña. El

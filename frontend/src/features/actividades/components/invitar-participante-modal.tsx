@@ -207,7 +207,7 @@ export function InvitarParticipanteModal({
                       : 'Quedará pendiente hasta que confirme su participación.'}
                   </p>
                   {alreadyInvitedWarning && (
-                    <div className="flex items-start gap-2 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400">
+                    <div className="flex items-start gap-2 rounded-md border border-warning-foreground/40 bg-warning px-3 py-2 text-warning-foreground dark:border-warning-foreground/40 dark:bg-warning/30 dark:text-warning-foreground">
                       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                       <span>{alreadyInvitedWarning} ¿Deseas agregarlo con esta nueva responsabilidad de todos modos?</span>
                     </div>

@@ -40,8 +40,8 @@ function ResetPasswordForm() {
     return (
       <Card className="w-full max-w-sm shadow-md border-border/60">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-            <XCircle className="size-6 text-red-600 dark:text-red-400" />
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10 dark:bg-destructive/30">
+            <XCircle className="size-6 text-destructive dark:text-destructive" />
           </div>
           <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
             Enlace inválido
@@ -86,8 +86,8 @@ function ResetPasswordForm() {
     return (
       <Card className="w-full max-w-sm shadow-md border-border/60">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <CheckCircle className="size-6 text-green-600 dark:text-green-400" />
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-success/20 dark:bg-success/30">
+            <CheckCircle className="size-6 text-success-foreground dark:text-success-foreground" />
           </div>
           <CardTitle className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
             Contraseña restablecida

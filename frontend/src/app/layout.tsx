@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/providers/query-provider';
+import { ThemeProvider } from '@/providers/theme-provider';
 
 export const metadata: Metadata = {
   title: 'Sistema IEP - Gestión Iglesia',
@@ -16,12 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
-        <QueryProvider>
-          {children}
-          <Toaster />
-        </QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

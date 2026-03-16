@@ -1,6 +1,7 @@
 'use client';
 
-import { Calendar, ExternalLink, LogOut, Menu, User } from 'lucide-react';
+import { Calendar, ExternalLink, LogOut, Menu, Moon, Sun, User } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -41,6 +42,7 @@ const rolLabels: Record<string, string> = {
 export function Navbar() {
   const { usuario, logout } = useAuth();
   const pathname = usePathname();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const initials = usuario?.email?.slice(0, 2).toUpperCase() ?? '??';
   const rolLabel = usuario?.rol ? rolLabels[usuario.rol] : '';
@@ -87,6 +89,17 @@ export function Navbar() {
 
         <div className="h-5 w-px bg-border hidden sm:block" />
 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          className="text-muted-foreground"
+        >
+          <Sun className="size-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Cambiar tema</span>
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -96,8 +109,7 @@ export function Navbar() {
             >
               <Avatar className="size-7">
                 <AvatarFallback
-                  className="text-[11px] font-semibold text-white"
-                  style={{ backgroundColor: 'oklch(0.42 0.10 228)' }}
+                  className="text-[11px] font-semibold bg-primary text-primary-foreground"
                 >
                   {initials}
                 </AvatarFallback>

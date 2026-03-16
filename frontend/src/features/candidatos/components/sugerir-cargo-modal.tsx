@@ -224,7 +224,7 @@ export function SugerirCargoModal({
                           {r.es_directiva && (
                             <Badge
                               variant="secondary"
-                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-none"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary border-none"
                             >
                               <ShieldCheck className="size-2.5" />
                               Directiva
@@ -233,7 +233,7 @@ export function SugerirCargoModal({
                           {r.es_unico && (
                             <Badge
                               variant="secondary"
-                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-accent text-accent-foreground dark:bg-accent dark:text-accent-foreground border-none"
                             >
                               <UserCheck className="size-2.5" />
                               Único
@@ -242,7 +242,7 @@ export function SugerirCargoModal({
                           {r.requiere_plena_comunion && (
                             <Badge
                               variant="secondary"
-                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                              className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-warning text-warning-foreground dark:bg-warning dark:text-warning-foreground border-none"
                             >
                               <BadgeCheck className="size-2.5" />
                               Plena Comunión
@@ -301,11 +301,11 @@ export function SugerirCargoModal({
           </div>
 
           {/* Opciones avanzadas (colapsable) */}
-          <div className="rounded-lg border border-blue-100 bg-blue-50/20 dark:border-blue-900/30 dark:bg-blue-950/10">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 dark:border-primary/20 dark:bg-primary/5">
             <button
               type="button"
               onClick={() => setShowOpciones((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50/50 transition-colors rounded-t-lg"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-primary dark:text-primary hover:bg-primary/5 transition-colors rounded-t-lg"
             >
               <span className="flex items-center gap-2">
                 <Settings2 className="size-4" />
@@ -315,10 +315,10 @@ export function SugerirCargoModal({
             </button>
 
             {showOpciones && (
-              <div className="border-t border-blue-100 dark:border-blue-900/30 px-4 py-4 grid gap-5">
+              <div className="border-t border-primary/20 dark:border-primary/20 px-4 py-4 grid gap-5">
                 {/* Filtro: solo con experiencia */}
                 <div className="grid gap-2">
-                  <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-background px-3 py-2.5 dark:border-blue-800">
+                  <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-background px-3 py-2.5 dark:border-primary">
                     <Checkbox
                       id="solo-experiencia"
                       checked={soloConExperiencia}
@@ -332,7 +332,7 @@ export function SugerirCargoModal({
                     </Label>
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-background px-3 py-2.5 dark:border-blue-800">
+                  <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-background px-3 py-2.5 dark:border-primary">
                     <Checkbox
                       id="solo-plena-comunion"
                       checked={soloConPlenaComunion}
@@ -351,7 +351,7 @@ export function SugerirCargoModal({
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">Prioridades de búsqueda</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary dark:text-primary">Prioridades de búsqueda</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         Arrastra o usa las flechas para definir la importancia.
                       </p>
@@ -359,7 +359,7 @@ export function SugerirCargoModal({
                     <button
                       type="button"
                       onClick={() => setPrioridad(PRIORIDAD_DEFAULT)}
-                      className="text-[10px] font-medium text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline transition-colors"
+                      className="text-[10px] font-medium text-primary hover:text-primary/80 underline-offset-2 hover:underline transition-colors"
                     >
                       Restablecer
                     </button>
@@ -372,9 +372,9 @@ export function SugerirCargoModal({
                       return (
                         <div
                           key={key}
-                          className="flex items-center gap-2 rounded-md border border-blue-100 bg-background px-3 py-2 dark:border-blue-900"
+                          className="flex items-center gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 dark:border-primary/20"
                         >
-                          <span className="text-[10px] font-bold text-blue-500 w-4 shrink-0 text-center">
+                          <span className="text-[10px] font-bold text-primary w-4 shrink-0 text-center">
                             {index + 1}
                           </span>
                           <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0" />
@@ -387,7 +387,7 @@ export function SugerirCargoModal({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7 h-7 w-7 text-blue-600"
+                              className="size-7 h-7 w-7 text-primary"
                               onClick={() => moverArriba(index)}
                               disabled={index === 0}
                             >
@@ -396,7 +396,7 @@ export function SugerirCargoModal({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7 h-7 w-7 text-blue-600"
+                              className="size-7 h-7 w-7 text-primary"
                               onClick={() => moverAbajo(index)}
                               disabled={index === prioridad.length - 1}
                             >

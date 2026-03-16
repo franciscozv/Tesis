@@ -75,17 +75,17 @@ interface DirectivaCardProps {
 
 function DirectivaCard({ cargo, holder, holderNombre }: DirectivaCardProps) {
   return (
-    <Card className="flex flex-col border-blue-200 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/10">
+    <Card className="flex flex-col border-primary/40 bg-primary/5 dark:border-primary/20 dark:bg-primary/5">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-2">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary dark:text-primary" />
           <div className="min-w-0">
             <CardTitle className="text-sm font-semibold leading-tight">{cargo.nombre}</CardTitle>
             <div className="mt-1 flex flex-wrap gap-1">
               {cargo.es_unico && (
                 <Badge
                   variant="secondary"
-                  className="h-4 border-none bg-purple-100 px-1 text-[10px] text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                  className="h-4 border-none bg-accent px-1 text-[10px] text-accent-foreground dark:bg-accent dark:text-accent-foreground"
                 >
                   <UserCheck className="mr-0.5 size-2.5" />
                   Único
@@ -94,7 +94,7 @@ function DirectivaCard({ cargo, holder, holderNombre }: DirectivaCardProps) {
               {cargo.requiere_plena_comunion && (
                 <Badge
                   variant="secondary"
-                  className="h-4 border-none bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  className="h-4 border-none bg-warning px-1 text-[10px] text-warning-foreground dark:bg-warning dark:text-warning-foreground"
                 >
                   <BadgeCheck className="mr-0.5 size-2.5" />
                   Plena Comunión
@@ -106,7 +106,7 @@ function DirectivaCard({ cargo, holder, holderNombre }: DirectivaCardProps) {
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-3">
-        <Separator className="bg-blue-200/60 dark:bg-blue-900/30" />
+        <Separator className="bg-primary/40 dark:bg-primary/20" />
 
         {/* Titular actual */}
         {holder && holderNombre ? (
@@ -250,17 +250,17 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
       </Card>
 
       {/* ── Sección 1: Directiva Actual ─────────────────────────────────────── */}
-      <Card className="border-blue-200 dark:border-blue-900/40">
+      <Card className="border-primary/40 dark:border-primary/20">
         <CardHeader className="pb-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Shield className="size-4 text-blue-600 dark:text-blue-400" />
+              <Shield className="size-4 text-primary dark:text-primary" />
               Directiva Actual
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
-                className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                className="bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary"
               >
                 {integrantesDirectiva.length} / {rolesDirectiva.length} cargos ocupados
               </Badge>
@@ -269,7 +269,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
                   size="sm"
                   variant="outline"
                   asChild
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/20"
+                  className="border-primary/60 text-primary hover:bg-primary/5 dark:border-primary/70 dark:text-primary dark:hover:bg-primary/10"
                 >
                   <Link href={`/dashboard/grupos/${grupoId}/renovacion-directiva`}>
                     <RefreshCw className="size-3.5" />
@@ -388,7 +388,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
                               variant="outline"
                               className={
                                 comunion === 'plena_comunion'
-                                  ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400'
+                                  ? 'border-warning-foreground/40 bg-warning text-warning-foreground dark:border-warning-foreground dark:bg-warning/30 dark:text-warning-foreground'
                                   : ''
                               }
                             >

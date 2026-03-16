@@ -217,7 +217,7 @@ export function RenovarDirectivaModal({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <RefreshCw className="size-4 text-blue-600" />
+            <RefreshCw className="size-4 text-primary" />
             Renovación Masiva de Directiva
           </DialogTitle>
           <DialogDescription>
@@ -249,7 +249,7 @@ export function RenovarDirectivaModal({
               variant="outline"
               size="sm"
               onClick={() => setShowConfig(!showConfig)}
-              className={showConfig ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}
+              className={showConfig ? 'bg-primary/5 border-primary/40 text-primary' : ''}
             >
               <Settings2 className="mr-2 size-4" />
               Configurar Algoritmo
@@ -259,7 +259,7 @@ export function RenovarDirectivaModal({
 
           {/* Panel de Configuración del Algoritmo */}
           {showConfig && (
-            <div className="rounded-lg border bg-blue-50/20 p-4 dark:bg-blue-900/10">
+            <div className="rounded-lg border bg-primary/5 p-4 dark:bg-primary/5">
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* Columna Izquierda: Período y Filtro */}
                 <div className="space-y-4">
@@ -437,15 +437,15 @@ export function RenovarDirectivaModal({
                       key={cargoId}
                       className={`rounded-lg border px-3 py-2.5 ${
                         advertencias.some((a) => a.tipo === 'error')
-                          ? 'border-red-200 bg-red-50/40 dark:border-red-900/40 dark:bg-red-950/10'
+                          ? 'border-destructive/40 bg-destructive/10 dark:border-destructive/40 dark:bg-destructive/10'
                           : advertencias.length > 0
-                            ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/10'
+                            ? 'border-warning-foreground/40 bg-warning/40 dark:border-warning-foreground/20 dark:bg-warning/20'
                             : 'border-border bg-background'
                       }`}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <ShieldCheck className="size-3.5 shrink-0 text-blue-500" />
+                          <ShieldCheck className="size-3.5 shrink-0 text-primary" />
                           <span className="text-xs text-muted-foreground shrink-0">
                             {cargo?.nombre}
                           </span>
@@ -460,7 +460,7 @@ export function RenovarDirectivaModal({
                                 variant={a.tipo === 'error' ? 'destructive' : 'outline'}
                                 className={`h-5 px-1.5 text-[10px] gap-0.5 ${
                                   a.tipo === 'aviso'
-                                    ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                                    ? 'border-warning-foreground/40 bg-warning text-warning-foreground dark:border-warning-foreground dark:bg-warning/30 dark:text-warning-foreground'
                                     : ''
                                 }`}
                               >
@@ -492,11 +492,11 @@ export function RenovarDirectivaModal({
               return (
                 <div
                   key={cargo.id_rol_grupo}
-                  className="rounded-lg border border-blue-200 bg-blue-50/30 p-4 dark:border-blue-900/40 dark:bg-blue-950/10"
+                  className="rounded-lg border border-primary/40 bg-primary/5 p-4 dark:border-primary/20 dark:bg-primary/5"
                 >
                   {/* Cabecera del cargo */}
                   <div className="mb-3 flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary dark:text-primary" />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm">{cargo.nombre}</p>
                       {titularNombre ? (
@@ -512,7 +512,7 @@ export function RenovarDirectivaModal({
                       )}
                     </div>
                     {seleccionado && (
-                      <Badge className="shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      <Badge className="shrink-0 bg-success text-success-foreground dark:bg-success dark:text-success-foreground">
                         Asignado
                       </Badge>
                     )}
@@ -588,12 +588,12 @@ export function RenovarDirectivaModal({
                               }}
                               className={`flex flex-col items-start gap-1 rounded-lg border p-2 text-xs transition-colors ${
                                 isSelected
-                                  ? 'border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-600 dark:bg-blue-900/40 dark:text-blue-200'
+                                  ? 'border-primary bg-primary/10 text-primary dark:border-primary dark:bg-primary/10 dark:text-primary'
                                   : 'border-border bg-background hover:bg-muted'
                               }`}
                             >
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-blue-600 dark:text-blue-400">#{c.posicion}</span>
+                                <span className="font-bold text-primary dark:text-primary">#{c.posicion}</span>
                                 <span className="font-semibold">{c.nombre_completo}</span>
                                 {cargo.requiere_plena_comunion && !c.indicadores.plena_comunion && (
                                   <Badge variant="destructive" className="h-4 px-1 text-[8px] uppercase">
@@ -601,11 +601,11 @@ export function RenovarDirectivaModal({
                                   </Badge>
                                 )}
                                 <div className="flex gap-1">
-                                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal gap-0.5 border-amber-200 bg-amber-50 text-amber-700">
+                                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal gap-0.5 border-muted-foreground/30 bg-muted/50 text-muted-foreground">
                                     <Award className="size-2.5" />
                                     {c.indicadores.experiencia_cargo_en_grupo}×
                                   </Badge>
-                                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal gap-0.5 border-green-200 bg-green-50 text-green-700">
+                                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal gap-0.5 border-success-foreground/40 bg-success text-success-foreground">
                                     <TrendingUp className="size-2.5" />
                                     {pct}%
                                   </Badge>
@@ -614,7 +614,7 @@ export function RenovarDirectivaModal({
 
                               {/* RESUMEN DE ACTIVIDADES - VERSIÓN INFALIBLE */}
                               <div className="mt-2 w-full space-y-1">
-                                <p className="text-[10px] font-extrabold uppercase text-blue-700 dark:text-blue-400">
+                                <p className="text-[10px] font-extrabold uppercase text-primary dark:text-primary">
                                   Actividades Realizadas:
                                 </p>
                                 <div className="flex flex-wrap gap-1">
@@ -625,7 +625,7 @@ export function RenovarDirectivaModal({
                                       </Badge>
                                     ))
                                   ) : (
-                                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1 rounded">
+                                    <span className="text-[10px] font-bold text-warning-foreground dark:text-warning-foreground bg-warning dark:bg-warning px-1 rounded">
                                       ⚠️ No se registran actividades previas.
                                     </span>
                                   )}
@@ -656,12 +656,12 @@ export function RenovarDirectivaModal({
                               )}
                               
                               {/* Bloque de Resumen de Actividades */}
-                              <div className="mt-2 w-full border-t border-blue-100 pt-2 text-left dark:border-blue-900/30">
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400">
+                              <div className="mt-2 w-full border-t border-primary/20 pt-2 text-left dark:border-primary/20">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-primary dark:text-primary">
                                   Actividades Realizadas:
                                 </p>
                                 {(!c.indicadores.resumen_servicios || c.indicadores.resumen_servicios.length === 0) ? (
-                                  <p className="text-[10px] font-medium italic text-amber-600 dark:text-amber-500">
+                                  <p className="text-[10px] font-medium italic text-warning-foreground dark:text-warning-foreground">
                                     No se registran actividades previas.
                                   </p>
                                 ) : (

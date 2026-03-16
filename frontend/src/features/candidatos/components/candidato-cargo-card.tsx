@@ -45,14 +45,14 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           {/* Experiencia en el cargo dentro del grupo */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Award className="size-3.5 shrink-0 text-amber-500" />
+            <Award className="size-3.5 shrink-0 text-warning-foreground" />
             <span className="text-muted-foreground">En este grupo:</span>
             <span className="ml-auto font-medium">{indicadores.experiencia_cargo_en_grupo}×</span>
           </div>
 
           {/* Grupos activos — menos es mejor */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Users className="size-3.5 shrink-0 text-blue-500" />
+            <Users className="size-3.5 shrink-0 text-primary" />
             <span className="text-muted-foreground">Grupos activos:</span>
             <span className="ml-auto">
               <Badge variant={gruposVariant} className="px-1.5 py-0 text-xs font-medium">
@@ -63,14 +63,14 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
 
           {/* Actividad en Servicios */}
           <div className="flex items-center gap-1.5 text-sm">
-            <TrendingUp className="size-3.5 shrink-0 text-green-500" />
+            <TrendingUp className="size-3.5 shrink-0 text-success-foreground" />
             <span className="text-muted-foreground">Actividad en Servicios:</span>
             <span className="ml-auto font-medium">{indicadores.asistencias_count} serv.</span>
           </div>
 
           {/* Antigüedad */}
           <div className="flex items-center gap-1.5 text-sm">
-            <CalendarDays className="size-3.5 shrink-0 text-purple-500" />
+            <CalendarDays className="size-3.5 shrink-0 text-accent-foreground" />
             <span className="text-muted-foreground">Antigüedad:</span>
             <span className="ml-auto font-medium">{indicadores.antiguedad_anios} años</span>
           </div>

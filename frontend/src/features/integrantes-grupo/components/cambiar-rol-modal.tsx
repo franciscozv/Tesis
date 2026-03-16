@@ -171,7 +171,7 @@ export function CambiarRolModal({
                             {r.es_unico && (
                               <Badge
                                 variant="secondary"
-                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-accent text-accent-foreground dark:bg-accent dark:text-accent-foreground border-none"
                               >
                                 <UserCheck className="size-2.5" />
                                 Único
@@ -180,7 +180,7 @@ export function CambiarRolModal({
                             {r.requiere_plena_comunion && (
                               <Badge
                                 variant="secondary"
-                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                                className="px-1 py-0 text-[10px] h-3.5 flex items-center gap-0.5 bg-warning text-warning-foreground dark:bg-warning dark:text-warning-foreground border-none"
                               >
                                 <BadgeCheck className="size-2.5" />
                                 Plena Comunión

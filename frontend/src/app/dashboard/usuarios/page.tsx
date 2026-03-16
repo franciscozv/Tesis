@@ -219,7 +219,7 @@ export default function UsuariosPage() {
                               title={u.activo ? 'Desactivar' : 'Activar'}
                             >
                               <Power
-                                className={`size-4 ${u.activo ? 'text-destructive' : 'text-green-600'}`}
+                                className={`size-4 ${u.activo ? 'text-destructive' : 'text-success-foreground'}`}
                               />
                             </Button>
                           </div>

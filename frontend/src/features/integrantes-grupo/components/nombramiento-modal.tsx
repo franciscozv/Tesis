@@ -187,7 +187,7 @@ export function NombramientoModal({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
-              <Crown className="size-4 text-amber-500" />
+              <Crown className="size-4 text-primary" />
               Realizar Nombramiento
             </DialogTitle>
             <Button
@@ -196,7 +196,7 @@ export function NombramientoModal({
               onClick={() => setShowConfig(!showConfig)}
               className={
                 showConfig
-                  ? 'h-8 bg-blue-50 border-blue-200 text-blue-700'
+                  ? 'h-8 bg-primary/5 border-primary/40 text-primary'
                   : 'h-8 text-muted-foreground'
               }
             >
@@ -210,7 +210,7 @@ export function NombramientoModal({
                 <span>
                   Cargo: <span className="font-semibold text-foreground">{cargo.nombre}</span>
                   {cargo.requiere_plena_comunion && (
-                    <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                    <span className="ml-2 text-xs text-warning-foreground dark:text-warning-foreground">
                       · requiere plena comunión
                     </span>
                   )}
@@ -223,7 +223,7 @@ export function NombramientoModal({
         <div className="grid gap-4">
           {/* Panel de Configuración del Algoritmo */}
           {showConfig && (
-            <div className="rounded-lg border border-blue-100 bg-blue-50/20 p-4 dark:border-blue-900/30 dark:bg-blue-950/10">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 dark:border-primary/20 dark:bg-primary/5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-4">
                   <div>
@@ -321,9 +321,9 @@ export function NombramientoModal({
             </div>
           )}
 
-          <Alert className="border-blue-200 bg-blue-50 py-2.5 dark:bg-blue-950/20">
-            <BadgeCheck className="size-4 text-blue-600 dark:text-blue-400" />
-            <AlertDescription className="text-xs text-blue-800 dark:text-blue-200">
+          <Alert className="border-primary/40 bg-primary/5 py-2.5 dark:bg-primary/10">
+            <BadgeCheck className="size-4 text-primary dark:text-primary" />
+            <AlertDescription className="text-xs text-primary dark:text-primary">
               Se muestran solo los miembros de la nómina del grupo, ordenados por idoneidad según el
               algoritmo de candidatos.
             </AlertDescription>
@@ -361,7 +361,7 @@ export function NombramientoModal({
                 {cargo?.requiere_plena_comunion && (
                   <p className="text-xs text-muted-foreground">
                     Este cargo requiere{' '}
-                    <span className="font-medium text-amber-600 dark:text-amber-400">
+                    <span className="font-medium text-warning-foreground dark:text-warning-foreground">
                       Plena Comunión
                     </span>
                     .
@@ -400,19 +400,19 @@ export function NombramientoModal({
                       <th className="px-4 py-2.5 font-medium text-muted-foreground">Candidato</th>
                       <th className="hidden px-4 py-2.5 text-center font-medium text-muted-foreground sm:table-cell">
                         <span className="flex items-center justify-center gap-1">
-                          <Award className="size-3.5 text-amber-500" />
+                          <Award className="size-3.5 text-muted-foreground" />
                           Exp.
                         </span>
                       </th>
                       <th className="hidden px-4 py-2.5 text-center font-medium text-muted-foreground sm:table-cell">
                         <span className="flex items-center justify-center gap-1">
-                          <TrendingUp className="size-3.5 text-green-500" />
+                          <TrendingUp className="size-3.5 text-success-foreground" />
                           Asist.
                         </span>
                       </th>
                       <th className="hidden px-4 py-2.5 text-center font-medium text-muted-foreground md:table-cell">
                         <span className="flex items-center justify-center gap-1">
-                          <CalendarDays className="size-3.5 text-purple-500" />
+                          <CalendarDays className="size-3.5 text-accent-foreground" />
                           Antigüedad
                         </span>
                       </th>
@@ -441,7 +441,7 @@ export function NombramientoModal({
                             {c.indicadores.plena_comunion && (
                               <Badge
                                 variant="secondary"
-                                className="mt-1.5 h-4 border-none bg-amber-100 px-1 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                className="mt-1.5 h-4 border-none bg-success px-1 text-[10px] text-success-foreground dark:bg-success dark:text-success-foreground"
                               >
                                 <BadgeCheck className="mr-0.5 size-2.5" />
                                 Plena Comunión

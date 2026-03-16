@@ -486,7 +486,7 @@ export function LogisticaTab({ actividadId, canManage, isCancelada }: LogisticaT
                                   ) : (
                                     <Check
                                       className={cn(
-                                        'size-4 text-green-600',
+                                        'size-4 text-success-foreground',
                                         expirada && 'opacity-50',
                                       )}
                                     />

@@ -66,7 +66,7 @@ function CopyButton({ text }: { text: string }) {
   }
   return (
     <Button type="button" variant="ghost" size="icon-sm" onClick={handleCopy}>
-      {copied ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
+      {copied ? <Check className="size-4 text-success-foreground" /> : <Copy className="size-4" />}
     </Button>
   );
 }
@@ -171,7 +171,7 @@ export function UsuarioFormModal({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="size-5 text-green-500" />
+              <CheckCircle2 className="size-5 text-success-foreground" />
               Usuario creado exitosamente
             </DialogTitle>
             <DialogDescription>

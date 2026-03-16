@@ -58,7 +58,7 @@ function AnioSection({ grupo }: { grupo: EntradaAnio }) {
         className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/40"
       >
         <div className="flex items-center gap-2">
-          <Clock className="size-4 text-blue-600 dark:text-blue-400" />
+          <Clock className="size-4 text-primary dark:text-primary" />
           <span className="font-semibold text-sm">{grupo.anio}</span>
           <Badge variant="secondary" className="ml-1 text-xs">
             {grupo.entradas.length} registro{grupo.entradas.length !== 1 ? 's' : ''}
@@ -78,11 +78,11 @@ function AnioSection({ grupo }: { grupo: EntradaAnio }) {
             {[...porCargo.entries()].map(([cargoNombre, entradas]) => (
               <div
                 key={cargoNombre}
-                className="rounded-md border border-blue-100 bg-blue-50/20 p-3 dark:border-blue-900/30 dark:bg-blue-950/10"
+                className="rounded-md border border-primary/20 bg-primary/5 p-3 dark:border-primary/20 dark:bg-primary/5"
               >
                 <div className="mb-2 flex items-center gap-1.5">
-                  <ShieldCheck className="size-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
-                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                  <ShieldCheck className="size-3.5 shrink-0 text-primary dark:text-primary" />
+                  <span className="text-xs font-semibold text-primary dark:text-primary">
                     {cargoNombre}
                   </span>
                 </div>

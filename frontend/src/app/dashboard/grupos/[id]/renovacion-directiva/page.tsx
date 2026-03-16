@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -335,7 +336,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           <Button
             onClick={handleSubmit}
             disabled={totalSelecciones === 0 || renovarMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
           >
             {renovarMutation.isPending ? (
               <Loader2 className="size-4 animate-spin" />
@@ -354,39 +355,36 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="size-4 text-blue-600" />
+                <CalendarDays className="size-4 text-primary" />
                 Fecha de Vigencia
               </CardTitle>
               <CardDescription>Indica cuándo asume la nueva directiva.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-2">
-                <Label htmlFor="fecha-renovacion">Fecha efectiva</Label>
-                <input
-                  id="fecha-renovacion"
-                  type="date"
+                <Label>Fecha efectiva</Label>
+                <DatePicker
                   value={fecha}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setFecha(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onChange={setFecha}
+                  disabledDays={(date) => date > new Date()}
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Tarjeta de Algoritmo */}
-          <Card className="border-blue-100 bg-blue-50/20 dark:border-blue-900/40 dark:bg-blue-950/10">
+          <Card className="border-primary/20 bg-primary/5 dark:border-primary/20 dark:bg-primary/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Settings2 className="size-4 text-blue-600" />
+                  <Settings2 className="size-4 text-primary" />
                   Configurar Algoritmo
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setShowConfig(!showConfig)}
-                  className="text-blue-600"
+                  className="text-primary"
                 >
                   {showConfig ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </Button>
@@ -484,7 +482,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                       return (
                         <div
                           key={key}
-                          className="flex items-center gap-2 rounded-md border bg-background p-2 transition-colors hover:border-blue-200"
+                          className="flex items-center gap-2 rounded-md border bg-background p-2 transition-colors hover:border-primary/40"
                         >
                           <GripVertical className="size-4 text-muted-foreground/40" />
                           <div className="flex-1 min-w-0">
@@ -552,20 +550,20 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                   <Card
                     key={cargo.id_rol_grupo}
                     className={`transition-all ${
-                      seleccionado ? 'border-green-200 bg-green-50/5 dark:border-green-900/30' : ''
+                      seleccionado ? 'border-success-foreground/40 bg-success/5 dark:border-success-foreground/30' : ''
                     }`}
                   >
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                          <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary dark:bg-primary/10 dark:text-primary">
                             <ShieldCheck className="size-5" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
                               <CardTitle className="text-lg">{cargo.nombre}</CardTitle>
                               {cargo.requiere_plena_comunion && (
-                                <Badge variant="outline" className="text-[10px] font-bold text-amber-600 border-amber-200 bg-amber-50">
+                                <Badge variant="outline" className="text-[10px] font-bold text-warning-foreground border-warning-foreground/40 bg-warning">
                                   Requiere Plena Comunión
                                 </Badge>
                               )}
@@ -589,12 +587,12 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                               1 && (
                               <Badge
                                 variant="destructive"
-                                className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                className="bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive"
                               >
                                 Duplicado
                               </Badge>
                             )}
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            <Badge className="bg-success/20 text-success-foreground dark:bg-success/30 dark:text-success-foreground">
                               Asignado
                             </Badge>
                           </div>
@@ -670,13 +668,13 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                   }}
                                   className={`flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
                                     isSelected
-                                      ? 'border-blue-400 bg-blue-50 text-blue-900 shadow-sm dark:bg-blue-900/20 dark:text-blue-100'
-                                      : 'border-border bg-background hover:border-blue-200'
+                                      ? 'border-primary bg-primary/5 text-primary shadow-sm dark:bg-primary/10 dark:text-primary'
+                                      : 'border-border bg-background hover:border-primary/40'
                                   }`}
                                 >
                                   <div className="flex w-full items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-bold text-blue-600 dark:text-blue-400">#{c.posicion}</span>
+                                      <span className="font-bold text-primary dark:text-primary">#{c.posicion}</span>
                                       <span className="text-sm font-semibold">{c.nombre_completo}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -687,7 +685,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                       )}
                                       {/* DIAGNÓSTICO AVANZADO */}
                                       {c.indicadores.historial_otros_cargos?.some((h) => h.es_directiva) && (
-                                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-amber-500 text-amber-600 bg-amber-50 gap-1">
+                                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-primary/60 text-primary bg-primary/10 gap-1">
                                           <Crown className="size-2.5" />
                                           {(() => {
                                             const activosOtros = c.indicadores.historial_otros_cargos?.filter(h => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() !== grupo.nombre?.trim().toLowerCase());
@@ -698,16 +696,16 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                           })()}
                                         </Badge>
                                       )}
-                                      {isSelected && <RefreshCw className="size-3 text-blue-600 animate-spin-slow" />}
+                                      {isSelected && <RefreshCw className="size-3 text-primary animate-spin-slow" />}
                                     </div>
                                   </div>
                                   
                                   <div className="flex flex-wrap gap-2">
-                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-amber-200 bg-amber-50 text-amber-700">
+                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-muted-foreground/30 bg-muted/50 text-muted-foreground">
                                       <Award className="size-2.5" />
                                       {c.indicadores.experiencia_cargo_en_grupo}× exp.
                                     </Badge>
-                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-green-200 bg-green-50 text-green-700">
+                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-success-foreground/40 bg-success text-success-foreground">
                                       <TrendingUp className="size-2.5" />
                                       {c.indicadores.asistencias_count} servicios
                                     </Badge>
@@ -723,9 +721,9 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                           const esDirectiva = h.es_directiva;
                                           return (
                                             <p key={idx} className={`flex items-center gap-1 pl-1 border-l ${
-                                              esDirectiva 
-                                                ? 'border-amber-400 text-amber-700 dark:text-amber-400 font-semibold' 
-                                                : 'border-blue-400 text-blue-700 dark:text-blue-400 font-medium'
+                                              esDirectiva
+                                                ? 'border-primary/60 text-primary font-semibold'
+                                                : 'border-primary/60 text-primary dark:text-primary font-medium'
                                             }`}>
                                               {esDirectiva ? <Crown className="size-2.5 shrink-0" /> : <Users className="size-2.5 shrink-0" />}
                                               <span>{h.grupo_nombre} ({h.cargo_nombre || 'Integrante'})</span>
@@ -750,8 +748,8 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
                                           return (
                                             <p key={idx} className={`flex items-center gap-1 pl-1 border-l ${
-                                              esDirectiva 
-                                                ? 'border-amber-400 text-amber-700 dark:text-amber-400 font-medium' 
+                                              esDirectiva
+                                                ? 'border-primary/60 text-primary font-medium'
                                                 : 'border-muted-foreground/20'
                                             }`}>
                                               {esDirectiva ? <Crown className="size-2.5 shrink-0" /> : <span className="w-2.5 text-center">•</span>}
@@ -764,7 +762,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
                                   {/* Resumen de Actividades - Siempre Visible */}
                                   <div className="mt-2 w-full space-y-1">
-                                    <p className="text-[10px] font-extrabold uppercase text-blue-700 dark:text-blue-400">
+                                    <p className="text-[10px] font-extrabold uppercase text-primary dark:text-primary">
                                       Actividades Realizadas ({periodoMeses} meses):
                                     </p>
                                     <div className="flex flex-wrap gap-1">
@@ -775,7 +773,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                           </Badge>
                                         ))
                                       ) : (
-                                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1 rounded flex items-center gap-1">
+                                        <span className="text-[10px] font-bold text-warning-foreground dark:text-warning-foreground bg-warning dark:bg-warning/20 px-1 rounded flex items-center gap-1">
                                           ⚠️ No se registran actividades previas.
                                         </span>
                                       )}
@@ -816,7 +814,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Crown className="size-5 text-amber-600" />
+              <Crown className="size-5 text-primary" />
               Confirmar Renovación de Directiva
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -862,12 +860,12 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                     key={cargoId}
                     className={`flex flex-col gap-2 rounded-lg border p-3 ${
                       hayAdvertencias
-                        ? 'border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-950/20'
+                        ? 'border-warning-foreground/40 bg-warning/60 dark:border-warning-foreground/40 dark:bg-warning/20'
                         : 'border-border bg-background'
                     }`}
                   >
                     {/* Fila cargo */}
-                    <p className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                    <p className="text-sm font-bold text-primary dark:text-primary">
                       {cargo?.nombre}
                     </p>
 
@@ -881,7 +879,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                       </div>
                       <ArrowLeft className="size-3 rotate-180 text-muted-foreground" />
                       <div className="flex flex-col text-right">
-                        <span className="text-[10px] uppercase text-green-600 font-bold">Entrante</span>
+                        <span className="text-[10px] uppercase text-success-foreground font-bold">Entrante</span>
                         <span className="text-xs font-semibold">
                           {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : `Miembro #${miembroId}`)}
                         </span>
@@ -890,9 +888,9 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
                     {/* Advertencias de conflicto */}
                     {cargoDirectivoEsteGrupo && (
-                      <div className="flex items-start gap-1.5 rounded-md border border-amber-300 bg-amber-100/60 px-2.5 py-1.5 dark:border-amber-700/40 dark:bg-amber-900/20">
-                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-amber-600 dark:text-amber-400" />
-                        <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                      <div className="flex items-start gap-1.5 rounded-md border border-warning-foreground/40 bg-warning/60 px-2.5 py-1.5 dark:border-warning-foreground/40 dark:bg-warning/20">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning-foreground dark:text-warning-foreground" />
+                        <p className="text-[11px] text-warning-foreground dark:text-warning-foreground">
                           <span className="font-semibold">
                             {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')} ya ocupa otro cargo en este grupo:
                           </span>{' '}
@@ -902,22 +900,22 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                     )}
 
                     {cargosActivosExternos.length > 0 && (
-                      <div className="flex items-start gap-1.5 rounded-md border border-amber-300 bg-amber-100/60 px-2.5 py-1.5 dark:border-amber-700/40 dark:bg-amber-900/20">
-                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <div className="flex items-start gap-1.5 rounded-md border border-warning-foreground/40 bg-warning/60 px-2.5 py-1.5 dark:border-warning-foreground/40 dark:bg-warning/20">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning-foreground dark:text-warning-foreground" />
                         <div className="min-w-0">
-                          <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                          <p className="text-[11px] font-semibold text-warning-foreground dark:text-warning-foreground">
                             {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')} tiene cargos activos en otros grupos:
                           </p>
                           <ul className="mt-0.5 space-y-0.5">
                             {cargosActivosExternos.map((h, i) => (
-                              <li key={i} className="flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400">
+                              <li key={i} className="flex items-center gap-1 text-[11px] text-warning-foreground dark:text-warning-foreground">
                                 {h.es_directiva ? (
                                   <Crown className="size-2.5 shrink-0" />
                                 ) : (
                                   <Users className="size-2.5 shrink-0" />
                                 )}
                                 <span className="font-medium">{h.cargo_nombre ?? 'Integrante'}</span>
-                                <span className="text-amber-600/70">en</span>
+                                <span className="text-warning-foreground/70">en</span>
                                 <span>{h.grupo_nombre}</span>
                               </li>
                             ))}
@@ -939,7 +937,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 handleConfirm();
               }}
               disabled={renovarMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
             >
               {renovarMutation.isPending ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />

@@ -86,12 +86,12 @@ export function GestionarRolesGrupo({ grupoId }: GestionarRolesGrupoProps) {
               key={rol.id_rol_grupo}
               className="flex items-center gap-1.5 rounded-full border bg-muted/40 pl-3 pr-1.5 py-1 text-sm"
             >
-              <Check className="size-3 text-green-600" />
+              <Check className="size-3 text-success-foreground" />
               <span className="font-medium">{rol.nombre}</span>
               {rol.es_directiva && (
                 <Badge
                   variant="secondary"
-                  className="h-4 px-1 text-[10px] bg-blue-100 text-blue-700 border-none"
+                  className="h-4 px-1 text-[10px] bg-primary/10 text-primary border-none"
                 >
                   Directiva
                 </Badge>
@@ -125,7 +125,7 @@ export function GestionarRolesGrupo({ grupoId }: GestionarRolesGrupoProps) {
                 <SelectItem key={r.id_rol_grupo} value={String(r.id_rol_grupo)}>
                   {r.nombre}
                   {r.es_directiva && (
-                    <span className="ml-2 text-xs text-blue-600">(Directiva)</span>
+                    <span className="ml-2 text-xs text-primary">(Directiva)</span>
                   )}
                 </SelectItem>
               ))}

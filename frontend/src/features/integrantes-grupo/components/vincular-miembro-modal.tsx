@@ -159,8 +159,8 @@ export function VincularMiembroModal({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             {!esAdmin && !soloNoDirectiva && (
-              <Alert className="py-2 px-3 border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-200">
-                <ShieldCheck className="size-4 text-blue-600 dark:text-blue-400" />
+              <Alert className="py-2 px-3 border-primary/60 bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary">
+                <ShieldCheck className="size-4 text-primary dark:text-primary" />
                 <AlertTitle className="text-sm font-semibold">Cargos de Directiva</AlertTitle>
                 <AlertDescription className="text-xs">
                   Los cargos de directiva están reservados para la administración general.
@@ -170,9 +170,9 @@ export function VincularMiembroModal({
             {mostrarAdvertenciaPlenaComunion && (
               <Alert
                 variant="destructive"
-                className="py-2 px-3 border-amber-500 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200"
+                className="py-2 px-3 border-warning-foreground bg-warning dark:bg-warning/30 text-warning-foreground dark:text-warning-foreground"
               >
-                <Info className="size-4 text-amber-600 dark:text-amber-400" />
+                <Info className="size-4 text-warning-foreground dark:text-warning-foreground" />
                 <AlertTitle className="text-sm font-semibold">Aviso de Requisito</AlertTitle>
                 <AlertDescription className="text-xs">
                   Este rol requiere que el miembro tenga <strong>Plena Comunión</strong>. El miembro
@@ -182,8 +182,8 @@ export function VincularMiembroModal({
               </Alert>
             )}
             {mostrarAdvertenciaVinculacion && (
-              <Alert className="py-2 px-3 border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
-                <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+              <Alert className="py-2 px-3 border-warning-foreground/40 bg-warning dark:bg-warning/30 text-warning-foreground dark:text-warning-foreground">
+                <AlertTriangle className="size-4 text-warning-foreground dark:text-warning-foreground" />
                 <AlertTitle className="text-sm font-semibold">Vinculación Activa</AlertTitle>
                 <AlertDescription className="text-xs">
                   Este miembro ya está activo en{' '}
@@ -309,7 +309,7 @@ export function VincularMiembroModal({
                               {r.es_unico && (
                                 <Badge
                                   variant="secondary"
-                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-none"
+                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-accent text-accent-foreground dark:bg-accent dark:text-accent-foreground border-none"
                                 >
                                   <UserCheck className="size-2.5" />
                                   Único
@@ -318,7 +318,7 @@ export function VincularMiembroModal({
                               {r.requiere_plena_comunion && (
                                 <Badge
                                   variant="secondary"
-                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none"
+                                  className="px-1 py-0 text-[10px] h-4 flex items-center gap-0.5 bg-warning text-warning-foreground dark:bg-warning dark:text-warning-foreground border-none"
                                 >
                                   <BadgeCheck className="size-2.5" />
                                   Plena Comunión

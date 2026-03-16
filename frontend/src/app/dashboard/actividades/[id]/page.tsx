@@ -451,7 +451,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                                 }
                               />
                             ) : inv.asistio ? (
-                              <CheckCircle className="size-4 text-green-600" />
+                              <CheckCircle className="size-4 text-success-foreground" />
                             ) : (
                               <XCircle className="size-4 text-muted-foreground" />
                             )}

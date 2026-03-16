@@ -326,7 +326,7 @@ export default function SugerirResponsabilidadesPage({
           <Button
             onClick={() => setShowConfirmModal(true)}
             disabled={selecciones.size === 0 || asignarMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
           >
             {asignarMutation.isPending ? (
               <Loader2 className="size-4 animate-spin" />
@@ -347,7 +347,7 @@ export default function SugerirResponsabilidadesPage({
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="size-4 text-blue-600" />
+                <Sparkles className="size-4 text-primary" />
                 Buscar Candidatos
               </CardTitle>
               <CardDescription>Elige una responsabilidad y busca los mejores candidatos.</CardDescription>
@@ -371,7 +371,7 @@ export default function SugerirResponsabilidadesPage({
                         <span className="flex items-center gap-2">
                           {r.nombre}
                           {selecciones.has(r.id_responsabilidad) && (
-                            <Badge className="h-4 px-1.5 text-[9px] bg-green-100 text-green-700">
+                            <Badge className="h-4 px-1.5 text-[9px] bg-successtext-success-foreground">
                               Asignado
                             </Badge>
                           )}
@@ -385,18 +385,18 @@ export default function SugerirResponsabilidadesPage({
           </Card>
 
           {/* Algorithm config (collapsible) */}
-          <Card className="border-blue-100 bg-blue-50/20 dark:border-blue-900/40 dark:bg-blue-950/10">
+          <Card className="border-primary/20 bg-primary/5 dark:border-primary/20 dark:bg-primary/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Settings2 className="size-4 text-blue-600" />
+                  <Settings2 className="size-4 text-primary" />
                   Configurar Algoritmo
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setShowConfig(!showConfig)}
-                  className="text-blue-600"
+                  className="text-primary"
                 >
                   {showConfig ? (
                     <ChevronUp className="size-4" />
@@ -522,7 +522,7 @@ export default function SugerirResponsabilidadesPage({
                       return (
                         <div
                           key={key}
-                          className="flex items-center gap-2 rounded-md border bg-background p-2 hover:border-blue-200"
+                          className="flex items-center gap-2 rounded-md border bg-background p-2 hover:border-primary/40"
                         >
                           <GripVertical className="size-4 text-muted-foreground/40" />
                           <p className="min-w-0 flex-1 truncate text-xs font-semibold">
@@ -532,7 +532,7 @@ export default function SugerirResponsabilidadesPage({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7 h-7 w-7 text-blue-600"
+                              className="size-7 h-7 w-7 text-primary"
                               onClick={() => moverArriba(index)}
                               disabled={index === 0}
                             >
@@ -541,7 +541,7 @@ export default function SugerirResponsabilidadesPage({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7 h-7 w-7 text-blue-600"
+                              className="size-7 h-7 w-7 text-primary"
                               onClick={() => moverAbajo(index)}
                               disabled={index === prioridad.length - 1}
                             >
@@ -573,7 +573,7 @@ export default function SugerirResponsabilidadesPage({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-blue-700 dark:text-blue-400">
+                        <p className="truncate text-xs font-semibold text-primary dark:text-primary">
                           {nombreResp}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">{nombre}</p>
@@ -651,7 +651,7 @@ export default function SugerirResponsabilidadesPage({
                   <span className="text-muted-foreground">· últimos {periodoMeses} meses</span>
                 </p>
                 {!excluirConflictos && (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  <p className="mt-1 text-xs text-warning-foreground dark:text-warning-foreground">
                     Candidatos con conflicto incluidos — aparecen resaltados.
                   </p>
                 )}
@@ -668,17 +668,17 @@ export default function SugerirResponsabilidadesPage({
                     onClick={() => handleSeleccionarCandidato(c)}
                     className={`flex w-full flex-col items-start gap-2 rounded-lg border p-4 text-left transition-all hover:shadow-sm ${
                       isSelected
-                        ? 'border-blue-400 bg-blue-50 shadow-sm dark:bg-blue-900/20'
+                        ? 'border-primary bg-primary/5 shadow-sm dark:bg-primary/10'
                         : tieneConflicto
                           ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/60'
-                          : 'border-border bg-background hover:border-blue-200'
+                          : 'border-border bg-background hover:border-primary/40'
                     }`}
                   >
                     {/* Row 1: name + badges */}
                     <div className="flex w-full items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         {isSelected && (
-                          <Badge className="h-5 bg-blue-600 px-2 text-[10px]">Seleccionado</Badge>
+                          <Badge className="h-5 bg-primary px-2 text-[10px]">Seleccionado</Badge>
                         )}
                         <span className="font-semibold">{c.nombre_completo}</span>
                       </div>
@@ -692,7 +692,7 @@ export default function SugerirResponsabilidadesPage({
                         ) : (
                           <Badge
                             variant="outline"
-                            className="h-5 border-green-600 px-2 text-[10px] text-green-600"
+                            className="h-5 border-success-foreground px-2 text-[10px] text-success-foreground"
                           >
                             Disponible
                           </Badge>
@@ -722,21 +722,21 @@ export default function SugerirResponsabilidadesPage({
                     {/* Stats row */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Star className="size-3 text-amber-500" />
+                        <Star className="size-3 text-muted-foreground" />
                         {c.indicadores.experiencia_rol_total}× exp. total
                       </span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <CalendarDays className="size-3 text-orange-500" />
+                        <CalendarDays className="size-3 text-muted-foreground" />
                         {c.indicadores.dias_desde_ultimo_uso === null
                           ? 'nunca lo ha realizado'
                           : `hace ${c.indicadores.dias_desde_ultimo_uso}d`}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="size-3 text-blue-500" />
+                        <Clock className="size-3 text-primary" />
                         {c.indicadores.asistencias_count} asistencias
                       </span>
                       {c.indicadores.servicios_esta_semana > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-amber-600">
+                        <span className="flex items-center gap-1 text-xs text-warning-foreground">
                           <Briefcase className="size-3" />
                           {c.indicadores.servicios_esta_semana} servicio
                           {c.indicadores.servicios_esta_semana !== 1 ? 's' : ''} esta semana
@@ -746,7 +746,7 @@ export default function SugerirResponsabilidadesPage({
 
                     {/* Actividades realizadas */}
                     <div className="w-full space-y-1">
-                      <p className="text-[10px] font-extrabold uppercase text-blue-700 dark:text-blue-400">
+                      <p className="text-[10px] font-extrabold uppercase text-primary dark:text-primary">
                         Actividades Realizadas ({periodoMeses} meses):
                       </p>
                       <div className="flex flex-wrap gap-1">
@@ -758,7 +758,7 @@ export default function SugerirResponsabilidadesPage({
                             </Badge>
                           ))
                         ) : (
-                          <span className="flex items-center gap-1 rounded bg-amber-50 px-1 text-[10px] font-bold text-amber-600 dark:bg-amber-900/20 dark:text-amber-500">
+                          <span className="flex items-center gap-1 rounded bg-warning px-1 text-[10px] font-bold text-warning-foreground dark:bg-warning dark:text-warning-foreground">
                             ⚠️ No se registran actividades previas.
                           </span>
                         )}
@@ -782,7 +782,7 @@ export default function SugerirResponsabilidadesPage({
         <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Sparkles className="size-5 text-blue-600" />
+              <Sparkles className="size-5 text-primary" />
               Confirmar Asignaciones
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -831,26 +831,26 @@ export default function SugerirResponsabilidadesPage({
                     key={respId}
                     className={`flex flex-col gap-1.5 rounded-lg border p-3 ${
                       tieneConflicto
-                        ? 'border-amber-200 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-950/20'
+                        ? 'border-warning-foreground/40 bg-warning/40 dark:border-warning-foreground/40 dark:bg-warning/30'
                         : 'border-border bg-background'
                     }`}
                   >
-                    <p className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                    <p className="text-sm font-bold text-primary dark:text-primary">
                       {nombreResp}
                     </p>
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold">{nombre}</p>
                       {confirmado && (
-                        <Badge className="h-4 bg-green-100 px-1.5 text-[9px] text-green-700">
+                        <Badge className="h-4 bg-successpx-1.5 text-[9px] text-success-foreground">
                           Confirmado
                         </Badge>
                       )}
                     </div>
 
                     {tieneConflicto && (
-                      <div className="flex items-start gap-1.5 rounded-md border border-amber-300 bg-amber-100/60 px-2 py-1.5 dark:border-amber-700/40 dark:bg-amber-900/20">
-                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-amber-600" />
-                        <div className="text-[11px] text-amber-800 dark:text-amber-300">
+                      <div className="flex items-start gap-1.5 rounded-md border border-warning-foreground/40 bg-warning/60 px-2 py-1.5 dark:border-warning-foreground/40 dark:bg-warning">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning-foreground" />
+                        <div className="text-[11px] text-warning-foreground dark:text-warning-foreground">
                           <p className="font-semibold">
                             Tiene {candidato.indicadores.conflictos_en_fecha_count} conflicto
                             {candidato.indicadores.conflictos_en_fecha_count !== 1 ? 's' : ''} en
@@ -874,7 +874,7 @@ export default function SugerirResponsabilidadesPage({
             <AlertDialogAction
               onClick={handleConfirm}
               disabled={asignarMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
             >
               {asignarMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />

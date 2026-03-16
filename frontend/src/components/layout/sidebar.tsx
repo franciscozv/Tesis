@@ -121,12 +121,11 @@ export function Sidebar({ className }: { className?: string }) {
 
   return (
     <aside
-      className={cn('flex h-full flex-col', className)}
-      style={{ backgroundColor: 'oklch(0.22 0.09 230)' }}
+      className={cn('flex h-full flex-col bg-sidebar text-sidebar-foreground', className)}
     >
       {/* Cabecera institucional */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div className="shrink-0 rounded-full bg-white/10 p-1">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border">
+        <div className="shrink-0 rounded-full bg-sidebar-primary/10 p-1">
           <Image
             src="/logo_iep.png"
             alt="Logo IEP"
@@ -136,8 +135,8 @@ export function Sidebar({ className }: { className?: string }) {
           />
         </div>
         <div className="min-w-0">
-          <p className="text-white text-sm font-semibold leading-tight truncate">Sistema IEP</p>
-          <p className="text-white/40 text-[10px] tracking-[0.15em] uppercase leading-tight">
+          <p className="text-sidebar-foreground text-sm font-semibold leading-tight truncate">Sistema IEP</p>
+          <p className="text-sidebar-foreground/40 text-[10px] tracking-[0.15em] uppercase leading-tight">
             Gestión Ministerial
           </p>
         </div>
@@ -154,7 +153,7 @@ export function Sidebar({ className }: { className?: string }) {
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>
-              <p className="px-3 pb-1.5 text-[9px] font-bold tracking-[0.20em] uppercase text-white/35">
+              <p className="px-3 pb-1.5 text-[9px] font-bold tracking-[0.20em] uppercase text-sidebar-foreground/35">
                 {group.label}
               </p>
               <div className="flex flex-col gap-0.5">
@@ -170,12 +169,12 @@ export function Sidebar({ className }: { className?: string }) {
                       className={cn(
                         'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                         isActive
-                          ? 'bg-white/15 text-white'
-                          : 'text-white/55 hover:bg-white/8 hover:text-white/90',
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                          : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/90',
                       )}
                     >
                       {isActive && (
-                        <span className="absolute inset-y-[20%] left-0 w-[3px] rounded-r-full bg-white/80" />
+                        <span className="absolute inset-y-[20%] left-0 w-[3px] rounded-r-full bg-sidebar-primary" />
                       )}
                       <item.icon className="size-4 shrink-0" />
                       <span className="truncate">{item.label}</span>
@@ -189,8 +188,8 @@ export function Sidebar({ className }: { className?: string }) {
       </nav>
 
       {/* Pie del sidebar */}
-      <div className="px-5 py-4 border-t border-white/10">
-        <p className="text-white/25 text-[9px] tracking-widest uppercase text-center">
+      <div className="px-5 py-4 border-t border-sidebar-border">
+        <p className="text-sidebar-foreground/25 text-[9px] tracking-widest uppercase text-center">
           I.E.P. &mdash; uso interno
         </p>
       </div>
