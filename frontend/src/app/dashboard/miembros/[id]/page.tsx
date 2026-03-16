@@ -2,8 +2,18 @@
 
 import { ArrowLeft, ArrowRight, History, Pencil, UserMinus, UsersRound } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +31,7 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useHistorialEstado } from '@/features/historial-estado/hooks/use-historial-estado';
 import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-desvincular-miembro';
 import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
+import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import type { EstadoComunion } from '@/features/miembros/types';
 import { cn } from '@/lib/utils';
@@ -57,6 +68,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
   const { data: historial, isLoading: loadingHistorial } = useHistorialEstado(miembroId);
   const desvincularMutation = useDesvincularMiembro();
   const todas = comunions ?? [];
+  const [comunionADesvincular, setComunionADesvincular] = useState<MiembroGrupo | null>(null);
 
   const historialOrdenado = historial
     ? [...historial].sort(
@@ -64,9 +76,13 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
       )
     : [];
 
-  function handleDesvincular(comunionId: number) {
-    desvincularMutation.mutate(comunionId, {
-      onSuccess: () => toast.success('Desvinculado del grupo exitosamente'),
+  function handleConfirmDesvincular() {
+    if (!comunionADesvincular) return;
+    desvincularMutation.mutate(comunionADesvincular.id, {
+      onSuccess: () => {
+        toast.success('Desvinculado del grupo exitosamente');
+        setComunionADesvincular(null);
+      },
       onError: () => toast.error('Error al desvincular'),
     });
   }
@@ -240,7 +256,7 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                onClick={() => handleDesvincular(mg.id)}
+                                onClick={() => setComunionADesvincular(mg)}
                                 disabled={desvincularMutation.isPending}
                               >
                                 <UserMinus className="size-4" />
@@ -346,6 +362,44 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={!!comunionADesvincular}
+        onOpenChange={(v) => {
+          if (!v) setComunionADesvincular(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desvincular del grupo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {comunionADesvincular && (
+                <>
+                  ¿Está seguro que desea desvincular a{' '}
+                  <span className="font-semibold text-foreground">
+                    {miembro.nombre} {miembro.apellido}
+                  </span>{' '}
+                  del grupo{' '}
+                  <span className="font-semibold text-foreground">
+                    {comunionADesvincular.grupo.nombre}
+                  </span>
+                  ? Esta acción no se puede deshacer.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={desvincularMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDesvincular}
+              disabled={desvincularMutation.isPending}
+            >
+              Desvincular
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -283,9 +283,14 @@ export default function CalendarioPage() {
       createMutation.mutate(
         { ...data, creador_id: usuario.id },
         {
-          onSuccess: () => {
+          onSuccess: (creada) => {
             toast.success('Actividad creada exitosamente');
             setFormOpen(false);
+            if (creada) {
+              setCurrentDate(new Date(`${creada.fecha}T12:00:00`));
+              setDetalleActividad(creada);
+              setDetalleOpen(true);
+            }
           },
           onError: (err: any) =>
             toast.error(err?.response?.data?.message || 'Error al crear actividad'),

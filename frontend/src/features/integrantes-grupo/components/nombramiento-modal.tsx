@@ -4,17 +4,22 @@ import {
   Award,
   BadgeCheck,
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   Crown,
+  GripVertical,
   Loader2,
+  Settings2,
   TrendingUp,
   Users,
   UserX,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +27,53 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSugerirCandidatosCargo } from '@/features/candidatos/hooks/use-sugerir-candidatos-cargo';
 import type { RolGrupo } from '@/features/catalogos/types';
+import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { useCambiarRol } from '../hooks/use-cambiar-rol';
+
+const PERIODOS = [
+  { value: '3', label: '3 meses' },
+  { value: '6', label: '6 meses' },
+  { value: '12', label: '12 meses' },
+  { value: '24', label: '24 meses' },
+];
+
+const CRITERIOS_INFO = [
+  {
+    key: 'experiencia',
+    label: 'Experiencia',
+    description: 'Más veces en el cargo → mejor',
+  },
+  {
+    key: 'carga_trabajo',
+    label: 'Carga de trabajo',
+    description: 'Menos grupos activos → mejor',
+  },
+  {
+    key: 'fidelidad',
+    label: 'Fidelidad',
+    description: 'Mayor % de asistencia → mejor',
+  },
+  {
+    key: 'antiguedad',
+    label: 'Antigüedad',
+    description: 'Más años en el grupo → mejor',
+  },
+] as const;
+
+const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
 
 interface NombramientoModalProps {
   grupoId: number;
@@ -38,7 +85,7 @@ interface NombramientoModalProps {
 }
 
 export function NombramientoModal({
-  grupoId,
+  grupoId: grupoIdProp,
   cargo,
   open,
   onOpenChange,
@@ -46,22 +93,63 @@ export function NombramientoModal({
 }: NombramientoModalProps) {
   const sugerirMutation = useSugerirCandidatosCargo();
   const cambiarRolMutation = useCambiarRol();
+  const { data: todosLosGrupos } = useGrupos();
 
-  // Lanzar la consulta automáticamente al abrir el modal
+  // --- Configuración del Algoritmo ---
+  const [periodoMeses, setPeriodoMeses] = useState<string>('12');
+  const [prioridad, setPrioridad] = useState<string[]>(PRIORIDAD_DEFAULT);
+  const [soloConExperiencia, setSoloConExperiencia] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [grupoId, setGrupoId] = useState<string>(String(grupoIdProp));
+
+  function moverArriba(index: number) {
+    if (index === 0) return;
+    const next = [...prioridad];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    setPrioridad(next);
+  }
+
+  function moverAbajo(index: number) {
+    if (index === prioridad.length - 1) return;
+    const next = [...prioridad];
+    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+    setPrioridad(next);
+  }
+
+  // Lanzar la consulta automáticamente al abrir o cambiar config
   const { mutate: buscarCandidatos } = sugerirMutation;
   useEffect(() => {
     if (open && cargo) {
-      buscarCandidatos({ cargo_id: cargo.id_rol_grupo, grupo_id: grupoId, periodo_meses: 12 });
+      buscarCandidatos({
+        cargo_id: cargo.id_rol_grupo,
+        grupo_id: grupoId === 'all' ? undefined : Number(grupoId),
+        periodo_meses: Number(periodoMeses),
+        solo_con_experiencia: soloConExperiencia,
+        criterios_prioridad: prioridad,
+      });
     }
-  }, [open, cargo?.id_rol_grupo, grupoId, buscarCandidatos]);
+  }, [
+    open,
+    cargo?.id_rol_grupo,
+    grupoId,
+    buscarCandidatos,
+    periodoMeses,
+    soloConExperiencia,
+    prioridad.join(','),
+  ]);
 
   function handleNombrar(miembroId: number) {
     if (!cargo) return;
     const integrante = integrantesNomina.find((mg) => mg.miembro_id === miembroId);
+    
+    // Si no está en la nómina, es un candidato externo (búsqueda global)
     if (!integrante) {
-      toast.error('Este miembro no está en la nómina del grupo');
+      // Aquí se podría implementar la lógica para agregar al grupo y nombrar
+      // Por ahora, notificamos que se requiere integración previa o ajustamos la mutación
+      toast.info('Para nombrar a un miembro externo, primero debe ser agregado al grupo.');
       return;
     }
+
     cambiarRolMutation.mutate(
       { id: integrante.id, input: { rol_grupo_id: cargo.id_rol_grupo } },
       {
@@ -78,23 +166,44 @@ export function NombramientoModal({
 
   function handleClose() {
     sugerirMutation.reset();
+    setShowConfig(false);
+    setGrupoId(String(grupoIdProp));
     onOpenChange(false);
   }
 
   const nominaIds = new Set(integrantesNomina.map((mg) => mg.miembro_id));
-  const candidatos = (sugerirMutation.data?.candidatos ?? []).filter((c) =>
-    nominaIds.has(c.miembro_id),
-  );
+  
+  // Si la búsqueda es global ('all'), mostramos todos los resultados del backend.
+  // Si la búsqueda es por grupo, filtramos para asegurar que estén en la nómina (por seguridad UI).
+  const candidatos = grupoId === 'all' 
+    ? (sugerirMutation.data?.candidatos ?? [])
+    : (sugerirMutation.data?.candidatos ?? []).filter((c) => nominaIds.has(c.miembro_id));
+
   const metadata = sugerirMutation.data?.metadata;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Crown className="size-4 text-amber-500" />
-            Realizar Nombramiento
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="size-4 text-amber-500" />
+              Realizar Nombramiento
+            </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfig(!showConfig)}
+              className={
+                showConfig
+                  ? 'h-8 bg-blue-50 border-blue-200 text-blue-700'
+                  : 'h-8 text-muted-foreground'
+              }
+            >
+              <Settings2 className="mr-2 size-3.5" />
+              <span className="text-xs">Configurar Algoritmo</span>
+            </Button>
+          </div>
           <DialogDescription asChild>
             <div className="space-y-0.5">
               {cargo && (
@@ -112,6 +221,106 @@ export function NombramientoModal({
         </DialogHeader>
 
         <div className="grid gap-4">
+          {/* Panel de Configuración del Algoritmo */}
+          {showConfig && (
+            <div className="rounded-lg border border-blue-100 bg-blue-50/20 p-4 dark:border-blue-900/30 dark:bg-blue-950/10">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Alcance de Búsqueda
+                    </Label>
+                    <Select value={grupoId} onValueChange={setGrupoId}>
+                      <SelectTrigger className="h-8 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" className="text-xs">Todos los grupos (Global)</SelectItem>
+                        <SelectItem value={String(grupoIdProp)} className="text-xs">Este grupo</SelectItem>
+                        <Separator className="my-1" />
+                        {todosLosGrupos?.filter(g => g.id_grupo !== grupoIdProp).map((g) => (
+                          <SelectItem key={g.id_grupo} value={String(g.id_grupo)} className="text-xs">
+                            Grupo: {g.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Análisis de Asistencia
+                    </Label>
+                    <Select value={periodoMeses} onValueChange={setPeriodoMeses}>
+                      <SelectTrigger className="h-8 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PERIODOS.map((p) => (
+                          <SelectItem key={p.value} value={p.value} className="text-xs">
+                            Últimos {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-2">
+                    <Checkbox
+                      id="solo-exp-indiv"
+                      checked={soloConExperiencia}
+                      onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
+                    />
+                    <Label
+                      htmlFor="solo-exp-indiv"
+                      className="cursor-pointer text-[11px] font-medium leading-none"
+                    >
+                      Priorizar experiencia previa
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Prioridades
+                  </Label>
+                  <div className="grid gap-1">
+                    {prioridad.map((key, index) => {
+                      const crit = CRITERIOS_INFO.find((c) => c.key === key);
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-1.5 rounded-md border bg-background px-2 py-1"
+                        >
+                          <GripVertical className="size-3 text-muted-foreground/30" />
+                          <p className="flex-1 truncate text-[10px] font-semibold">{crit?.label}</p>
+                          <div className="flex gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => moverArriba(index)}
+                              disabled={index === 0}
+                              className="rounded p-0.5 hover:bg-muted disabled:opacity-20"
+                            >
+                              <ChevronUp className="size-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moverAbajo(index)}
+                              disabled={index === prioridad.length - 1}
+                              className="rounded p-0.5 hover:bg-muted disabled:opacity-20"
+                            >
+                              <ChevronDown className="size-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Alert className="border-blue-200 bg-blue-50 py-2.5 dark:bg-blue-950/20">
             <BadgeCheck className="size-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-xs text-blue-800 dark:text-blue-200">
@@ -164,20 +373,24 @@ export function NombramientoModal({
           {/* Tabla de candidatos */}
           {candidatos.length > 0 && (
             <div className="grid gap-3">
-              {metadata && (
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {candidatos.length} candidato{candidatos.length !== 1 ? 's' : ''} elegible
-                    {candidatos.length !== 1 ? 's' : ''} · últimos {metadata.periodo_meses_usado}{' '}
-                    meses
-                  </span>
-                  {metadata.requiere_plena_comunion && (
-                    <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                      Filtro: Plena Comunión
-                    </Badge>
-                  )}
-                </div>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {metadata && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>
+                      {candidatos.length} candidato{candidatos.length !== 1 ? 's' : ''} · últimos{' '}
+                      {metadata.periodo_meses_usado} meses
+                    </span>
+                    {metadata.requiere_plena_comunion && (
+                      <Badge variant="secondary" className="h-4 px-1 text-[10px] border-none">
+                        Plena Comunión
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground italic">
+                  * Ordenados por {prioridad.map((p) => CRITERIOS_INFO.find(c => c.key === p)?.label).slice(0, 1)}
+                </p>
+              </div>
 
               <div className="overflow-x-auto rounded-lg border">
                 <table className="w-full text-sm">

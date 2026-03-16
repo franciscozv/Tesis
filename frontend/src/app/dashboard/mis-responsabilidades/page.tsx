@@ -1,19 +1,13 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, Eye, MoreHorizontal, Reply } from 'lucide-react';
+import { Check, ClipboardList, Eye, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -69,8 +63,12 @@ function responsabilidadToInvitado(r: Responsabilidad): Invitado {
     asistio: false,
     fecha_invitacion: '',
     fecha_respuesta: null,
+    actividad: r.actividad,
+    rol: r.rol ? { id_responsabilidad: r.rol.id, nombre: r.rol.nombre } : undefined,
   };
 }
+
+type Respondiendo = { invitado: Invitado; accion: 'aceptar' | 'rechazar' };
 
 export default function MisResponsabilidadesPage() {
   const { usuario } = useAuth();
@@ -79,7 +77,7 @@ export default function MisResponsabilidadesPage() {
 
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [respondiendo, setRespondiendo] = useState<Invitado | null>(null);
+  const [respondiendo, setRespondiendo] = useState<Respondiendo | null>(null);
 
   const hoy = getHoy();
 
@@ -103,6 +101,10 @@ export default function MisResponsabilidadesPage() {
       if (fechaHasta && r.actividad.fecha > fechaHasta) return false;
       return true;
     });
+  }
+
+  function handleResponder(r: Responsabilidad, accion: 'aceptar' | 'rechazar') {
+    setRespondiendo({ invitado: responsabilidadToInvitado(r), accion });
   }
 
   function handleResponderSuccess() {
@@ -172,7 +174,7 @@ export default function MisResponsabilidadesPage() {
             items={filtrarPorFechas(proximas)}
             isLoading={isLoading}
             resaltarProximos
-            onResponder={(r) => setRespondiendo(responsabilidadToInvitado(r))}
+            onResponder={handleResponder}
           />
         </TabsContent>
 
@@ -181,13 +183,14 @@ export default function MisResponsabilidadesPage() {
             items={filtrarPorFechas(historial)}
             isLoading={isLoading}
             resaltarProximos={false}
-            onResponder={(r) => setRespondiendo(responsabilidadToInvitado(r))}
+            onResponder={handleResponder}
           />
         </TabsContent>
       </Tabs>
 
       <ResponderInvitacionModal
-        invitado={respondiendo}
+        invitado={respondiendo?.invitado ?? null}
+        accion={respondiendo?.accion ?? 'aceptar'}
         open={!!respondiendo}
         onOpenChange={(open) => {
           if (!open) {
@@ -209,124 +212,134 @@ function ResponsabilidadesTable({
   items: Responsabilidad[];
   isLoading: boolean;
   resaltarProximos: boolean;
-  onResponder: (r: Responsabilidad) => void;
+  onResponder: (r: Responsabilidad, accion: 'aceptar' | 'rechazar') => void;
 }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
         <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Actividad</TableHead>
-                <TableHead className="hidden md:table-cell">Rol / Necesidad</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead className="hidden md:table-cell">Hora</TableHead>
-                <TableHead className="hidden lg:table-cell">Grupo</TableHead>
-                <TableHead className="hidden lg:table-cell">Tipo Actividad</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                ['s1', 's2', 's3', 's4', 's5'].map((key) => (
-                  <TableRow key={key}>
-                    <TableCell colSpan={9}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : !items.length ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
-                    No se encontraron responsabilidades.
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Actividad</TableHead>
+              <TableHead className="hidden md:table-cell">Rol / Necesidad</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead className="hidden md:table-cell">Hora</TableHead>
+              <TableHead className="hidden lg:table-cell">Grupo</TableHead>
+              <TableHead className="hidden lg:table-cell">Tipo Actividad</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="w-20" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              ['s1', 's2', 's3', 's4', 's5'].map((key) => (
+                <TableRow key={key}>
+                  <TableCell colSpan={9}>
+                    <Skeleton className="h-4 w-full" />
                   </TableCell>
                 </TableRow>
-              ) : (
-                items.map((r) => {
-                  const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
+              ))
+            ) : !items.length ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  No se encontraron responsabilidades.
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((r) => {
+                const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
+                const esPendiente =
+                  r.tipo === 'invitacion' && r.estado_invitacion === 'pendiente';
 
-                  return (
-                    <TableRow
-                      key={`${r.tipo}-${r.id}`}
-                      className={highlight ? 'bg-info/8' : undefined}
-                    >
-                      <TableCell>
-                        <Badge variant={r.tipo === 'invitacion' ? 'info' : 'secondary'}>
-                          {r.tipo === 'invitacion' ? 'Invitación' : 'Colaboración'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <Link
-                          href={`/dashboard/actividades/${r.actividad.id}`}
-                          className="hover:underline"
+                return (
+                  <TableRow
+                    key={`${r.tipo}-${r.id}`}
+                    className={highlight ? 'bg-info/8' : undefined}
+                  >
+                    <TableCell>
+                      <Badge variant={r.tipo === 'invitacion' ? 'info' : 'secondary'}>
+                        {r.tipo === 'invitacion' ? 'Invitación' : 'Colaboración'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/dashboard/actividades/${r.actividad.id}`}
+                        className="hover:underline"
+                      >
+                        {r.actividad.nombre}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {r.tipo === 'invitacion' ? (
+                        <Badge variant="outline">{r.rol?.nombre ?? '—'}</Badge>
+                      ) : (
+                        <span className="text-sm">
+                          {r.tipo_necesidad?.nombre ?? r.necesidad?.descripcion ?? '—'}
+                          {r.cantidad_ofrecida ? ` (${r.cantidad_ofrecida})` : ''}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {formatFecha(r.actividad.fecha)}
+                    </TableCell>
+                    <TableCell className="hidden whitespace-nowrap md:table-cell">
+                      {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {r.grupo?.nombre ?? '—'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {r.tipo_actividad.nombre}
+                    </TableCell>
+                    <TableCell>
+                      {r.tipo === 'invitacion' ? (
+                        <Badge
+                          variant={r.estado_invitacion === 'pendiente' ? 'warning' : 'success'}
                         >
-                          {r.actividad.nombre}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {r.tipo === 'invitacion' ? (
-                          <Badge variant="outline">{r.rol?.nombre ?? '—'}</Badge>
-                        ) : (
-                          <span className="text-sm">
-                            {r.tipo_necesidad?.nombre ?? r.necesidad?.descripcion ?? '—'}
-                            {r.cantidad_ofrecida ? ` (${r.cantidad_ofrecida})` : ''}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatFecha(r.actividad.fecha)}
-                      </TableCell>
-                      <TableCell className="hidden whitespace-nowrap md:table-cell">
-                        {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {r.grupo?.nombre ?? '—'}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {r.tipo_actividad.nombre}
-                      </TableCell>
-                      <TableCell>
-                        {r.tipo === 'invitacion' ? (
-                          <Badge
-                            variant={r.estado_invitacion === 'pendiente' ? 'warning' : 'success'}
+                          {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="success">Aceptada</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {esPendiente ? (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-green-600 hover:bg-green-50 hover:text-green-700"
+                            title="Aceptar invitación"
+                            onClick={() => onResponder(r, 'aceptar')}
                           >
-                            {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
-                          </Badge>
-                        ) : (
-                          <Badge variant="success">Aceptada</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/actividades/${r.actividad.id}`}>
-                                <Eye className="size-4" />
-                                Ver actividad
-                              </Link>
-                            </DropdownMenuItem>
-                            {r.tipo === 'invitacion' && r.estado_invitacion === 'pendiente' && (
-                              <DropdownMenuItem onClick={() => onResponder(r)}>
-                                <Reply className="size-4" />
-                                Responder
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                            <Check className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            title="Rechazar invitación"
+                            onClick={() => onResponder(r, 'rechazar')}
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
+                          <Link href={`/dashboard/actividades/${r.actividad.id}`}>
+                            <Eye className="size-4" />
+                            <span className="sr-only">Ver actividad</span>
+                          </Link>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

@@ -26,6 +26,7 @@ export function useAuth() {
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
+    document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     window.dispatchEvent(new StorageEvent('storage'));
     window.location.href = '/auth/login';
   }, []);

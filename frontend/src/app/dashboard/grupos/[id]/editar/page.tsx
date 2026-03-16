@@ -1,8 +1,11 @@
 'use client';
 
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GrupoForm } from '@/features/grupos-ministeriales/components/grupo-form';
@@ -60,7 +63,15 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-lg grid gap-4">
+      <div>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/dashboard/grupos/${grupoId}`}>
+            <ArrowLeft className="size-4" />
+            Volver al grupo
+          </Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Editar Grupo</CardTitle>

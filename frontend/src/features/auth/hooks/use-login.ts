@@ -11,6 +11,7 @@ export function useLogin() {
     onSuccess: (data) => {
       localStorage.setItem('token', data.responseObject.token);
       localStorage.setItem('usuario', JSON.stringify(data.responseObject.usuario));
+      document.cookie = 'auth-session=1; path=/; SameSite=Lax';
       router.push('/dashboard');
     },
   });

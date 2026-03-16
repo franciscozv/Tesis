@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -27,12 +29,14 @@ import type { Invitado } from '../types';
 
 interface ResponderInvitacionModalProps {
   invitado: Invitado | null;
+  accion: 'aceptar' | 'rechazar';
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function ResponderInvitacionModal({
   invitado,
+  accion,
   open,
   onOpenChange,
 }: ResponderInvitacionModalProps) {
@@ -41,21 +45,17 @@ export function ResponderInvitacionModal({
   const form = useForm<ResponderInvitacionFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.refine creates input type mismatch with zodResolver
     resolver: zodResolver(responderInvitacionSchema) as any,
-    defaultValues: {
-      estado: 'confirmado',
-      motivo_rechazo: '',
-    },
+    defaultValues: { estado: 'confirmado', motivo_rechazo: '' },
   });
 
-  const estadoActual = form.watch('estado');
-
-  function handleResponder(estado: 'confirmado' | 'rechazado') {
-    form.setValue('estado', estado);
-
-    if (estado === 'confirmado') {
-      submitResponse({ estado: 'confirmado', motivo_rechazo: '' });
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        estado: accion === 'aceptar' ? 'confirmado' : 'rechazado',
+        motivo_rechazo: '',
+      });
     }
-  }
+  }, [open, accion, form]);
 
   function submitResponse(data: ResponderInvitacionFormData) {
     if (!invitado) return;
@@ -82,19 +82,38 @@ export function ResponderInvitacionModal({
     );
   }
 
-  const actividadNombre = invitado?.actividad?.nombre ?? `Actividad #${invitado?.actividad_id}`;
+  const rolNombre = invitado?.rol?.nombre;
+  const actividadNombre = invitado?.actividad?.nombre;
+  const fechaActividad = invitado?.actividad?.fecha
+    ? new Date(`${invitado.actividad.fecha}T12:00:00`).toLocaleDateString('es-CL', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+      })
+    : null;
+
+  const verbo = accion === 'aceptar' ? 'aceptar' : 'rechazar';
+  const descripcion = [
+    `¿Deseas ${verbo} la invitación`,
+    rolNombre ? `para "${rolNombre}"` : null,
+    actividadNombre ? `en la actividad "${actividadNombre}"` : null,
+    fechaActividad ? `el día ${fechaActividad}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .concat('?');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Responder Invitación</DialogTitle>
-          <DialogDescription>
-            Confirme o rechace su invitación a &quot;{actividadNombre}&quot;.
-          </DialogDescription>
+          <DialogTitle>
+            {accion === 'aceptar' ? 'Aceptar invitación' : 'Rechazar invitación'}
+          </DialogTitle>
+          <DialogDescription>{descripcion}</DialogDescription>
         </DialogHeader>
 
-        {estadoActual === 'rechazado' ? (
+        {accion === 'rechazar' ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(submitResponse)} className="grid gap-4">
               <FormField
@@ -113,38 +132,39 @@ export function ResponderInvitacionModal({
                   </FormItem>
                 )}
               />
-              <div className="flex justify-end gap-2">
+              <DialogFooter>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    form.setValue('estado', 'confirmado');
-                    form.clearErrors();
-                  }}
+                  onClick={() => onOpenChange(false)}
+                  disabled={mutation.isPending}
                 >
-                  Volver
+                  Cancelar
                 </Button>
                 <Button type="submit" variant="destructive" disabled={mutation.isPending}>
-                  {mutation.isPending && <Loader2 className="animate-spin" />}
-                  Confirmar Rechazo
+                  {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Confirmar rechazo
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </Form>
         ) : (
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button
-              variant="destructive"
-              onClick={() => handleResponder('rechazado')}
+              variant="outline"
+              onClick={() => onOpenChange(false)}
               disabled={mutation.isPending}
             >
-              Rechazar
+              Cancelar
             </Button>
-            <Button onClick={() => handleResponder('confirmado')} disabled={mutation.isPending}>
-              {mutation.isPending && <Loader2 className="animate-spin" />}
-              Confirmar Asistencia
+            <Button
+              onClick={() => submitResponse({ estado: 'confirmado', motivo_rechazo: '' })}
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+              Confirmar asistencia
             </Button>
-          </div>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

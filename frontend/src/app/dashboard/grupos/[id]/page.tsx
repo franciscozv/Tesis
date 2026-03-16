@@ -3,7 +3,7 @@
 import {
   ArrowLeft,
   BadgeCheck,
-  Crown,
+  Clock,
   Pencil,
   Plus,
   RefreshCw,
@@ -42,15 +42,17 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { rolesGrupoHooks } from '@/features/catalogos/hooks';
 import type { RolGrupo } from '@/features/catalogos/types';
+import { GestionarRolesGrupo } from '@/features/grupo-rol/components/gestionar-roles-grupo';
+import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import { useGrupo } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { CambiarRolModal } from '@/features/integrantes-grupo/components/cambiar-rol-modal';
-import { NombramientoModal } from '@/features/integrantes-grupo/components/nombramiento-modal';
+import { HistorialDirectiva } from '@/features/integrantes-grupo/components/historial-directiva';
 import { VincularMiembroModal } from '@/features/integrantes-grupo/components/vincular-miembro-modal';
 import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-desvincular-miembro';
+import { useHistorialDirectiva } from '@/features/integrantes-grupo/hooks/use-historial-directiva';
 import { useIntegrantesGrupo } from '@/features/integrantes-grupo/hooks/use-integrantes-grupo';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 
@@ -69,21 +71,9 @@ interface DirectivaCardProps {
   cargo: RolGrupo;
   holder: MiembroGrupo | undefined;
   holderNombre: string | null;
-  puedeNombrar: boolean;
-  onNombrar: (cargo: RolGrupo) => void;
-  onDesvincular: (mg: MiembroGrupo) => void;
-  isAdmin: boolean;
 }
 
-function DirectivaCard({
-  cargo,
-  holder,
-  holderNombre,
-  puedeNombrar,
-  onNombrar,
-  onDesvincular,
-  isAdmin,
-}: DirectivaCardProps) {
+function DirectivaCard({ cargo, holder, holderNombre }: DirectivaCardProps) {
   return (
     <Card className="flex flex-col border-blue-200 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/10">
       <CardHeader className="pb-2">
@@ -127,42 +117,12 @@ function DirectivaCard({
                 Desde {new Date(holder.fecha_vinculacion).toLocaleDateString('es-CL')}
               </p>
             </div>
-            {isAdmin && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => onDesvincular(holder)}
-                      className="shrink-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <UserMinus className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Desvincular del cargo</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
           </div>
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <UserX className="size-4 shrink-0" />
             <p className="text-sm">Vacante</p>
           </div>
-        )}
-
-        {/* Botón de nombramiento */}
-        {puedeNombrar && (
-          <Button
-            size="sm"
-            variant={holder ? 'outline' : 'default'}
-            className="mt-auto w-full"
-            onClick={() => onNombrar(cargo)}
-          >
-            <Crown className="size-3.5" />
-            {holder ? 'Renovar Nombramiento' : 'Realizar Nombramiento'}
-          </Button>
         )}
       </CardContent>
     </Card>
@@ -182,12 +142,17 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
   const { data: misGrupos } = useMisGrupos();
   const misGruposIds = new Set(misGrupos?.map((g) => g.id_grupo) ?? []);
   const puedeEditar = isAdmin || misGruposIds.has(grupoId);
-  const { data: rolesGrupo } = rolesGrupoHooks.useAllActivos();
+  const { data: rolesGrupo } = useRolesHabilitadosEnGrupo(grupoId);
 
   const [vincularOpen, setVincularOpen] = useState(false);
   const [cambiarRolTarget, setCambiarRolTarget] = useState<MiembroGrupo | null>(null);
   const [miembroADesvincular, setMiembroADesvincular] = useState<MiembroGrupo | null>(null);
-  const [cargoNombramiento, setCargoNombramiento] = useState<RolGrupo | null>(null);
+  const [historialTab, setHistorialTab] = useState(false);
+
+  const { data: historialDirectiva, isLoading: loadingHistorial } = useHistorialDirectiva(
+    grupoId,
+    historialTab,
+  );
 
   const desvincularMutation = useDesvincularMiembro();
 
@@ -292,12 +257,27 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
               <Shield className="size-4 text-blue-600 dark:text-blue-400" />
               Directiva Actual
             </CardTitle>
-            <Badge
-              variant="secondary"
-              className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-            >
-              {integrantesDirectiva.length} / {rolesDirectiva.length} cargos ocupados
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              >
+                {integrantesDirectiva.length} / {rolesDirectiva.length} cargos ocupados
+              </Badge>
+              {isAdmin && rolesDirectiva.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  asChild
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/20"
+                >
+                  <Link href={`/dashboard/grupos/${grupoId}/renovacion-directiva`}>
+                    <RefreshCw className="size-3.5" />
+                    Renovar Directiva
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
           <p className="text-muted-foreground text-xs">
             Los cargos directivos son gestionados exclusivamente por la administración general.
@@ -315,24 +295,30 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
               No hay cargos directivos configurados para este grupo.
             </p>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {rolesDirectiva.map((cargo) => {
-                const holder = holderByRolId.get(cargo.id_rol_grupo);
-                const holderNombre = holder ? getMiembroNombre(holder) : null;
-                return (
-                  <DirectivaCard
-                    key={cargo.id_rol_grupo}
-                    cargo={cargo}
-                    holder={holder}
-                    holderNombre={holderNombre}
-                    puedeNombrar={isAdmin}
-                    onNombrar={setCargoNombramiento}
-                    onDesvincular={setMiembroADesvincular}
-                    isAdmin={isAdmin}
-                  />
-                );
-              })}
-            </div>
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {rolesDirectiva.map((cargo) => {
+                  const holder = holderByRolId.get(cargo.id_rol_grupo);
+                  const holderNombre = holder ? getMiembroNombre(holder) : null;
+                  return (
+                    <DirectivaCard
+                      key={cargo.id_rol_grupo}
+                      cargo={cargo}
+                      holder={holder}
+                      holderNombre={holderNombre}
+                    />
+                  );
+                })}
+              </div>
+              {isAdmin && (
+                <div className="mt-6 border-t pt-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Roles Configurados para este Grupo
+                  </p>
+                  <GestionarRolesGrupo grupoId={grupoId} />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -467,6 +453,35 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
         </CardContent>
       </Card>
 
+      {/* ── Sección 3: Historial de Directiva ───────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock className="size-4 text-muted-foreground" />
+            Historial de Directiva
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Registro histórico de quiénes han conformado la directiva del grupo por año.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {!historialTab ? (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <Clock className="size-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">
+                Haz clic para cargar el historial de directivas anteriores.
+              </p>
+              <Button size="sm" variant="outline" onClick={() => setHistorialTab(true)}>
+                <Clock className="size-4" />
+                Cargar Historial
+              </Button>
+            </div>
+          ) : (
+            <HistorialDirectiva historial={historialDirectiva} isLoading={loadingHistorial} />
+          )}
+        </CardContent>
+      </Card>
+
       {/* ── Modales ──────────────────────────────────────────────────────────── */}
 
       <VincularMiembroModal
@@ -474,16 +489,6 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
         open={vincularOpen}
         onOpenChange={setVincularOpen}
         soloNoDirectiva
-      />
-
-      <NombramientoModal
-        grupoId={grupoId}
-        cargo={cargoNombramiento}
-        open={!!cargoNombramiento}
-        onOpenChange={(v) => {
-          if (!v) setCargoNombramiento(null);
-        }}
-        integrantesNomina={integrantesNomina}
       />
 
       <CambiarRolModal

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  AlertTriangle,
   BadgeCheck,
   Check,
   ChevronsUpDown,
@@ -46,8 +47,9 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { ApiResponse } from '@/features/auth/types';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 import { cn } from '@/lib/utils';
+import { useAsignacionesMiembro } from '../hooks/use-integraciones-miembro';
 import { useIntegrantesGrupo } from '../hooks/use-integrantes-grupo';
-import { useRolesGrupo } from '../hooks/use-roles-grupo';
+import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import { useVincularMiembro } from '../hooks/use-vincular-miembro';
 import { type VincularMiembroFormData, vincularMiembroSchema } from '../schemas';
 
@@ -71,7 +73,7 @@ export function VincularMiembroModal({
   const { usuario } = useAuth();
   const { data: miembros, isLoading: isLoadingMiembros } = useMiembros();
   const { data: miembrosGrupo } = useIntegrantesGrupo(grupoId);
-  const { data: roles } = useRolesGrupo();
+  const { data: roles } = useRolesHabilitadosEnGrupo(grupoId);
   const mutation = useVincularMiembro();
 
   const esAdmin = usuario?.rol === 'administrador';
@@ -103,6 +105,12 @@ export function VincularMiembroModal({
 
   const selectedMiembro = miembrosActivos.find((m) => m.id === selectedMiembroId);
   const selectedRol = rolesActivos.find((r) => r.id_rol_grupo === selectedRolId);
+
+  const { data: asignacionesMiembro } = useAsignacionesMiembro(selectedMiembroId);
+  const membresiasActivas = (asignacionesMiembro ?? []).filter(
+    (mg) => mg.fecha_desvinculacion === null,
+  );
+  const mostrarAdvertenciaVinculacion = selectedMiembroId > 0 && membresiasActivas.length > 0;
 
   const mostrarAdvertenciaPlenaComunion =
     selectedRol?.requiere_plena_comunion &&
@@ -170,6 +178,19 @@ export function VincularMiembroModal({
                   Este rol requiere que el miembro tenga <strong>Plena Comunión</strong>. El miembro
                   seleccionado actualmente es{' '}
                   <strong>{selectedMiembro?.estado_comunion.replace('_', ' ')}</strong>.
+                </AlertDescription>
+              </Alert>
+            )}
+            {mostrarAdvertenciaVinculacion && (
+              <Alert className="py-2 px-3 border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="text-sm font-semibold">Vinculación Activa</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Este miembro ya está activo en{' '}
+                  {membresiasActivas.length === 1 ? 'un grupo' : `${membresiasActivas.length} grupos`}
+                  :{' '}
+                  <strong>{membresiasActivas.map((mg) => mg.grupo.nombre).join(', ')}</strong>.
+                  La vinculación múltiple está permitida.
                 </AlertDescription>
               </Alert>
             )}

@@ -56,8 +56,8 @@ const CRITERIOS_INFO = [
   },
   {
     key: 'fidelidad',
-    label: 'Fidelidad (asistencia)',
-    description: 'Mayor % de asistencia → mejor',
+    label: 'Actividad en Servicios',
+    description: 'Prioriza a quien tiene más participación real en actividades.',
   },
 ] as const;
 

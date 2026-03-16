@@ -9,10 +9,14 @@ import type {
 } from '../types';
 
 export const necesidadesApi = {
-  getAbiertas: async () => {
-    const { data } =
-      await apiClient.get<ApiResponse<NecesidadLogistica[]>>('/necesidades/abiertas');
-    return data.responseObject;
+  getAbiertas: async (): Promise<NecesidadLogistica[]> => {
+    try {
+      const { data } =
+        await apiClient.get<ApiResponse<NecesidadLogistica[]>>('/necesidades/abiertas');
+      return data.responseObject ?? [];
+    } catch {
+      return [];
+    }
   },
 
   getAll: async (filters?: NecesidadFilters) => {

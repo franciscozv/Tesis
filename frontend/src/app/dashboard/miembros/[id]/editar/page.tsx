@@ -1,8 +1,11 @@
 'use client';
 
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MiembroForm } from '@/features/miembros/components/miembro-form';
@@ -64,7 +67,15 @@ export default function EditarMiembroPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl grid gap-4">
+      <div>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/dashboard/miembros/${miembroId}`}>
+            <ArrowLeft className="size-4" />
+            Volver al miembro
+          </Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Editar Miembro</CardTitle>

@@ -159,6 +159,10 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   const [invitarOpen, setInvitarOpen] = useState(false);
   const [sugerirOpen, setSugerirOpen] = useState(false);
   const [deletingInvitadoId, setDeletingInvitadoId] = useState<number | null>(null);
+  const [pendingAsistencia, setPendingAsistencia] = useState<{
+    invitadoId: number;
+    asistio: boolean;
+  } | null>(null);
   const [invitarDefaults, setInvitarDefaults] = useState<
     { miembro_id?: number; responsabilidad_id?: number } | undefined
   >();
@@ -189,11 +193,24 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   }
 
   function handleMarcarAsistencia(invitadoId: number, asistio: boolean) {
+    setPendingAsistencia({ invitadoId, asistio });
+  }
+
+  function handleConfirmAsistencia() {
+    if (!pendingAsistencia) return;
     asistenciaMutation.mutate(
-      { id: invitadoId, asistio },
+      { id: pendingAsistencia.invitadoId, asistio: pendingAsistencia.asistio },
       {
-        onSuccess: () => toast.success(asistio ? 'Asistencia marcada' : 'Asistencia desmarcada'),
-        onError: () => toast.error('Error al marcar asistencia'),
+        onSuccess: () => {
+          toast.success(
+            pendingAsistencia.asistio ? 'Registro completado' : 'Asistencia desmarcada',
+          );
+          setPendingAsistencia(null);
+        },
+        onError: () => {
+          toast.error('Error al marcar asistencia');
+          setPendingAsistencia(null);
+        },
       },
     );
   }
@@ -358,9 +375,11 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                 </span>
                 {canManageGestion && !isCancelada && (
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setSugerirOpen(true)}>
-                      <Sparkles className="size-4" />
-                      Sugerir
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/dashboard/actividades/${actividadId}/sugerir-responsabilidades`}>
+                        <Sparkles className="size-4" />
+                        Sugerir
+                      </Link>
                     </Button>
                     <Button
                       size="sm"
@@ -497,6 +516,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         onOpenChange={setInvitarOpen}
         miembros={miembros}
         responsabilidadesActividad={responsabilidadesActividad}
+        invitados={invitados}
         defaultValues={invitarDefaults}
         excludeMiembroId={usuario?.miembro_id ?? undefined}
       />
@@ -511,6 +531,57 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         sugerirMutation={sugerirMutation}
         onInvitar={handleInvitarFromCandidato}
       />
+
+      <AlertDialog
+        open={!!pendingAsistencia}
+        onOpenChange={(open) => !open && setPendingAsistencia(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAsistencia?.asistio ? 'Registrar asistencia' : 'Desmarcar asistencia'}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {(() => {
+                const inv = invitados?.find((i) => i.id === pendingAsistencia?.invitadoId);
+                const nombre = inv?.miembro
+                  ? `${inv.miembro.nombre} ${inv.miembro.apellido}`
+                  : `Miembro #${inv?.miembro_id}`;
+                const responsabilidad =
+                  inv?.rol?.nombre ??
+                  responsabilidadesMap.get(inv?.responsabilidad_id ?? 0)?.nombre ??
+                  '—';
+                return (
+                  <p className="text-sm text-muted-foreground">
+                    {pendingAsistencia?.asistio ? (
+                      <>
+                        Estás a punto de confirmar que{' '}
+                        <span className="font-medium text-foreground">{nombre}</span> asistió a esta
+                        actividad como{' '}
+                        <span className="font-medium text-foreground">{responsabilidad}</span>.
+                      </>
+                    ) : (
+                      <>
+                        Estás a punto de quitar el registro de asistencia de{' '}
+                        <span className="font-medium text-foreground">{nombre}</span> ({responsabilidad}).
+                      </>
+                    )}
+                  </p>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={asistenciaMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAsistencia}
+              disabled={asistenciaMutation.isPending}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!deletingInvitadoId}

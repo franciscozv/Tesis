@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { RolGrupo } from '@/features/catalogos/types';
 import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
@@ -58,8 +59,8 @@ const CRITERIOS_INFO = [
   },
   {
     key: 'fidelidad',
-    label: 'Fidelidad (asistencia)',
-    description: 'Mayor % de asistencia → mejor',
+    label: 'Actividad en Servicios',
+    description: 'Más participación en actividades → mejor',
   },
   {
     key: 'antiguedad',
@@ -104,27 +105,30 @@ export function SugerirCargoModal({
 
   const [cargoId, setCargoId] = useState<string>('');
   const [periodoMeses, setPeriodoMeses] = useState<string>('12');
-  const [grupoId, setGrupoId] = useState<string>('');
+  const [grupoId, setGrupoId] = useState<string>('all'); // 'all' significa "Todos los grupos"
   const [respuesta, setRespuesta] = useState<SugerirCargoResponse | null>(null);
 
   // Auto-selección si solo hay un grupo disponible (común para directiva)
+  // Para admin, por defecto dejamos 'all' para búsqueda global
   useEffect(() => {
-    if (open && gruposAMostrar?.length === 1 && !grupoId) {
+    if (open && !isAdmin && gruposAMostrar && gruposAMostrar.length === 1 && (grupoId === 'all' || !grupoId)) {
       setGrupoId(String(gruposAMostrar[0].id_grupo));
     }
-  }, [open, gruposAMostrar, grupoId]);
+  }, [open, gruposAMostrar, grupoId, isAdmin]);
 
   // Opciones avanzadas
   const [showOpciones, setShowOpciones] = useState(false);
   const [soloConExperiencia, setSoloConExperiencia] = useState(false);
+  const [soloConPlenaComunion, setSoloConPlenaComunion] = useState(false);
   const [prioridad, setPrioridad] = useState<string[]>(PRIORIDAD_DEFAULT);
 
   // Criterios usados en la última búsqueda (para el banner de metadata)
   const [usedCriterios, setUsedCriterios] = useState<string[]>([]);
   const [usedSoloExp, setUsedSoloExp] = useState(false);
+  const [usedSoloPlena, setUsedSoloPlena] = useState(false);
 
-  // El botón se habilita cuando hay cargo y grupo elegido
-  const puedeHaceQuery = Boolean(cargoId) && Boolean(grupoId);
+  // El botón se habilita cuando hay cargo elegido (el grupo es opcional ahora)
+  const puedeHaceQuery = Boolean(cargoId);
 
   function moverArriba(index: number) {
     if (index === 0) return;
@@ -145,12 +149,14 @@ export function SugerirCargoModal({
 
     const criteriosEfectivos = [...prioridad];
     const soloExpEfectivo = soloConExperiencia;
+    const soloPlenaEfectiva = soloConPlenaComunion;
 
     const body: SugerirCargoInput = {
       cargo_id: Number(cargoId),
       periodo_meses: Number(periodoMeses),
-      ...(grupoId ? { grupo_id: Number(grupoId) } : {}),
+      ...(grupoId && grupoId !== 'all' ? { grupo_id: Number(grupoId) } : {}),
       solo_con_experiencia: soloExpEfectivo,
+      solo_con_plena_comunion: soloPlenaEfectiva,
       criterios_prioridad: criteriosEfectivos,
     };
 
@@ -159,21 +165,31 @@ export function SugerirCargoModal({
         setRespuesta(data ?? null);
         setUsedCriterios(criteriosEfectivos);
         setUsedSoloExp(soloExpEfectivo);
+        setUsedSoloPlena(soloPlenaEfectiva);
       },
     });
   }
+
+  // Reactividad: Buscar automáticamente cuando cambien los filtros
+  useEffect(() => {
+    if (open && puedeHaceQuery) {
+      handleBuscar();
+    }
+  }, [cargoId, periodoMeses, grupoId, soloConExperiencia, soloConPlenaComunion, prioridad, open]);
 
   function handleOpenChange(value: boolean) {
     if (!value) {
       setCargoId('');
       setPeriodoMeses('12');
-      setGrupoId('');
+      setGrupoId('all');
       setRespuesta(null);
       setShowOpciones(false);
       setSoloConExperiencia(false);
+      setSoloConPlenaComunion(false);
       setPrioridad(PRIORIDAD_DEFAULT);
       setUsedCriterios([]);
       setUsedSoloExp(false);
+      setUsedSoloPlena(false);
     }
     onOpenChange(value);
   }
@@ -185,7 +201,7 @@ export function SugerirCargoModal({
           <DialogTitle>Sugerir Candidatos para Cargo</DialogTitle>
           <DialogDescription>
             {isAdmin
-              ? 'Candidatos del grupo ordenados por experiencia, carga actual, asistencia y antigüedad.'
+              ? 'Busca candidatos idóneos a través de todos los grupos o en uno específico.'
               : 'Candidatos idóneos entre los miembros de tu grupo.'}
           </DialogDescription>
         </DialogHeader>
@@ -266,16 +282,15 @@ export function SugerirCargoModal({
             </Button>
           </div>
 
-          {/* Selector de grupo (obligatorio para filtrar) */}
+          {/* Selector de grupo (opcional) */}
           <div>
-            <Label className="mb-1.5 block">
-              {isAdmin ? 'Grupo' : 'Grupo'} <span className="text-destructive">*</span>
-            </Label>
+            <Label className="mb-1.5 block">Grupo</Label>
             <Select value={grupoId} onValueChange={setGrupoId}>
               <SelectTrigger>
-                <SelectValue placeholder={isAdmin ? 'Seleccionar grupo' : 'Seleccionar grupo'} />
+                <SelectValue placeholder="Seleccionar grupo" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Búsqueda global (todos los grupos)</SelectItem>
                 {gruposAMostrar?.map((g) => (
                   <SelectItem key={g.id_grupo} value={String(g.id_grupo)}>
                     {g.nombre}
@@ -286,45 +301,70 @@ export function SugerirCargoModal({
           </div>
 
           {/* Opciones avanzadas (colapsable) */}
-          <div className="rounded-lg border">
+          <div className="rounded-lg border border-blue-100 bg-blue-50/20 dark:border-blue-900/30 dark:bg-blue-950/10">
             <button
               type="button"
               onClick={() => setShowOpciones((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50/50 transition-colors rounded-t-lg"
             >
               <span className="flex items-center gap-2">
                 <Settings2 className="size-4" />
-                Opciones avanzadas
+                Configuración del Algoritmo
               </span>
               {showOpciones ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
 
             {showOpciones && (
-              <div className="border-t px-4 py-4 grid gap-4">
+              <div className="border-t border-blue-100 dark:border-blue-900/30 px-4 py-4 grid gap-5">
                 {/* Filtro: solo con experiencia */}
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="solo-experiencia"
-                    checked={soloConExperiencia}
-                    onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
-                  />
-                  <Label
-                    htmlFor="solo-experiencia"
-                    className="cursor-pointer text-sm font-normal leading-none"
-                  >
-                    Solo con experiencia previa en este cargo
-                  </Label>
-                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-background px-3 py-2.5 dark:border-blue-800">
+                    <Checkbox
+                      id="solo-experiencia"
+                      checked={soloConExperiencia}
+                      onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
+                    />
+                    <Label
+                      htmlFor="solo-experiencia"
+                      className="cursor-pointer text-xs font-semibold leading-none"
+                    >
+                      Priorizar solo candidatos con experiencia previa en este cargo
+                    </Label>
+                  </div>
 
-                <Separator />
+                  <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-background px-3 py-2.5 dark:border-blue-800">
+                    <Checkbox
+                      id="solo-plena-comunion"
+                      checked={soloConPlenaComunion}
+                      onCheckedChange={(v) => setSoloConPlenaComunion(Boolean(v))}
+                    />
+                    <Label
+                      htmlFor="solo-plena-comunion"
+                      className="cursor-pointer text-xs font-semibold leading-none"
+                    >
+                      Filtrar solo candidatos con Plena Comunión activa
+                    </Label>
+                  </div>
+                </div>
 
                 {/* Criterios de prioridad */}
                 <div>
-                  <p className="text-sm font-medium mb-1">Criterios de prioridad</p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Ordena de mayor a menor importancia. En caso de empate en el primero, se aplica
-                    el siguiente.
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">Prioridades de búsqueda</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Arrastra o usa las flechas para definir la importancia.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPrioridad(PRIORIDAD_DEFAULT)}
+                      className="text-[10px] font-medium text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline transition-colors"
+                    >
+                      Restablecer
+                    </button>
+                  </div>
+                  
                   <div className="grid gap-1.5">
                     {prioridad.map((key, index) => {
                       const criterio = CRITERIOS_INFO.find((c) => c.key === key);
@@ -332,49 +372,41 @@ export function SugerirCargoModal({
                       return (
                         <div
                           key={key}
-                          className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2"
+                          className="flex items-center gap-2 rounded-md border border-blue-100 bg-background px-3 py-2 dark:border-blue-900"
                         >
-                          <span className="text-xs font-mono text-muted-foreground w-4 shrink-0 text-center">
+                          <span className="text-[10px] font-bold text-blue-500 w-4 shrink-0 text-center">
                             {index + 1}
                           </span>
-                          <GripVertical className="size-4 text-muted-foreground/40 shrink-0" />
+                          <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium leading-none">{criterio.label}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {criterio.description}
-                            </p>
+                            <p className="text-xs font-semibold leading-none">{criterio.label}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{criterio.desc}</p>
                           </div>
-                          <div className="flex flex-col gap-0.5 shrink-0">
-                            <button
-                              type="button"
+                          
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 h-7 w-7 text-blue-600"
                               onClick={() => moverArriba(index)}
                               disabled={index === 0}
-                              className="rounded p-0.5 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              aria-label="Subir criterio"
                             >
-                              <ChevronUp className="size-3.5" />
-                            </button>
-                            <button
-                              type="button"
+                              <ChevronUp className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 h-7 w-7 text-blue-600"
                               onClick={() => moverAbajo(index)}
                               disabled={index === prioridad.length - 1}
-                              className="rounded p-0.5 hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              aria-label="Bajar criterio"
                             >
-                              <ChevronDown className="size-3.5" />
-                            </button>
+                              <ChevronDown className="size-4" />
+                            </Button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrioridad(PRIORIDAD_DEFAULT)}
-                    className="mt-2 text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
-                  >
-                    Restablecer orden por defecto
-                  </button>
                 </div>
               </div>
             )}
@@ -382,11 +414,15 @@ export function SugerirCargoModal({
         </div>
 
         {/* Banner de metadata */}
-        {respuesta && (
+        {respuesta && !sugerirMutation.isPending && (
           <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm space-y-1.5">
             <p className="font-medium">
-              Sugerencias para el grupo{' '}
-              <span className="text-foreground">#{respuesta.metadata.grupo_id_usado}</span>
+              Sugerencias para{' '}
+              <span className="text-foreground">
+                {respuesta.metadata.grupo_id_usado
+                  ? `el grupo ${gruposAMostrar?.find((g) => g.id_grupo === respuesta.metadata.grupo_id_usado)?.nombre || `#${respuesta.metadata.grupo_id_usado}`}`
+                  : 'todos los grupos'}
+              </span>
               {' · '}
               últimos {respuesta.metadata.periodo_meses_usado} mes
               {respuesta.metadata.periodo_meses_usado !== 1 ? 'es' : ''}
@@ -423,15 +459,24 @@ export function SugerirCargoModal({
           </div>
         )}
 
+        {/* Cargando */}
+        {sugerirMutation.isPending && (
+          <div className="grid gap-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+        )}
+
         {/* Sin resultados */}
-        {respuesta && respuesta.candidatos.length === 0 && (
+        {!sugerirMutation.isPending && respuesta && respuesta.candidatos.length === 0 && (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No se encontraron candidatos para este cargo en el grupo seleccionado.
           </p>
         )}
 
         {/* Lista de candidatos */}
-        {respuesta && respuesta.candidatos.length > 0 && (
+        {!sugerirMutation.isPending && respuesta && respuesta.candidatos.length > 0 && (
           <div className="grid gap-3">
             {respuesta.candidatos.map((c) => (
               <CandidatoCargoCard key={c.miembro_id} candidato={c} />

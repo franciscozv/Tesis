@@ -23,7 +23,6 @@ interface CandidatoCardProps {
 
 export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
   const { indicadores } = candidato;
-  const pct = Math.round(indicadores.asistencia_ratio_periodo * 100);
   const esNuevoTalento = indicadores.experiencia_rol_total === 0;
   const tieneConflicto = !indicadores.disponible_en_fecha;
 
@@ -96,8 +95,8 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
           </div>
           <div className="flex items-center gap-1.5 text-sm">
             <CheckCircle2 className="size-3.5 shrink-0 text-green-500" />
-            <span className="text-muted-foreground">Asistencia:</span>
-            <span className="ml-auto font-medium">{pct}%</span>
+            <span className="text-muted-foreground">Actividad en Servicios:</span>
+            <span className="ml-auto font-medium">{indicadores.asistencias_count} serv.</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
             <Clock className="size-3.5 shrink-0 text-purple-500" />
@@ -106,26 +105,81 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
           </div>
 
           {/* Indicadores de rotación y carga semanal */}
-          <div className="flex items-center gap-1.5 text-sm">
-            <CalendarDays className="size-3.5 shrink-0 text-orange-500" />
+          <div className="col-span-2 flex items-start gap-1.5 text-sm">
+            <CalendarDays className="mt-0.5 size-3.5 shrink-0 text-orange-500" />
             <span className="text-muted-foreground">Último uso:</span>
-            <span className="ml-auto font-medium">
-              {indicadores.dias_desde_ultimo_uso === null
-                ? '—'
-                : `hace ${indicadores.dias_desde_ultimo_uso}d`}
+            <span className="ml-auto text-right font-medium">
+              {indicadores.dias_desde_ultimo_uso === null ? (
+                '—'
+              ) : indicadores.ultimo_uso_nombre ? (
+                <>
+                  <span>hace {indicadores.dias_desde_ultimo_uso}d</span>
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    {indicadores.ultimo_uso_tipo_actividad
+                      ? `${indicadores.ultimo_uso_tipo_actividad} · ${indicadores.ultimo_uso_nombre}`
+                      : indicadores.ultimo_uso_nombre}
+                  </span>
+                </>
+              ) : (
+                `hace ${indicadores.dias_desde_ultimo_uso}d`
+              )}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm">
-            <Briefcase className="size-3.5 shrink-0 text-sky-500" />
+          <div className="col-span-2 flex items-start gap-1.5 text-sm">
+            <Briefcase className="mt-0.5 size-3.5 shrink-0 text-sky-500" />
             <span className="text-muted-foreground">Esta semana:</span>
             <span
-              className={`ml-auto font-medium ${indicadores.servicios_esta_semana > 1 ? 'text-amber-600 dark:text-amber-400' : ''}`}
+              className={`ml-auto text-right font-medium ${indicadores.servicios_esta_semana > 1 ? 'text-amber-600 dark:text-amber-400' : ''}`}
             >
-              {indicadores.servicios_esta_semana === 0
-                ? '0 servicios'
-                : `${indicadores.servicios_esta_semana} servicio${indicadores.servicios_esta_semana !== 1 ? 's' : ''}`}
+              {indicadores.servicios_esta_semana === 0 ? (
+                '0 servicios'
+              ) : (
+                <>
+                  <span>
+                    {indicadores.servicios_esta_semana} servicio
+                    {indicadores.servicios_esta_semana !== 1 ? 's' : ''}
+                  </span>
+                  {indicadores.servicios_esta_semana_detalle &&
+                    indicadores.servicios_esta_semana_detalle.length > 0 && (
+                      <ul className="mt-0.5 space-y-0.5 text-right">
+                        {indicadores.servicios_esta_semana_detalle.map((s, i) => {
+                          const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                          const dia = s.fecha
+                            ? DIAS[new Date(s.fecha + 'T12:00:00').getDay()]
+                            : null;
+                          return (
+                            <li key={i} className="text-xs font-normal text-muted-foreground">
+                              {dia && <span className="font-medium">{dia} · </span>}
+                              {s.rol} en {s.actividad}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                </>
+              )}
             </span>
           </div>
+        </div>
+
+        {/* Resumen de servicios realizados */}
+        <div className="rounded-md border bg-muted/30 p-2.5">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Actividades Realizadas:
+          </p>
+          {indicadores.resumen_servicios && indicadores.resumen_servicios.length > 0 ? (
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {indicadores.resumen_servicios.map((s, idx) => (
+                <span key={idx} className="text-xs text-muted-foreground">
+                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} ({s.rol})
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No se registran actividades realizadas en el período de análisis.
+            </p>
+          )}
         </div>
 
         {/* Justificación */}

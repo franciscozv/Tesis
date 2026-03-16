@@ -61,11 +61,11 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
             </span>
           </div>
 
-          {/* Asistencia */}
+          {/* Actividad en Servicios */}
           <div className="flex items-center gap-1.5 text-sm">
             <TrendingUp className="size-3.5 shrink-0 text-green-500" />
-            <span className="text-muted-foreground">Asistencia:</span>
-            <span className="ml-auto font-medium">{pct}%</span>
+            <span className="text-muted-foreground">Actividad en Servicios:</span>
+            <span className="ml-auto font-medium">{indicadores.asistencias_count} serv.</span>
           </div>
 
           {/* Antigüedad */}
@@ -74,6 +74,26 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
             <span className="text-muted-foreground">Antigüedad:</span>
             <span className="ml-auto font-medium">{indicadores.antiguedad_anios} años</span>
           </div>
+        </div>
+
+        {/* Resumen de servicios realizados en el período */}
+        <div className="rounded-md border bg-muted/30 p-2.5">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Resumen de actividades:
+          </p>
+          {indicadores.resumen_servicios && indicadores.resumen_servicios.length > 0 ? (
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {indicadores.resumen_servicios.map((s, idx) => (
+                <span key={idx} className="text-xs text-muted-foreground">
+                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} ({s.rol})
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No se registran servicios realizados en el período de análisis.
+            </p>
+          )}
         </div>
 
         {/* Justificación */}
