@@ -24,13 +24,12 @@ export async function isEncargadoDeGrupo(miembroId: number, grupoId: number): Pr
     .select('rol_grupo!inner(es_directiva)')
     .eq('miembro_id', miembroId)
     .eq('grupo_id', grupoId)
-    .is('fecha_desvinculacion', null)
-    .maybeSingle();
+    .is('fecha_desvinculacion', null);
 
   if (error) throw error;
-  if (!data) return false;
+  if (!data || data.length === 0) return false;
 
-  return (data as any).rol_grupo.es_directiva === true;
+  return (data as any[]).some((row) => row.rol_grupo.es_directiva === true);
 }
 
 /**

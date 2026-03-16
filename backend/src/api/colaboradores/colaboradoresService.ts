@@ -50,7 +50,7 @@ export class ColaboradoresService {
       return ServiceResponse.success<Colaborador[]>('Colaboradores encontrados', colaboradores);
     } catch (error) {
       const errorMessage = `Error al obtener colaboradores: ${(error as Error).message}`;
-      logger.error(errorMessage);
+      logger.error({ err: error }, errorMessage);
       return ServiceResponse.failure(
         'Error al obtener colaboradores',
         null,
