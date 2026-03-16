@@ -121,3 +121,39 @@ export const CambiarRolIntegranteSchema = z.object({
     rol_grupo_id: z.number().int().positive('ID de rol debe ser positivo'),
   }),
 });
+
+/**
+ * Schema para renovación masiva de directiva
+ * POST /api/integrantes-grupo/grupo/:grupo_id/renovar-directiva
+ */
+export const RenovarDirectivaMasivaSchema = z.object({
+  params: z.object({
+    grupo_id: commonValidations.id,
+  }),
+  body: z.object({
+    renovaciones: z
+      .array(
+        z.object({
+          cargo_id: z.number().int().positive('ID de cargo debe ser positivo'),
+          nuevo_miembro_id: z.number().int().positive('ID de miembro debe ser positivo'),
+        }),
+      )
+      .min(1, 'Debe incluir al menos una renovación'),
+    fecha: z.string().datetime('Fecha debe ser válida').optional(),
+  }),
+});
+
+export type RenovarDirectivaItem = {
+  cargo_id: number;
+  nuevo_miembro_id: number;
+};
+
+/**
+ * Schema para historial de directiva de un grupo
+ * GET /api/integrantes-grupo/grupo/:grupo_id/historial-directiva
+ */
+export const GetHistorialDirectivaSchema = z.object({
+  params: z.object({
+    grupo_id: commonValidations.id,
+  }),
+});

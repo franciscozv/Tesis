@@ -41,13 +41,20 @@ class CandidatosController {
    * Sugiere candidatos para un cargo en grupo (indicadores crudos, sin scoring)
    */
   public sugerirCargo: RequestHandler = async (req: Request, res: Response) => {
-    const { cargo_id, grupo_id, periodo_meses, solo_con_experiencia, criterios_prioridad } =
-      req.body;
+    const {
+      cargo_id,
+      grupo_id,
+      periodo_meses,
+      solo_con_experiencia,
+      solo_con_plena_comunion,
+      criterios_prioridad,
+    } = req.body;
     const serviceResponse = await candidatosService.sugerirParaCargo(cargo_id, {
-      periodoMeses: periodo_meses ?? 12,
+      periodoMeses: periodo_meses,
       grupoIdBody: grupo_id,
       usuario: req.usuario,
       soloConExperiencia: solo_con_experiencia,
+      soloConPlenaComunion: solo_con_plena_comunion,
       criteriosPrioridad: criterios_prioridad,
     });
     res.status(serviceResponse.statusCode).send(serviceResponse);

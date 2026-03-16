@@ -1,4 +1,5 @@
 import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
+import { logger } from '@/server';
 import { supabase } from '@/common/utils/supabaseClient';
 import type { NecesidadAbierta, NecesidadLogistica } from './necesidadesLogisticasModel';
 
@@ -120,8 +121,11 @@ export class NecesidadesLogisticasRepository {
       .in('actividad_id', actividadIds)
       .order('fecha_registro', { ascending: false });
 
-    if (error) throw error;
-    return data as unknown as NecesidadAbierta[];
+    if (error) {
+      logger.error({ err: error }, 'findAbiertasProximasAsync error');
+      return [];
+    }
+    return (data ?? []) as unknown as NecesidadAbierta[];
   }
 
   /**

@@ -8,10 +8,12 @@ import { integranteGrupoController } from './integranteGrupoController';
 import {
   CambiarRolIntegranteSchema,
   DesvincularMiembroSchema,
+  GetHistorialDirectivaSchema,
   GetIntegrantesByGrupoSchema,
   GetIntegrantesByMiembroSchema,
   IntegranteGrupoConNombresSchema,
   IntegranteGrupoSchema,
+  RenovarDirectivaMasivaSchema,
   VincularMiembroSchema,
 } from './integranteGrupoModel';
 
@@ -147,4 +149,57 @@ integranteGrupoRouter.get(
   '/grupo/:grupo_id',
   validateRequest(GetIntegrantesByGrupoSchema),
   integranteGrupoController.getIntegrantesByGrupo,
+);
+
+/**
+ * POST /api/integrantes-grupo/grupo/:grupo_id/renovar-directiva
+ * Renovación masiva de directiva - solo administradores
+ */
+integranteGrupoRegistry.registerPath({
+  method: 'post',
+  path: '/api/integrantes-grupo/grupo/{grupo_id}/renovar-directiva',
+  tags: ['Integrantes de Grupo'],
+  request: {
+    params: RenovarDirectivaMasivaSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: RenovarDirectivaMasivaSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(
+    z.array(IntegranteGrupoSchema),
+    'Directiva renovada exitosamente',
+  ),
+});
+integranteGrupoRouter.post(
+  '/grupo/:grupo_id/renovar-directiva',
+  verificarRol('administrador'),
+  validateRequest(RenovarDirectivaMasivaSchema),
+  integranteGrupoController.renovarDirectivaMasiva,
+);
+
+/**
+ * GET /api/integrantes-grupo/grupo/:grupo_id/historial-directiva
+ * Historial de directiva de un grupo
+ */
+integranteGrupoRegistry.registerPath({
+  method: 'get',
+  path: '/api/integrantes-grupo/grupo/{grupo_id}/historial-directiva',
+  tags: ['Integrantes de Grupo'],
+  request: {
+    params: GetHistorialDirectivaSchema.shape.params,
+  },
+  responses: createApiResponse(
+    z.array(IntegranteGrupoConNombresSchema),
+    'Historial de directiva obtenido',
+  ),
+});
+integranteGrupoRouter.get(
+  '/grupo/:grupo_id/historial-directiva',
+  verificarRol('administrador', 'usuario'),
+  validateRequest(GetHistorialDirectivaSchema),
+  integranteGrupoController.getHistorialDirectiva,
 );

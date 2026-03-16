@@ -1,3 +1,4 @@
+import { logger } from '@/server';
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
@@ -14,17 +15,20 @@ export class MisResponsabilidadesRepository {
       .from('invitado')
       .select(`
         id, miembro_id, responsabilidad_id, estado, fecha_invitacion,
-        actividad!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
-          grupo(id_grupo, nombre),
-          tipo_actividad(id_tipo, nombre)
+        actividad:actividad_id!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
+          grupo:grupo_id(id_grupo, nombre),
+          tipo_actividad:tipo_actividad_id(id_tipo, nombre)
         ),
-        responsabilidad_actividad(id_responsabilidad, nombre)
+        responsabilidad_actividad:responsabilidad_id(id_responsabilidad, nombre)
       `)
       .eq('miembro_id', miembroId)
       .in('estado', ['pendiente', 'confirmado']);
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      logger.error({ err: error }, `findInvitacionesByMiembro error (miembroId=${miembroId})`);
+      return [];
+    }
+    return data ?? [];
   }
 
   /**
@@ -36,19 +40,22 @@ export class MisResponsabilidadesRepository {
       .from('colaborador')
       .select(`
         id, miembro_id, cantidad_ofrecida, observaciones, estado,
-        necesidad_logistica!inner(id, descripcion,
-          actividad!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
-            grupo(id_grupo, nombre),
-            tipo_actividad(id_tipo, nombre)
+        necesidad_logistica:necesidad_id!inner(id, descripcion,
+          actividad:actividad_id!inner(id, nombre, fecha, hora_inicio, hora_fin, estado,
+            grupo:grupo_id(id_grupo, nombre),
+            tipo_actividad:tipo_actividad_id(id_tipo, nombre)
           ),
-          tipo_necesidad_logistica(id_tipo, nombre)
+          tipo_necesidad_logistica:tipo_necesidad_id(id_tipo, nombre)
         )
       `)
       .eq('miembro_id', miembroId)
       .eq('estado', 'aceptada');
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      logger.error({ err: error }, `findColaboracionesByMiembro error (miembroId=${miembroId})`);
+      return [];
+    }
+    return data ?? [];
   }
 }
 

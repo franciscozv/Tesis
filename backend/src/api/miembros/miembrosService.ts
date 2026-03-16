@@ -99,7 +99,8 @@ export class MiembrosService {
   async findById(id: number, usuario: JwtPayload): Promise<ServiceResponse<Miembro | null>> {
     try {
       if (usuario.rol === 'usuario') {
-        if (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id))) {
+        const esPropioPerfil = usuario.miembro_id === id;
+        if (!esPropioPerfil && (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id)))) {
           return ServiceResponse.failure(
             'No tienes permiso para ver la información de miembros',
             null,

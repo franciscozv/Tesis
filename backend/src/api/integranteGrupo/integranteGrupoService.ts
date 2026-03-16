@@ -1,7 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
-import type { IntegranteGrupo, IntegranteGrupoConNombres } from './integranteGrupoModel';
+import type {
+  IntegranteGrupo,
+  IntegranteGrupoConNombres,
+  RenovarDirectivaItem,
+} from './integranteGrupoModel';
 import { IntegranteGrupoRepository } from './integranteGrupoRepository';
 
 /**
@@ -72,6 +76,19 @@ export class IntegranteGrupoService {
       if (!rolStatus.activo) {
         return ServiceResponse.failure(
           'El rol de grupo no está activo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // 4b-prev. Verificar que el rol está habilitado para este grupo específico
+      const rolHabilitado = await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(
+        grupoId,
+        rolId,
+      );
+      if (!rolHabilitado) {
+        return ServiceResponse.failure(
+          'Este rol no está configurado para este grupo. Un administrador debe habilitarlo primero.',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -294,6 +311,20 @@ export class IntegranteGrupoService {
         );
       }
 
+      // Verificar que el nuevo rol está habilitado para este grupo
+      const rolHabilitadoNuevo =
+        await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(
+          integranteExistente.grupo_id,
+          rolGrupoId,
+        );
+      if (!rolHabilitadoNuevo) {
+        return ServiceResponse.failure(
+          'Este rol no está configurado para este grupo. Un administrador debe habilitarlo primero.',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
       // Solo administradores pueden asignar cargos de directiva
       if (rolStatus.es_directiva && rolUsuario !== 'administrador') {
         return ServiceResponse.failure(
@@ -403,6 +434,165 @@ export class IntegranteGrupoService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Error al obtener integraciones del miembro',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Renovación masiva de directiva de un grupo (solo administradores)
+   *
+   * Para cada par (cargo_id, nuevo_miembro_id):
+   *  1. Valida cargo y miembro (sin escritura)
+   *  2. Cierra al titular saliente
+   *  3. Cierra la integración previa del entrante (si existe)
+   *  4. Inserta nueva fila activa con el cargo directivo
+   */
+  async renovarDirectivaMasiva(
+    grupoId: number,
+    renovaciones: RenovarDirectivaItem[],
+    fecha?: string,
+    rolUsuario?: string,
+  ): Promise<ServiceResponse<IntegranteGrupo[] | null>> {
+    try {
+      if (rolUsuario !== 'administrador') {
+        return ServiceResponse.failure(
+          'Solo un administrador puede ejecutar una renovación de directiva',
+          null,
+          StatusCodes.FORBIDDEN,
+        );
+      }
+
+      const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(grupoId);
+      if (!grupoStatus.existe) {
+        return ServiceResponse.failure('El grupo no existe', null, StatusCodes.NOT_FOUND);
+      }
+      if (!grupoStatus.activo) {
+        return ServiceResponse.failure('El grupo no está activo', null, StatusCodes.BAD_REQUEST);
+      }
+
+      // Sin duplicados de cargo_id en la misma solicitud
+      const cargoIds = renovaciones.map((r) => r.cargo_id);
+      if (new Set(cargoIds).size !== cargoIds.length) {
+        return ServiceResponse.failure(
+          'No se puede renovar el mismo cargo más de una vez en la misma solicitud',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // Sin duplicados de miembro_id en la misma solicitud (un miembro no puede tener dos cargos directivos)
+      const miembroIds = renovaciones.map((r) => r.nuevo_miembro_id);
+      if (new Set(miembroIds).size !== miembroIds.length) {
+        return ServiceResponse.failure(
+          'No se puede asignar el mismo miembro a múltiples cargos directivos en la misma solicitud',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // Validación previa completa (sin escritura)
+      for (const { cargo_id, nuevo_miembro_id } of renovaciones) {
+        const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(cargo_id);
+        if (!rolStatus.existe) {
+          return ServiceResponse.failure(
+            `El cargo con ID ${cargo_id} no existe`,
+            null,
+            StatusCodes.NOT_FOUND,
+          );
+        }
+        if (!rolStatus.activo) {
+          return ServiceResponse.failure(
+            `El cargo con ID ${cargo_id} no está activo`,
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+        if (!rolStatus.es_directiva) {
+          return ServiceResponse.failure(
+            `El cargo con ID ${cargo_id} no es un cargo directivo`,
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+
+        // Verificar que el cargo directivo está habilitado para este grupo
+        const cargoHabilitado =
+          await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(grupoId, cargo_id);
+        if (!cargoHabilitado) {
+          return ServiceResponse.failure(
+            `El cargo con ID ${cargo_id} no está configurado para este grupo`,
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+
+        const miembroStatus =
+          await this.integranteGrupoRepository.verificarMiembroActivo(nuevo_miembro_id);
+        if (!miembroStatus.existe) {
+          return ServiceResponse.failure(
+            `El miembro con ID ${nuevo_miembro_id} no existe`,
+            null,
+            StatusCodes.NOT_FOUND,
+          );
+        }
+        if (!miembroStatus.activo) {
+          return ServiceResponse.failure(
+            `El miembro con ID ${nuevo_miembro_id} no está activo`,
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+        if (rolStatus.requiere_plena_comunion && !miembroStatus.plena_comunion) {
+          return ServiceResponse.failure(
+            `El cargo con ID ${cargo_id} requiere plena comunión y el miembro con ID ${nuevo_miembro_id} no la cumple`,
+            null,
+            StatusCodes.BAD_REQUEST,
+          );
+        }
+      }
+      const fechaRenovacion = fecha || new Date().toISOString();
+      await this.integranteGrupoRepository.renovarDirectivaMasivaAsync(
+        grupoId,
+        renovaciones,
+        fechaRenovacion,
+      );
+
+      return ServiceResponse.success<null>(
+        'Directiva renovada exitosamente.',
+        null,
+        StatusCodes.OK,
+      );
+    } catch (error) {
+      const errorMessage = `Error al renovar directiva: ${(error as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Error al renovar la directiva del grupo',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Obtiene el historial completo de directiva de un grupo (activos + pasados)
+   */
+  async getHistorialDirectiva(
+    grupoId: number,
+  ): Promise<ServiceResponse<IntegranteGrupoConNombres[] | null>> {
+    try {
+      const historial =
+        await this.integranteGrupoRepository.findHistorialDirectivaAsync(grupoId);
+      return ServiceResponse.success<IntegranteGrupoConNombres[]>(
+        'Historial de directiva obtenido',
+        historial,
+      );
+    } catch (error) {
+      const errorMessage = `Error al obtener historial de directiva: ${(error as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Error al obtener el historial de directiva',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

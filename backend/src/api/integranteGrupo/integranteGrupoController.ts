@@ -74,6 +74,32 @@ class IntegranteGrupoController {
     const serviceResponse = await integranteGrupoService.getIntegrantesByGrupo(grupoId);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
+
+  /**
+   * Renovación masiva de directiva
+   * POST /api/integrantes-grupo/grupo/:grupo_id/renovar-directiva
+   */
+  public renovarDirectivaMasiva: RequestHandler = async (req: Request, res: Response) => {
+    const grupoId = Number.parseInt(req.params.grupo_id, 10);
+    const { renovaciones, fecha } = req.body;
+    const serviceResponse = await integranteGrupoService.renovarDirectivaMasiva(
+      grupoId,
+      renovaciones,
+      fecha,
+      req.usuario?.rol,
+    );
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
+   * Historial de directiva de un grupo
+   * GET /api/integrantes-grupo/grupo/:grupo_id/historial-directiva
+   */
+  public getHistorialDirectiva: RequestHandler = async (req: Request, res: Response) => {
+    const grupoId = Number.parseInt(req.params.grupo_id, 10);
+    const serviceResponse = await integranteGrupoService.getHistorialDirectiva(grupoId);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
 }
 
 export const integranteGrupoController = new IntegranteGrupoController();

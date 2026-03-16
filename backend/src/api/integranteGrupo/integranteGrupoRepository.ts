@@ -1,5 +1,9 @@
 import { supabase } from '@/common/utils/supabaseClient';
-import type { IntegranteGrupo, IntegranteGrupoConNombres } from './integranteGrupoModel';
+import type {
+  IntegranteGrupo,
+  IntegranteGrupoConNombres,
+  RenovarDirectivaItem,
+} from './integranteGrupoModel';
 
 /**
  * Repository para operaciones de Integrantes en Grupo
@@ -81,6 +85,21 @@ export class IntegranteGrupoRepository {
       es_unico: data.es_unico === true,
       es_directiva: data.es_directiva === true,
     };
+  }
+
+  /**
+   * Verifica si un rol está habilitado (configurado) para el grupo en grupo_rol
+   */
+  async verificarRolHabilitadoEnGrupo(grupoId: number, rolId: number): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('grupo_rol')
+      .select('grupo_id')
+      .eq('grupo_id', grupoId)
+      .eq('rol_grupo_id', rolId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data !== null;
   }
 
   /**
@@ -243,6 +262,123 @@ export class IntegranteGrupoRepository {
 
     if (errorInsert) throw errorInsert;
     return data as IntegranteGrupo;
+  }
+
+  /**
+   * Obtiene el titular activo de un cargo directivo en un grupo (si existe)
+   */
+  async findCurrentHolderAsync(grupoId: number, cargoId: number): Promise<IntegranteGrupo | null> {
+    const { data, error } = await supabase
+      .from('integrante_grupo')
+      .select('*')
+      .eq('grupo_id', grupoId)
+      .eq('rol_grupo_id', cargoId)
+      .is('fecha_desvinculacion', null)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as IntegranteGrupo | null;
+  }
+
+  /**
+   * Obtiene la integración activa de un miembro en un grupo (si existe)
+   */
+  async findActiveIntegranteAsync(
+    miembroId: number,
+    grupoId: number,
+  ): Promise<IntegranteGrupo | null> {
+    const { data, error } = await supabase
+      .from('integrante_grupo')
+      .select('*')
+      .eq('miembro_id', miembroId)
+      .eq('grupo_id', grupoId)
+      .is('fecha_desvinculacion', null)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as IntegranteGrupo | null;
+  }
+
+  /**
+   * Renovación masiva de directiva: cierra cargos salientes y nombra entrantes en una sola transacción.
+   * Garantiza que la directiva del grupo sea renovada de forma atómica.
+   */
+  async renovarDirectivaMasivaAsync(
+    grupoId: number,
+    renovaciones: RenovarDirectivaItem[],
+    fecha: string,
+  ): Promise<void> {
+    // Usamos RPC para garantizar atomicidad (todo o nada en la base de datos)
+    const { error } = await supabase.rpc('renovar_directiva_masiva', {
+      p_grupo_id: grupoId,
+      p_fecha: fecha,
+      p_renovaciones: renovaciones.map((r) => ({
+        cargo_id: r.cargo_id,
+        nuevo_miembro_id: r.nuevo_miembro_id,
+      })),
+    });
+
+    if (error) {
+      throw new Error(`Error en transacción de renovación: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtiene el historial completo de directiva de un grupo (activos + pasados)
+   */
+  async findHistorialDirectivaAsync(grupoId: number): Promise<IntegranteGrupoConNombres[]> {
+    const { data, error } = await supabase
+      .from('integrante_grupo')
+      .select(`
+        id_integrante,
+        miembro_id,
+        grupo_id,
+        rol_grupo_id,
+        fecha_vinculacion,
+        fecha_desvinculacion,
+        grupo!inner(id_grupo, nombre),
+        rol_grupo!inner(id_rol_grupo, nombre, es_directiva),
+        miembro!inner(id, nombre, apellido, rut)
+      `)
+      .eq('grupo_id', grupoId)
+      .order('fecha_vinculacion', { ascending: false });
+
+    if (error) throw error;
+
+    return (data as any[])
+      .filter((row) => {
+        const rolObj = Array.isArray(row.rol_grupo) ? row.rol_grupo[0] : row.rol_grupo;
+        return rolObj?.es_directiva === true;
+      })
+      .map((row) => {
+        const miembroObj = Array.isArray(row.miembro) ? row.miembro[0] : row.miembro;
+        const grupoObj = Array.isArray(row.grupo) ? row.grupo[0] : row.grupo;
+        const rolObj = Array.isArray(row.rol_grupo) ? row.rol_grupo[0] : row.rol_grupo;
+
+        return {
+          id: row.id_integrante,
+          miembro_id: row.miembro_id,
+          miembro: miembroObj
+            ? {
+                id: miembroObj.id,
+                nombre: miembroObj.nombre,
+                apellido: miembroObj.apellido,
+                rut: miembroObj.rut,
+              }
+            : undefined,
+          grupo: {
+            id: grupoObj.id_grupo,
+            nombre: grupoObj.nombre,
+          },
+          rol: {
+            id: rolObj.id_rol_grupo,
+            nombre: rolObj.nombre,
+            es_directiva: rolObj.es_directiva === true,
+          },
+          fecha_vinculacion: row.fecha_vinculacion,
+          fecha_desvinculacion: row.fecha_desvinculacion,
+        };
+      });
   }
 
   /**

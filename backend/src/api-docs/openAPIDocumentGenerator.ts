@@ -4,6 +4,7 @@ import { authRegistry } from '@/api/auth/authRouter';
 import { calendarioRegistry } from '@/api/calendario/calendarioRouter';
 import { candidatosRegistry } from '@/api/candidatos/candidatosRouter';
 import { colaboradoresRegistry } from '@/api/colaboradores/colaboradoresRouter';
+import { grupoRolRegistry } from '@/api/grupoRol/grupoRolRouter';
 import { gruposMinisterialesRegistry } from '@/api/gruposMinisteriales/grupoMinisterialRouter';
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { historialEstadoRegistry } from '@/api/historialEstado/historialEstadoRouter';
@@ -29,6 +30,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     calendarioRegistry,
     candidatosRegistry,
     colaboradoresRegistry,
+    grupoRolRegistry,
     gruposMinisterialesRegistry,
     historialEstadoRegistry,
     invitadosRegistry,
