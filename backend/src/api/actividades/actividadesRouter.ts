@@ -8,6 +8,7 @@ import { actividadesController } from './actividadesController';
 import {
   ActividadSchema,
   CreateActividadSchema,
+  DuplicarActividadSchema,
   GetActividadSchema,
   ListActividadesQuerySchema,
   PatchEstadoActividadSchema,
@@ -114,6 +115,32 @@ actividadesRouter.put(
   verificarRol('administrador', 'usuario'),
   validateRequest(UpdateActividadSchema),
   actividadesController.update,
+);
+
+// POST /api/actividades/:id/duplicar - Reprogramar actividad cancelada (crea nueva)
+actividadesRegistry.registerPath({
+  method: 'post',
+  path: '/api/actividades/{id}/duplicar',
+  tags: ['Actividades'],
+  summary: 'Reprogramar actividad cancelada: crea una nueva actividad con nueva fecha/hora',
+  request: {
+    params: DuplicarActividadSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: DuplicarActividadSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(ActividadSchema, 'Success'),
+});
+actividadesRouter.post(
+  '/:id/duplicar',
+  verificarToken,
+  verificarRol('administrador', 'usuario'),
+  validateRequest(DuplicarActividadSchema),
+  actividadesController.duplicar,
 );
 
 // PATCH /api/actividades/:id/estado - Cambiar estado de una actividad

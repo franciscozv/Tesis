@@ -1,5 +1,5 @@
-import { supabase } from '@/common/utils/supabaseClient';
 import type { RolGrupo } from '@/api/rolesGrupo/rolesGrupoModel';
+import { supabase } from '@/common/utils/supabaseClient';
 import type { GrupoRol } from './grupoRolModel';
 
 export class GrupoRolRepository {

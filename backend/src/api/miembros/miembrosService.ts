@@ -1,6 +1,8 @@
+import bcrypt from 'bcryptjs';
 import { StatusCodes } from 'http-status-codes';
 import { historialEstadoService } from '@/api/historialEstado/historialEstadoService';
 import type {
+  DeleteMiembroResult,
   GetMiembrosQuery,
   Miembro,
   PaginatedMiembrosResponse,
@@ -10,6 +12,13 @@ import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
+
+const SALT_ROUNDS = 10;
+
+const buildPasswordFromRut = (rut: string): string => {
+  const rutBase = rut.split('-')[0] ?? '';
+  return rutBase.slice(0, 4);
+};
 
 /**
  * Service para lógica de negocio de Miembros
@@ -61,7 +70,7 @@ export class MiembrosService {
   ): Promise<ServiceResponse<PaginatedMiembrosResponse | null>> {
     try {
       if (usuario.rol === 'usuario') {
-        if (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id))) {
+        if (!(await isDirectivaEnAlgunGrupo(usuario.id))) {
           return ServiceResponse.failure(
             'No tienes permiso para ver la lista de miembros',
             null,
@@ -70,12 +79,22 @@ export class MiembrosService {
         }
       }
 
-      const { page, limit, search, estado_comunion } = params;
+      const { page, limit, search, estado_comunion, incluir_inactivos } = params;
+
+      if (incluir_inactivos && usuario.rol !== 'administrador') {
+        return ServiceResponse.failure(
+          'No tienes permiso para ver miembros inactivos',
+          null,
+          StatusCodes.FORBIDDEN,
+        );
+      }
+
       const { data, total } = await this.miembrosRepository.findAllPaginatedAsync({
         page,
         limit,
         search,
         estado_comunion,
+        incluir_inactivos,
       });
       const totalPages = Math.ceil(total / limit);
       return ServiceResponse.success<PaginatedMiembrosResponse>('Miembros encontrados', {
@@ -99,8 +118,8 @@ export class MiembrosService {
   async findById(id: number, usuario: JwtPayload): Promise<ServiceResponse<Miembro | null>> {
     try {
       if (usuario.rol === 'usuario') {
-        const esPropioPerfil = usuario.miembro_id === id;
-        if (!esPropioPerfil && (!usuario.miembro_id || !(await isDirectivaEnAlgunGrupo(usuario.miembro_id)))) {
+        const esPropioPerfil = usuario.id === id;
+        if (!esPropioPerfil && !(await isDirectivaEnAlgunGrupo(usuario.id))) {
           return ServiceResponse.failure(
             'No tienes permiso para ver la información de miembros',
             null,
@@ -109,9 +128,13 @@ export class MiembrosService {
         }
       }
 
-      const miembro = await this.miembrosRepository.findByIdAsync(id);
+      const miembro = await this.miembrosRepository.findByIdIncludingInactiveAsync(id);
 
       if (!miembro) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      if (!miembro.activo && usuario.rol !== 'administrador') {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
@@ -131,10 +154,27 @@ export class MiembrosService {
    * Crea un nuevo miembro (RF_01: Registrar nuevo miembro)
    */
   async create(
-    miembroData: Omit<Miembro, 'id' | 'created_at' | 'updated_at' | 'activo'>,
+    miembroData: Omit<
+      Miembro,
+      'id' | 'created_at' | 'updated_at' | 'activo' | 'fecha_creacion' | 'ultimo_acceso'
+    >,
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
-      const miembro = await this.miembrosRepository.createAsync(miembroData);
+      const passwordPlano = buildPasswordFromRut(miembroData.rut);
+      if (passwordPlano.length < 4) {
+        return ServiceResponse.failure(
+          'RUT inválido: no se pudo generar contraseña inicial',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      const password_hash = await bcrypt.hash(passwordPlano, SALT_ROUNDS);
+      const miembro = await this.miembrosRepository.createAsync({
+        ...miembroData,
+        password_hash,
+        fecha_creacion: new Date().toISOString(),
+      });
       return ServiceResponse.success<Miembro>(
         'Miembro creado exitosamente',
         miembro,
@@ -144,7 +184,6 @@ export class MiembrosService {
       const errorMessage = `Error al crear miembro: ${(ex as Error).message}`;
       logger.error(errorMessage);
 
-      // Manejar error de duplicado (RUT o email únicos)
       if ((ex as any).code === '23505') {
         return ServiceResponse.failure(
           'Ya existe un miembro con ese RUT o email',
@@ -170,7 +209,15 @@ export class MiembrosService {
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
       // estado_comunion solo se modifica vía PATCH /:id/estado
-      const { estado_comunion: _, ...safeData } = miembroData as any;
+      // campos de auth solo se modifican vía endpoints de cuenta
+      const {
+        estado_comunion: _,
+        rol: __,
+        password_hash: ___,
+        fecha_creacion: ____,
+        ultimo_acceso: _____,
+        ...safeData
+      } = miembroData as any;
       const miembro = await this.miembrosRepository.updateAsync(id, safeData);
 
       if (!miembro) {
@@ -182,7 +229,6 @@ export class MiembrosService {
       const errorMessage = `Error al actualizar miembro con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
 
-      // Manejar error de duplicado (RUT o email únicos)
       if ((ex as any).code === '23505') {
         return ServiceResponse.failure(
           'Ya existe un miembro con ese RUT o email',
@@ -200,17 +246,35 @@ export class MiembrosService {
   }
 
   /**
-   * Elimina lógicamente un miembro (soft delete)
+   * Elimina un miembro: soft delete si tiene dependencias, hard delete si está "limpio"
    */
-  async delete(id: number): Promise<ServiceResponse<null>> {
+  async delete(id: number): Promise<ServiceResponse<DeleteMiembroResult | null>> {
     try {
-      const deleted = await this.miembrosRepository.deleteAsync(id);
+      const miembro = await this.miembrosRepository.findByIdIncludingInactiveAsync(id);
 
-      if (!deleted) {
+      if (!miembro) {
         return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      return ServiceResponse.success('Miembro eliminado exitosamente', null);
+      if (!miembro.activo) {
+        return ServiceResponse.failure('El miembro ya está inactivo', null, StatusCodes.CONFLICT);
+      }
+
+      const tieneDependencias = await this.miembrosRepository.checkDependenciasAsync(id);
+
+      if (tieneDependencias) {
+        await this.miembrosRepository.deleteAsync(id);
+        return ServiceResponse.success<DeleteMiembroResult>(
+          'Miembro inactivado: tiene registros históricos asociados',
+          { tipo: 'inactivado', tieneDependencias: true },
+        );
+      }
+
+      await this.miembrosRepository.hardDeleteAsync(id);
+      return ServiceResponse.success<DeleteMiembroResult>('Miembro eliminado permanentemente', {
+        tipo: 'eliminado',
+        tieneDependencias: false,
+      });
     } catch (ex) {
       const errorMessage = `Error al eliminar miembro con id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -223,21 +287,40 @@ export class MiembrosService {
   }
 
   /**
-   * Actualiza datos de contacto del perfil propio
+   * Reactiva un miembro inactivo
    */
-  async updateMiPerfil(
-    miembroId: number | null,
-    data: { direccion?: string | null; telefono?: string | null; email?: string | null },
-  ): Promise<ServiceResponse<Miembro | null>> {
+  async reactivar(id: number): Promise<ServiceResponse<Miembro | null>> {
     try {
-      if (!miembroId) {
+      const miembro = await this.miembrosRepository.reactivarAsync(id);
+
+      if (!miembro) {
         return ServiceResponse.failure(
-          'Tu usuario no tiene un miembro asociado',
+          'Miembro no encontrado o ya está activo',
           null,
-          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
         );
       }
 
+      return ServiceResponse.success<Miembro>('Miembro reactivado exitosamente', miembro);
+    } catch (ex) {
+      const errorMessage = `Error al reactivar miembro con id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Ocurrió un error al reactivar el miembro',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Actualiza datos de contacto del perfil propio
+   */
+  async updateMiPerfil(
+    miembroId: number,
+    data: { direccion?: string | null; telefono?: string | null; email?: string | null },
+  ): Promise<ServiceResponse<Miembro | null>> {
+    try {
       const miembro = await this.miembrosRepository.updatePerfilAsync(miembroId, data);
 
       if (!miembro) {
@@ -276,7 +359,6 @@ export class MiembrosService {
     usuario_id: number,
   ): Promise<ServiceResponse<Miembro | null>> {
     try {
-      // Obtener el miembro actual para saber el estado anterior
       const miembroActual = await this.miembrosRepository.findByIdAsync(id);
 
       if (!miembroActual) {
@@ -285,7 +367,6 @@ export class MiembrosService {
 
       const estado_anterior = miembroActual.estado_comunion;
 
-      // Validar que el nuevo estado sea distinto al actual
       if (estado_nuevo === estado_anterior) {
         return ServiceResponse.failure(
           `El miembro ya se encuentra en estado "${estado_nuevo}"`,
@@ -294,11 +375,10 @@ export class MiembrosService {
         );
       }
 
-      // Delegar al servicio de historial (registra historial + actualiza miembro)
       const historialResponse = await historialEstadoService.create({
         miembro_id: id,
         estado_anterior,
-        estado_nuevo: estado_nuevo as any, // El servicio ya valida el tipo
+        estado_nuevo: estado_nuevo as any,
         motivo,
         usuario_id,
       });
@@ -311,7 +391,6 @@ export class MiembrosService {
         );
       }
 
-      // Obtener el miembro actualizado para devolverlo
       const miembroActualizado = await this.miembrosRepository.findByIdAsync(id);
 
       if (!miembroActualizado) {
@@ -331,6 +410,99 @@ export class MiembrosService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Ocurrió un error al cambiar el estado de comunión',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // ─── Gestión de cuenta de acceso ──────────────────────────────────────────
+
+  /**
+   * Actualiza email y/o rol de la cuenta de un miembro
+   */
+  async actualizarCuenta(
+    miembroId: number,
+    data: { email?: string; rol?: 'administrador' | 'usuario' },
+  ): Promise<ServiceResponse<Miembro | null>> {
+    try {
+      const miembro = await this.miembrosRepository.findByIdIncludingInactiveAsync(miembroId);
+      if (!miembro) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      if (data.email) {
+        const emailEnUso = await this.miembrosRepository.existsByEmailAsync(data.email, miembroId);
+        if (emailEnUso) {
+          return ServiceResponse.failure(
+            'Ya existe un miembro con ese email',
+            null,
+            StatusCodes.CONFLICT,
+          );
+        }
+      }
+
+      const miembroActualizado = await this.miembrosRepository.updateCuentaAsync(miembroId, data);
+
+      if (!miembroActualizado) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success<Miembro>(
+        'Cuenta actualizada exitosamente',
+        miembroActualizado,
+      );
+    } catch (ex) {
+      const errorMessage = `Error al actualizar cuenta: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Ocurrió un error al actualizar la cuenta',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Restablece la contraseÃ±a de un miembro (admin)
+   */
+  async resetPassword(
+    miembroId: number,
+    nueva_password: string,
+  ): Promise<ServiceResponse<Miembro | null>> {
+    try {
+      const miembro = await this.miembrosRepository.findByIdIncludingInactiveAsync(miembroId);
+      if (!miembro) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      if (!miembro.activo) {
+        return ServiceResponse.failure(
+          'No se puede restablecer contraseÃ±a de un miembro inactivo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      const password_hash = await bcrypt.hash(nueva_password, SALT_ROUNDS);
+      const miembroActualizado = await this.miembrosRepository.updatePasswordAsync(
+        miembroId,
+        password_hash,
+      );
+
+      if (!miembroActualizado) {
+        return ServiceResponse.failure('Miembro no encontrado', null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success<Miembro>(
+        'ContraseÃ±a restablecida exitosamente',
+        miembroActualizado,
+      );
+    } catch (ex) {
+      const errorMessage = `Error al restablecer contraseÃ±a: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'OcurriÃ³ un error al restablecer la contraseÃ±a',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

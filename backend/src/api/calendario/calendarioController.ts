@@ -22,7 +22,12 @@ class CalendarioController {
     const mes = Number(req.query.mes);
     const anio = Number(req.query.anio);
     const grupoId = req.query.grupoId ? Number(req.query.grupoId) : undefined;
-    const serviceResponse = await calendarioService.getCalendarioConsolidado(mes, anio, grupoId);
+    const serviceResponse = await calendarioService.getCalendarioConsolidado(
+      mes,
+      anio,
+      req.usuario!,
+      grupoId,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -31,7 +36,7 @@ class CalendarioController {
    */
   public getMisResponsabilidades: RequestHandler = async (req: Request, res: Response) => {
     const miembroId = Number(req.params.miembro_id);
-    const miembroIdToken = req.usuario?.miembro_id ?? null;
+    const miembroIdToken = req.usuario?.id ?? null;
     const serviceResponse = await calendarioService.getMisResponsabilidades(
       miembroId,
       miembroIdToken,

@@ -60,5 +60,3 @@ class ResponsabilidadesActividadController {
 }
 
 export const responsabilidadesActividadController = new ResponsabilidadesActividadController();
-
-

@@ -11,7 +11,7 @@ import type {
 import { NecesidadesLogisticasRepository } from './necesidadesLogisticasRepository';
 
 /**
- * Servicio con lógica de negocio para Necesidades Logísticas
+ * Servicio con lógica de negocio para Necesidades Materiales
  */
 export class NecesidadesLogisticasService {
   private necesidadesRepository: NecesidadesLogisticasRepository;
@@ -21,7 +21,7 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Obtiene todas las necesidades logísticas con filtros opcionales
+   * Obtiene todas las necesidades materiales con filtros opcionales
    */
   async findAll(
     filters: {
@@ -34,16 +34,9 @@ export class NecesidadesLogisticasService {
       let necesidades: NecesidadLogistica[] = [];
 
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         necesidades = await this.necesidadesRepository.findAllForEncargadoAsync(
           filters,
-          usuario.miembro_id,
+          usuario.id,
         );
       } else {
         necesidades = await this.necesidadesRepository.findAllAsync(filters);
@@ -51,7 +44,7 @@ export class NecesidadesLogisticasService {
 
       if (!necesidades) {
         return ServiceResponse.failure(
-          'Error al obtener necesidades logísticas',
+          'Error al obtener necesidades materiales',
           null,
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
@@ -59,20 +52,20 @@ export class NecesidadesLogisticasService {
 
       if (necesidades.length === 0) {
         return ServiceResponse.success<NecesidadLogistica[]>(
-          'No se encontraron necesidades logísticas',
+          'No se encontraron necesidades materiales',
           [],
         );
       }
 
       return ServiceResponse.success<NecesidadLogistica[]>(
-        'Necesidades logísticas encontradas',
+        'Necesidades materiales encontradas',
         necesidades,
       );
     } catch (error) {
-      const errorMessage = `Error al obtener necesidades logísticas: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener necesidades materiales: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener necesidades logísticas',
+        'Error al obtener necesidades materiales',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -89,20 +82,20 @@ export class NecesidadesLogisticasService {
 
       if (!necesidades || necesidades.length === 0) {
         return ServiceResponse.success<NecesidadAbierta[]>(
-          'No se encontraron necesidades logísticas abiertas',
+          'No se encontraron necesidades materiales abiertas',
           [],
         );
       }
 
       return ServiceResponse.success<NecesidadAbierta[]>(
-        'Necesidades logísticas abiertas encontradas',
+        'Necesidades materiales abiertas encontradas',
         necesidades,
       );
     } catch (error) {
       const errorMessage = `Error al obtener necesidades abiertas: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener necesidades logísticas abiertas',
+        'Error al obtener necesidades materiales abiertas',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -110,7 +103,7 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Obtiene una necesidad logística por ID
+   * Obtiene una necesidad material por ID
    */
   async findById(id: number): Promise<ServiceResponse<NecesidadLogistica | null>> {
     try {
@@ -118,21 +111,21 @@ export class NecesidadesLogisticasService {
 
       if (!necesidad) {
         return ServiceResponse.failure(
-          'Necesidad logística no encontrada',
+          'Necesidad material no encontrada',
           null,
           StatusCodes.NOT_FOUND,
         );
       }
 
       return ServiceResponse.success<NecesidadLogistica>(
-        'Necesidad logística encontrada',
+        'Necesidad material encontrada',
         necesidad,
       );
     } catch (error) {
-      const errorMessage = `Error al obtener necesidad logística: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener necesidad material: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener necesidad logística',
+        'Error al obtener necesidad material',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -140,7 +133,7 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Crea una nueva necesidad logística
+   * Crea una nueva necesidad material
    */
   async create(
     necesidadData: Omit<
@@ -164,7 +157,7 @@ export class NecesidadesLogisticasService {
 
       if (actividad.estado === 'cancelada') {
         return ServiceResponse.failure(
-          'No se pueden registrar necesidades logísticas en una actividad cancelada',
+          'No se pueden registrar necesidades materiales en una actividad cancelada',
           null,
           StatusCodes.CONFLICT,
         );
@@ -173,7 +166,7 @@ export class NecesidadesLogisticasService {
       const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
       if (finActividad.isBefore(nowEnZona())) {
         return ServiceResponse.failure(
-          'No se pueden registrar necesidades logísticas en una actividad que ya finalizó',
+          'No se pueden registrar necesidades materiales en una actividad que ya finalizó',
           null,
           StatusCodes.CONFLICT,
         );
@@ -181,20 +174,13 @@ export class NecesidadesLogisticasService {
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidadData.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esLider) {
           return ServiceResponse.failure(
-            'Solo puede gestionar necesidades logísticas de actividades de sus grupos',
+            'Solo puede gestionar necesidades materiales de actividades de sus grupos',
             null,
             StatusCodes.FORBIDDEN,
           );
@@ -218,15 +204,15 @@ export class NecesidadesLogisticasService {
         cantidad_cubierta: 0,
       });
       return ServiceResponse.success<NecesidadLogistica>(
-        'Necesidad logística creada exitosamente',
+        'Necesidad material creada exitosamente',
         necesidad,
         StatusCodes.CREATED,
       );
     } catch (error) {
-      const errorMessage = `Error al crear necesidad logística: ${(error as Error).message}`;
+      const errorMessage = `Error al crear necesidad material: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al crear necesidad logística',
+        'Error al crear necesidad material',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -234,7 +220,7 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Actualiza una necesidad logística existente
+   * Actualiza una necesidad material existente
    */
   async update(
     id: number,
@@ -246,7 +232,7 @@ export class NecesidadesLogisticasService {
       const necesidadExistente = await this.necesidadesRepository.findByIdAsync(id);
       if (!necesidadExistente) {
         return ServiceResponse.failure(
-          'Necesidad logística no encontrada',
+          'Necesidad material no encontrada',
           null,
           StatusCodes.NOT_FOUND,
         );
@@ -254,29 +240,22 @@ export class NecesidadesLogisticasService {
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidadExistente.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esLider) {
           return ServiceResponse.failure(
-            'Solo puede gestionar necesidades logísticas de actividades de sus grupos',
+            'Solo puede gestionar necesidades materiales de actividades de sus grupos',
             null,
             StatusCodes.FORBIDDEN,
           );
         }
       }
 
-      if (necesidadExistente.estado === 'cerrada') {
+      if (necesidadExistente.estado === 'cerrada' || necesidadExistente.estado === 'cancelada') {
         return ServiceResponse.failure(
-          'No se puede editar una necesidad logística en estado "cerrada"',
+          `No se puede editar una necesidad material en estado "${necesidadExistente.estado}"`,
           null,
           StatusCodes.CONFLICT,
         );
@@ -312,15 +291,15 @@ export class NecesidadesLogisticasService {
 
       if (!necesidad) {
         return ServiceResponse.failure(
-          'Necesidad logística no encontrada',
+          'Necesidad material no encontrada',
           null,
           StatusCodes.NOT_FOUND,
         );
       }
 
-      // Recalculate state from accepted offers (skip if manually closed)
+      // Recalculate state from committed amounts (skip if manually closed)
       if (necesidad.estado !== 'cerrada') {
-        const sumaCubierta = await this.necesidadesRepository.sumCantidadOfrecidaAceptadaAsync(id);
+        const sumaCubierta = await this.necesidadesRepository.sumCantidadCompromisosAsync(id);
         const nuevoEstado: (typeof ESTADOS_NECESIDAD)[number] =
           sumaCubierta >= necesidad.cantidad_requerida ? 'cubierta' : 'abierta';
 
@@ -331,7 +310,7 @@ export class NecesidadesLogisticasService {
           });
           if (recalculada) {
             return ServiceResponse.success<NecesidadLogistica>(
-              'Necesidad logística actualizada exitosamente',
+              'Necesidad material actualizada exitosamente',
               recalculada,
             );
           }
@@ -339,14 +318,14 @@ export class NecesidadesLogisticasService {
       }
 
       return ServiceResponse.success<NecesidadLogistica>(
-        'Necesidad logística actualizada exitosamente',
+        'Necesidad material actualizada exitosamente',
         necesidad,
       );
     } catch (error) {
-      const errorMessage = `Error al actualizar necesidad logística: ${(error as Error).message}`;
+      const errorMessage = `Error al actualizar necesidad material: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al actualizar necesidad logística',
+        'Error al actualizar necesidad material',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -354,7 +333,7 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Cambia el estado de una necesidad logística
+   * Cambia el estado de una necesidad material
    */
   async updateEstado(
     id: number,
@@ -365,7 +344,7 @@ export class NecesidadesLogisticasService {
       const necesidad = await this.necesidadesRepository.findByIdAsync(id);
       if (!necesidad) {
         return ServiceResponse.failure(
-          'Necesidad logística no encontrada',
+          'Necesidad material no encontrada',
           null,
           StatusCodes.NOT_FOUND,
         );
@@ -373,20 +352,13 @@ export class NecesidadesLogisticasService {
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidad.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esLider) {
           return ServiceResponse.failure(
-            'Solo puede gestionar necesidades logísticas de actividades de sus grupos',
+            'Solo puede gestionar necesidades materiales de actividades de sus grupos',
             null,
             StatusCodes.FORBIDDEN,
           );
@@ -395,16 +367,19 @@ export class NecesidadesLogisticasService {
 
       if (necesidad.estado === estado) {
         return ServiceResponse.failure(
-          `La necesidad logística ya se encuentra en estado "${estado}"`,
+          `La necesidad material ya se encuentra en estado "${estado}"`,
           null,
           StatusCodes.CONFLICT,
         );
       }
 
-      // No se puede reabrir una necesidad cerrada
-      if (necesidad.estado === 'cerrada' && estado === 'abierta') {
+      // No se puede reabrir una necesidad cerrada o cancelada
+      if (
+        (necesidad.estado === 'cerrada' || necesidad.estado === 'cancelada') &&
+        estado === 'abierta'
+      ) {
         return ServiceResponse.failure(
-          'No se puede reabrir una necesidad cerrada',
+          `No se puede reabrir una necesidad en estado "${necesidad.estado}"`,
           null,
           StatusCodes.CONFLICT,
         );
@@ -421,9 +396,9 @@ export class NecesidadesLogisticasService {
       }
 
       const mensajes: Record<string, string> = {
-        abierta: 'Necesidad logística reabierta exitosamente',
-        cubierta: 'Necesidad logística marcada como cubierta exitosamente',
-        cerrada: 'Necesidad logística cerrada exitosamente',
+        abierta: 'Necesidad material reabierta exitosamente',
+        cubierta: 'Necesidad material marcada como cubierta exitosamente',
+        cerrada: 'Necesidad material cerrada exitosamente',
       };
 
       return ServiceResponse.success<NecesidadLogistica>(mensajes[estado], necesidadActualizada);
@@ -431,7 +406,7 @@ export class NecesidadesLogisticasService {
       const errorMessage = `Error al cambiar estado de necesidad: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al cambiar el estado de la necesidad logística',
+        'Error al cambiar el estado de la necesidad material',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -439,14 +414,14 @@ export class NecesidadesLogisticasService {
   }
 
   /**
-   * Elimina una necesidad logística (solo si está abierta)
+   * Elimina una necesidad material (solo si está abierta)
    */
   async delete(id: number, usuario?: JwtPayload): Promise<ServiceResponse<null>> {
     try {
       const necesidad = await this.necesidadesRepository.findByIdAsync(id);
       if (!necesidad) {
         return ServiceResponse.failure(
-          'Necesidad logística no encontrada',
+          'Necesidad material no encontrada',
           null,
           StatusCodes.NOT_FOUND,
         );
@@ -454,20 +429,13 @@ export class NecesidadesLogisticasService {
 
       // Verificar permisos: un líder solo puede gestionar necesidades de sus grupos
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esLider = await this.necesidadesRepository.isEncargadoDeActividadAsync(
           necesidad.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esLider) {
           return ServiceResponse.failure(
-            'Solo puede gestionar necesidades logísticas de actividades de sus grupos',
+            'Solo puede gestionar necesidades materiales de actividades de sus grupos',
             null,
             StatusCodes.FORBIDDEN,
           );
@@ -476,28 +444,28 @@ export class NecesidadesLogisticasService {
 
       if (necesidad.estado !== 'abierta') {
         return ServiceResponse.failure(
-          'Solo se pueden eliminar necesidades logísticas en estado "abierta"',
+          'Solo se pueden eliminar necesidades materiales en estado "abierta"',
           null,
           StatusCodes.CONFLICT,
         );
       }
 
-      const tieneAceptadas = await this.necesidadesRepository.hasColaboracionesAceptadasAsync(id);
-      if (tieneAceptadas) {
+      const tieneColaboraciones = await this.necesidadesRepository.hasColaboracionesAsync(id);
+      if (tieneColaboraciones) {
         return ServiceResponse.failure(
-          'No se puede eliminar una necesidad con colaboraciones aceptadas',
+          'No se puede eliminar una necesidad con colaboraciones registradas',
           null,
           StatusCodes.CONFLICT,
         );
       }
 
       await this.necesidadesRepository.deleteAsync(id);
-      return ServiceResponse.success('Necesidad logística eliminada exitosamente', null);
+      return ServiceResponse.success('Necesidad material eliminada exitosamente', null);
     } catch (error) {
-      const errorMessage = `Error al eliminar necesidad logística: ${(error as Error).message}`;
+      const errorMessage = `Error al eliminar necesidad material: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al eliminar necesidad logística',
+        'Error al eliminar necesidad material',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

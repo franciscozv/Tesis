@@ -1,4 +1,4 @@
-import { supabase } from '@/common/utils/supabaseClient';
+﻿import { supabase } from '@/common/utils/supabaseClient';
 import type { TipoNecesidad } from './tiposNecesidadModel';
 
 /**
@@ -9,7 +9,7 @@ export class TiposNecesidadRepository {
    * Obtiene tipos de necesidad, opcionalmente filtrados por estado
    */
   async findAllAsync(activo?: boolean): Promise<TipoNecesidad[]> {
-    let query = supabase.from('tipo_necesidad_logistica').select('*');
+    let query = supabase.from('tipo_necesidad').select('*');
 
     if (activo !== undefined) {
       query = query.eq('activo', activo);
@@ -26,7 +26,7 @@ export class TiposNecesidadRepository {
    */
   async findByIdAsync(id: number): Promise<TipoNecesidad | null> {
     const { data, error } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .select('*')
       .eq('id_tipo', id)
       .single();
@@ -43,7 +43,7 @@ export class TiposNecesidadRepository {
    */
   async existsByNombreAsync(nombre: string, excludeId?: number): Promise<boolean> {
     let query = supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .select('id_tipo')
       .eq('nombre', nombre)
       .eq('activo', true);
@@ -63,7 +63,7 @@ export class TiposNecesidadRepository {
    */
   async isBeingUsedAsync(idTipo: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .select('id')
       .eq('tipo_necesidad_id', idTipo)
       .limit(1);
@@ -79,7 +79,7 @@ export class TiposNecesidadRepository {
     tipoData: Omit<TipoNecesidad, 'id_tipo' | 'created_at' | 'updated_at' | 'activo'>,
   ): Promise<TipoNecesidad> {
     const { data, error } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .insert({ ...tipoData, activo: true })
       .select()
       .single();
@@ -93,7 +93,7 @@ export class TiposNecesidadRepository {
    */
   async updateAsync(id: number, tipoData: Partial<TipoNecesidad>): Promise<TipoNecesidad | null> {
     const { data, error } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .update(tipoData)
       .eq('id_tipo', id)
       .select()
@@ -112,7 +112,7 @@ export class TiposNecesidadRepository {
   async toggleEstadoAsync(id: number): Promise<TipoNecesidad | null> {
     // Obtener el registro sin filtrar por activo
     const { data: current, error: findError } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .select('*')
       .eq('id_tipo', id)
       .single();
@@ -123,7 +123,7 @@ export class TiposNecesidadRepository {
     }
 
     const { data, error } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .update({ activo: !current.activo })
       .eq('id_tipo', id)
       .select()
@@ -137,7 +137,7 @@ export class TiposNecesidadRepository {
    * Elimina un tipo de necesidad permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase.from('tipo_necesidad_logistica').delete().eq('id_tipo', id);
+    const { error } = await supabase.from('tipo_necesidad').delete().eq('id_tipo', id);
 
     if (error) throw error;
     return true;

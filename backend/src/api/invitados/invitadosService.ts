@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { emitAndPersist, emitAndPersistAdmin } from '@/api/notificaciones/notificacionesService';
 import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { nowEnZona, parseActividadFin } from '@/common/utils/dateTime';
@@ -117,7 +118,7 @@ export class InvitadosService {
       }
 
       // Evitar auto-invitación
-      if (usuario?.miembro_id && invitadoData.miembro_id === usuario.miembro_id) {
+      if (invitadoData.miembro_id === usuario?.id) {
         return ServiceResponse.failure(
           'No puede invitarse a sí mismo',
           null,
@@ -127,16 +128,9 @@ export class InvitadosService {
 
       // Verificar permisos: admin bypass total; líder debe ser encargado vigente del grupo.
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esEncargado = await this.invitadosRepository.isEncargadoDeActividadAsync(
           invitadoData.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esEncargado) {
           return ServiceResponse.failure(
@@ -160,7 +154,9 @@ export class InvitadosService {
       }
 
       // Validar que el responsabilidad de actividad exista y esté activo
-      const rolExiste = await this.invitadosRepository.responsabilidadActividadExistsAsync(invitadoData.responsabilidad_id);
+      const rolExiste = await this.invitadosRepository.responsabilidadActividadExistsAsync(
+        invitadoData.responsabilidad_id,
+      );
       if (!rolExiste) {
         return ServiceResponse.failure(
           'El responsabilidad de actividad especificado no existe o no está activo',
@@ -185,11 +181,34 @@ export class InvitadosService {
 
       const { confirmado, ...dataToInsert } = invitadoData;
       const invitado = await this.invitadosRepository.createAsync(dataToInsert, confirmado);
-      return ServiceResponse.success<Invitado>(
-        'Invitación creada exitosamente',
-        invitado,
-        StatusCodes.CREATED,
-      );
+
+      // Notificar al miembro invitado (persiste en BD para offline)
+      const fechaFormateada = new Date(`${actividad.fecha}T12:00:00`).toLocaleDateString('es-CL', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+      const responsabilidadNombre = (invitado as any).rol?.nombre ?? 'Sin rol';
+      const detalleBase = `${responsabilidadNombre} · ${fechaFormateada}`;
+      const mensajeNotif = confirmado
+        ? `Asignación confirmada: ${actividad.nombre}`
+        : `Nueva invitación: ${actividad.nombre}`;
+      const detalleNotif = confirmado ? `${detalleBase} · Confirmado` : detalleBase;
+
+      logger.info(`[notif] emitiendo nueva_invitacion → user:${invitadoData.miembro_id}`);
+      await emitAndPersist(invitadoData.miembro_id, {
+        tipo: 'nueva_invitacion',
+        mensaje: mensajeNotif,
+        detalle: detalleNotif,
+        href: `/dashboard/mis-responsabilidades?invitadoId=${invitado.id}`,
+        timestamp: Date.now(),
+      });
+
+      const mensajeRespuesta = confirmado
+        ? 'Miembro registrado como confirmado'
+        : 'Invitación creada';
+
+      return ServiceResponse.success<Invitado>(mensajeRespuesta, invitado, StatusCodes.CREATED);
     } catch (error) {
       const errorMessage = `Error al crear invitación: ${(error as Error).message}`;
       logger.error(errorMessage);
@@ -225,7 +244,9 @@ export class InvitadosService {
       }
 
       // No permitir respuestas sobre invitaciones de actividades canceladas
-      const actividad = await this.invitadosRepository.findActividadDatosAsync(invitado.actividad_id);
+      const actividad = await this.invitadosRepository.findActividadDatosAsync(
+        invitado.actividad_id,
+      );
       if (!actividad || actividad.estado === 'cancelada') {
         return ServiceResponse.failure(
           'No se puede responder invitaciones de una actividad cancelada',
@@ -247,6 +268,32 @@ export class InvitadosService {
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
+
+      // Notificar a admins/directiva cuando un miembro confirma o rechaza su participación
+      const miembro = (invitadoActualizado as any).miembro;
+      const rol = (invitadoActualizado as any).rol;
+      const nombreMiembro = miembro
+        ? `${miembro.nombre} ${miembro.apellido}`
+        : `Miembro #${invitadoActualizado.miembro_id}`;
+      const nombreRol = rol?.nombre ?? 'Sin rol';
+      const fechaFormateada = new Date(`${actividad.fecha}T12:00:00`).toLocaleDateString('es-CL', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+
+      emitAndPersistAdmin({
+        tipo: estado === 'confirmado' ? 'invitacion_confirmada' : 'invitacion_rechazada',
+        mensaje:
+          estado === 'confirmado'
+            ? `${nombreMiembro} confirmó su participación`
+            : `${nombreMiembro} rechazó su participación`,
+        detalle: `${nombreRol} · ${actividad.nombre} · ${fechaFormateada}`,
+        href: `/dashboard/actividades/${invitadoActualizado.actividad_id}`,
+        timestamp: Date.now(),
+      }).catch((err) =>
+        logger.warn({ err }, `[notif] error notificando respuesta invitación admin`),
+      );
 
       const mensaje =
         estado === 'confirmado' ? 'Invitación confirmada exitosamente' : 'Invitación rechazada';
@@ -273,10 +320,10 @@ export class InvitadosService {
         return ServiceResponse.failure('Invitado no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      // Solo se puede marcar asistencia de invitados confirmados
-      if (invitado.estado !== 'confirmado') {
+      // Solo se puede marcar asistencia de invitados confirmados o pendientes
+      if (invitado.estado !== 'confirmado' && invitado.estado !== 'pendiente') {
         return ServiceResponse.failure(
-          'Solo se puede marcar asistencia de invitados con estado "confirmado"',
+          'Solo se puede marcar asistencia de invitados confirmados o pendientes',
           null,
           StatusCodes.CONFLICT,
         );
@@ -303,7 +350,20 @@ export class InvitadosService {
         );
       }
 
-      const invitadoActualizado = await this.invitadosRepository.updateAsistenciaAsync(id, asistio);
+      const extraUpdate =
+        invitado.estado === 'pendiente' && asistio
+          ? {
+              estado: 'confirmado',
+              fecha_respuesta: new Date().toISOString(),
+              motivo_rechazo: null,
+            }
+          : undefined;
+
+      const invitadoActualizado = await this.invitadosRepository.updateAsistenciaAsync(
+        id,
+        asistio,
+        extraUpdate,
+      );
 
       if (!invitadoActualizado) {
         return ServiceResponse.failure(
@@ -341,16 +401,9 @@ export class InvitadosService {
 
       // Verificar permisos: admin bypass total; líder debe ser encargado vigente del grupo.
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'No tiene un perfil de miembro asociado para realizar esta acción',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esEncargado = await this.invitadosRepository.isEncargadoDeActividadAsync(
           invitado.actividad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esEncargado) {
           return ServiceResponse.failure(
@@ -384,4 +437,3 @@ export class InvitadosService {
 }
 
 export const invitadosService = new InvitadosService();
-

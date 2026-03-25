@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const EstadoComunionEnum = z.enum(['asistente', 'probando', 'plena_comunion']);
 export const generoEnum = z.enum(['masculino', 'femenino']);
+export const rolEnum = z.enum(['administrador', 'usuario']);
 
 export const createMiembroSchema = z.object({
   rut: z
@@ -11,7 +12,7 @@ export const createMiembroSchema = z.object({
     .regex(/^\d{7,8}-[\dkK]$/, 'Formato RUT inválido (ej: 12345678-9)'),
   nombre: z.string().min(2, 'Mínimo 2 caracteres').max(100),
   apellido: z.string().min(2, 'Mínimo 2 caracteres').max(100),
-  email: z.string().email('Email inválido').max(150).or(z.literal('')).optional(),
+  email: z.string().email('Email inválido').max(150),
   telefono: z.string().max(20).or(z.literal('')).optional(),
   fecha_nacimiento: z
     .string()
@@ -28,6 +29,7 @@ export const createMiembroSchema = z.object({
   direccion: z.string().or(z.literal('')).optional(),
   genero: generoEnum.or(z.literal('')).optional(),
   estado_comunion: EstadoComunionEnum,
+  rol: rolEnum.default('usuario'),
   fecha_ingreso: z
     .string()
     .min(1, 'Fecha de ingreso es requerida')
@@ -43,7 +45,7 @@ export const createMiembroSchema = z.object({
 
 export const updateMiembroSchema = createMiembroSchema
   .partial()
-  .omit({ rut: true, estado_comunion: true });
+  .omit({ rut: true, estado_comunion: true, rol: true });
 
 export const cambiarEstadoSchema = z.object({
   estado_nuevo: EstadoComunionEnum,

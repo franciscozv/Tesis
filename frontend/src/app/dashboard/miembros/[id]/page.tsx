@@ -1,6 +1,16 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, History, Pencil, UserMinus, UsersRound } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  History,
+  KeyRound,
+  Pencil,
+  RefreshCw,
+  UserMinus,
+  UsersRound,
+  UserX,
+} from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
 import { toast } from 'sonner';
@@ -28,13 +38,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
 import { useHistorialEstado } from '@/features/historial-estado/hooks/use-historial-estado';
 import { useDesvincularMiembro } from '@/features/integrantes-grupo/hooks/use-desvincular-miembro';
 import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
-import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
+import { useActualizarCuenta, useResetPasswordMiembro } from '@/features/miembros/hooks/use-cuenta';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
+import { useReactivarMiembro } from '@/features/miembros/hooks/use-reactivar-miembro';
 import type { EstadoComunion } from '@/features/miembros/types';
+import { extractApiMessage } from '@/lib/api-error';
 import { cn } from '@/lib/utils';
+import { CuentaFormModal } from './cuenta-form-modal';
+import { ResetPasswordModal } from './reset-password-modal';
 
 const estadoLabels: Record<EstadoComunion, string> = {
   asistente: 'Asistente',
@@ -67,14 +82,56 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
 
   const { data: historial, isLoading: loadingHistorial } = useHistorialEstado(miembroId);
   const desvincularMutation = useDesvincularMiembro();
+  const reactivarMutation = useReactivarMiembro();
+  const actualizarCuentaMutation = useActualizarCuenta();
+  const resetPasswordMutation = useResetPasswordMiembro();
   const todas = comunions ?? [];
   const [comunionADesvincular, setComunionADesvincular] = useState<MiembroGrupo | null>(null);
+  const [cuentaModalOpen, setCuentaModalOpen] = useState(false);
+  const [cuentaError, setCuentaError] = useState<string | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const historialOrdenado = historial
     ? [...historial].sort(
         (a, b) => new Date(b.fecha_cambio).getTime() - new Date(a.fecha_cambio).getTime(),
       )
     : [];
+
+  function handleReactivar() {
+    reactivarMutation.mutate(miembroId, {
+      onSuccess: () => toast.success('Miembro reactivado exitosamente'),
+      onError: () => toast.error('Error al reactivar el miembro'),
+    });
+  }
+
+  function handleActualizarCuenta(data: { email?: string; rol?: 'administrador' | 'usuario' }) {
+    setCuentaError(null);
+    actualizarCuentaMutation.mutate(
+      { id: miembroId, input: data },
+      {
+        onSuccess: () => {
+          toast.success('Cuenta actualizada');
+          setCuentaModalOpen(false);
+        },
+        onError: (e) => setCuentaError(extractApiMessage(e, 'Error al actualizar cuenta')),
+      },
+    );
+  }
+
+  function handleResetPassword(data: { nueva_password: string }) {
+    setResetError(null);
+    resetPasswordMutation.mutate(
+      { id: miembroId, input: data },
+      {
+        onSuccess: () => {
+          toast.success('Contrase\u00f1a restablecida');
+          setResetModalOpen(false);
+        },
+        onError: (e) => setResetError(extractApiMessage(e, 'Error al restablecer contrase\u00f1a')),
+      },
+    );
+  }
 
   function handleConfirmDesvincular() {
     if (!comunionADesvincular) return;
@@ -132,6 +189,26 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
+      {/* Banner de miembro inactivo */}
+      {!miembro.activo && isAdmin && (
+        <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
+          <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+            <UserX className="size-4 shrink-0" />
+            Este miembro está <strong>inactivo</strong>. Fue dado de baja del sistema.
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReactivar}
+            disabled={reactivarMutation.isPending}
+            className="shrink-0 border-amber-300 dark:border-amber-700"
+          >
+            <RefreshCw className="size-3.5" />
+            {reactivarMutation.isPending ? 'Reactivando...' : 'Reactivar'}
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -141,8 +218,6 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
             <InfoRow label="Nombre" value={`${miembro.nombre} ${miembro.apellido}`} />
             <Separator />
             <InfoRow label="RUT" value={miembro.rut} />
-            <Separator />
-            <InfoRow label="Email" value={miembro.email} />
             <Separator />
             <InfoRow label="Teléfono" value={miembro.telefono} />
             <Separator />
@@ -362,6 +437,112 @@ export default function DetalleMiembroPage({ params }: { params: Promise<{ id: s
           )}
         </CardContent>
       </Card>
+
+      {/* Cuenta de acceso ??? solo admin */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <KeyRound className="size-4" />
+                Cuenta de acceso
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCuentaError(null);
+                    setCuentaModalOpen(true);
+                  }}
+                >
+                  <Pencil className="size-3.5" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setResetError(null);
+                    setResetModalOpen(true);
+                  }}
+                >
+                  <KeyRound className="size-3.5" />
+                  {'Restablecer contrase\u00f1a'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <>
+              <InfoRow
+                label="Rol"
+                value={
+                  miembro.rol
+                    ? miembro.rol === 'administrador'
+                      ? 'Administrador'
+                      : 'Usuario'
+                    : 'Sin rol'
+                }
+              />
+              <Separator />
+              <InfoRow label="Email de acceso" value={miembro.email ?? 'Sin email'} />
+              <Separator />
+              <InfoRow
+                label="Ultimo acceso"
+                value={
+                  miembro.ultimo_acceso
+                    ? new Date(miembro.ultimo_acceso).toLocaleDateString('es-CL', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Nunca'
+                }
+              />
+              <Separator />
+              <InfoRow
+                label="Cuenta creada"
+                value={
+                  miembro.fecha_creacion
+                    ? new Date(miembro.fecha_creacion).toLocaleDateString('es-CL')
+                    : 'Sin fecha'
+                }
+              />
+            </>
+          </CardContent>
+        </Card>
+      )}
+
+      <CuentaFormModal
+        open={cuentaModalOpen}
+        onOpenChange={(open) => {
+          setCuentaModalOpen(open);
+          if (!open) {
+            setCuentaError(null);
+          }
+        }}
+        miembro={miembro}
+        isPending={actualizarCuentaMutation.isPending}
+        onUpdateSubmit={handleActualizarCuenta}
+        serverError={cuentaError}
+      />
+
+      <ResetPasswordModal
+        open={resetModalOpen}
+        onOpenChange={(open) => {
+          setResetModalOpen(open);
+          if (!open) {
+            setResetError(null);
+          }
+        }}
+        miembro={miembro}
+        isPending={resetPasswordMutation.isPending}
+        onSubmit={handleResetPassword}
+        serverError={resetError}
+      />
 
       <AlertDialog
         open={!!comunionADesvincular}

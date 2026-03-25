@@ -50,6 +50,27 @@ export async function isDirectivaEnAlgunGrupo(miembroId: number): Promise<boolea
 }
 
 /**
+ * Verifica si un miembro tiene membresía activa en un grupo (cualquier rol).
+ *
+ * Retorna true si existe en integrante_grupo una fila con:
+ *   - miembro_id = miembroId
+ *   - grupo_id   = grupoId
+ *   - fecha_desvinculacion IS NULL  (membresía activa)
+ */
+export async function isMiembroActivoDeGrupo(miembroId: number, grupoId: number): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('integrante_grupo')
+    .select('id')
+    .eq('miembro_id', miembroId)
+    .eq('grupo_id', grupoId)
+    .is('fecha_desvinculacion', null)
+    .limit(1);
+
+  if (error) throw error;
+  return data !== null && data.length > 0;
+}
+
+/**
  * Retorna un ServiceResponse 403 si el miembro NO es encargado vigente del grupo.
  * Retorna null si está autorizado (la ejecución puede continuar).
  *
@@ -57,7 +78,7 @@ export async function isDirectivaEnAlgunGrupo(miembroId: number): Promise<boolea
  *
  * Uso típico en un service:
  *   if (usuario.rol !== 'administrador') {
- *     const forbidden = await requireEncargadoDeGrupo(usuario.miembro_id, grupoId);
+ *     const forbidden = await requireEncargadoDeGrupo(usuario.id, grupoId);
  *     if (forbidden) return forbidden;
  *   }
  */
@@ -75,4 +96,3 @@ export async function requireEncargadoDeGrupo(
   }
   return null;
 }
-

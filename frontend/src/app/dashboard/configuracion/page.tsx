@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { DefaultValues, FieldValues } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import { AccessDenied } from '@/components/access-denied';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +17,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { extractApiMessage } from '@/lib/api-error';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import {
@@ -48,6 +48,7 @@ import type {
   TipoActividad,
   TipoNecesidad,
 } from '@/features/catalogos/types';
+import { extractApiMessage } from '@/lib/api-error';
 
 // =============================================================================
 // Generic catalog tab logic
@@ -104,7 +105,10 @@ function useCatalogoTab<T, TForm extends FieldValues>(opts: UseCatalogoTabOption
           setModalOpen(false);
         },
         onError: (error: unknown) => {
-          const msg = extractApiMessage(error, `Error al actualizar ${opts.entityName.toLowerCase()}`);
+          const msg = extractApiMessage(
+            error,
+            `Error al actualizar ${opts.entityName.toLowerCase()}`,
+          );
           setServerError(msg);
         },
       });
@@ -470,6 +474,11 @@ function CatalogoTabContent<T, TForm extends FieldValues>({
 export default function ConfiguracionPage() {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
+
+  // usuario === null: aún hidratando o no autenticado (RouteGuard redirige)
+  if (usuario !== null && !isAdmin) {
+    return <AccessDenied message="Esta sección es exclusiva de administradores." />;
+  }
 
   return (
     <div className="space-y-6">

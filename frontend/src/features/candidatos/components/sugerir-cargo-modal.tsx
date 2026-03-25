@@ -1,6 +1,23 @@
 'use client';
 
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   BadgeCheck,
   ChevronDown,
   ChevronUp,
@@ -77,6 +94,35 @@ const CRITERIO_LABELS: Record<string, string> = {
 
 const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
 
+function SortableCriterioCargoItem({
+  id,
+  label,
+  description,
+}: {
+  id: string;
+  label: string;
+  description: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 dark:border-primary/20 cursor-grab active:cursor-grabbing select-none ${isDragging ? 'opacity-50 shadow-lg z-10 relative' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold leading-none">{label}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 interface SugerirCargoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -110,7 +156,13 @@ export function SugerirCargoModal({
   // Auto-selección si solo hay un grupo disponible (común para directiva)
   // Para admin, por defecto dejamos 'all' para búsqueda global
   useEffect(() => {
-    if (open && !isAdmin && gruposAMostrar && gruposAMostrar.length === 1 && (grupoId === 'all' || !grupoId)) {
+    if (
+      open &&
+      !isAdmin &&
+      gruposAMostrar &&
+      gruposAMostrar.length === 1 &&
+      (grupoId === 'all' || !grupoId)
+    ) {
       setGrupoId(String(gruposAMostrar[0].id_grupo));
     }
   }, [open, gruposAMostrar, grupoId, isAdmin]);
@@ -129,18 +181,20 @@ export function SugerirCargoModal({
   // El botón se habilita cuando hay cargo elegido (el grupo es opcional ahora)
   const puedeHaceQuery = Boolean(cargoId);
 
-  function moverArriba(index: number) {
-    if (index === 0) return;
-    const next = [...prioridad];
-    [next[index - 1], next[index]] = [next[index], next[index - 1]];
-    setPrioridad(next);
-  }
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
-  function moverAbajo(index: number) {
-    if (index === prioridad.length - 1) return;
-    const next = [...prioridad];
-    [next[index], next[index + 1]] = [next[index + 1], next[index]];
-    setPrioridad(next);
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setPrioridad((prev) => {
+        const oldIndex = prev.indexOf(active.id as string);
+        const newIndex = prev.indexOf(over.id as string);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
   }
 
   function handleBuscar() {
@@ -350,7 +404,9 @@ export function SugerirCargoModal({
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-primary dark:text-primary">Prioridades de búsqueda</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary dark:text-primary">
+                        Prioridades de búsqueda
+                      </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         Arrastra o usa las flechas para definir la importancia.
                       </p>
@@ -363,49 +419,29 @@ export function SugerirCargoModal({
                       Restablecer
                     </button>
                   </div>
-                  
-                  <div className="grid gap-1.5">
-                    {prioridad.map((key, index) => {
-                      const criterio = CRITERIOS_INFO.find((c) => c.key === key);
-                      if (!criterio) return null;
-                      return (
-                        <div
-                          key={key}
-                          className="flex items-center gap-2 rounded-md border border-primary/20 bg-background px-3 py-2 dark:border-primary/20"
-                        >
-                          <span className="text-[10px] font-bold text-primary w-4 shrink-0 text-center">
-                            {index + 1}
-                          </span>
-                          <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold leading-none">{criterio.label}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{criterio.description}</p>
-                          </div>
-                          
-                          <div className="flex items-center gap-1 shrink-0 ml-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 h-7 w-7 text-primary"
-                              onClick={() => moverArriba(index)}
-                              disabled={index === 0}
-                            >
-                              <ChevronUp className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 h-7 w-7 text-primary"
-                              onClick={() => moverAbajo(index)}
-                              disabled={index === prioridad.length - 1}
-                            >
-                              <ChevronDown className="size-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext items={prioridad} strategy={verticalListSortingStrategy}>
+                      <div className="grid gap-1.5">
+                        {prioridad.map((key) => {
+                          const criterio = CRITERIOS_INFO.find((c) => c.key === key);
+                          if (!criterio) return null;
+                          return (
+                            <SortableCriterioCargoItem
+                              key={key}
+                              id={key}
+                              label={criterio.label}
+                              description={criterio.description}
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               </div>
             )}

@@ -1,10 +1,10 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { type Router } from 'express';
 import { z } from 'zod';
+import { RolGrupoSchema } from '@/api/rolesGrupo/rolesGrupoModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { verificarRol, verificarToken } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
-import { RolGrupoSchema } from '@/api/rolesGrupo/rolesGrupoModel';
 import { grupoRolController } from './grupoRolController';
 import {
   DeshabilitarRolEnGrupoSchema,

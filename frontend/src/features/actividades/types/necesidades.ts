@@ -1,4 +1,4 @@
-export type EstadoNecesidad = 'abierta' | 'cubierta' | 'cerrada';
+export type EstadoNecesidad = 'abierta' | 'cubierta' | 'cerrada' | 'cancelada';
 
 export interface NecesidadLogistica {
   id: number;

@@ -3,6 +3,16 @@
 import { CalendarPlus, MoreHorizontal, Pencil, Plus, Power } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,11 +69,12 @@ function formatHora(hora: string) {
 }
 
 export default function PatronesPage() {
-  const { data: patrones, isLoading, isError } = usePatrones();
-  const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
-  const { data: grupos } = useGrupos();
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
+
+  const { data: patrones, isLoading, isError } = usePatrones(isAdmin);
+  const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
+  const { data: grupos } = useGrupos();
 
   const createMutation = useCreatePatron();
   const updateMutation = useUpdatePatron();
@@ -71,6 +82,7 @@ export default function PatronesPage() {
 
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [toggleConfirm, setToggleConfirm] = useState<PatronActividad | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -100,6 +112,11 @@ export default function PatronesPage() {
         (tiposMap.get(p.tipo_actividad_id)?.nombre ?? '').toLowerCase().includes(q),
     );
   }, [patrones, search, tiposMap]);
+
+  const patronesInactivos = useMemo(
+    () => patrones?.filter((p) => !p.activo) ?? [],
+    [patrones],
+  );
 
   function openCreate() {
     setEditing(null);
@@ -135,13 +152,23 @@ export default function PatronesPage() {
   }
 
   function handleToggleEstado(patron: PatronActividad) {
+    setToggleConfirm(patron);
+  }
+
+  function confirmToggleEstado() {
+    if (!toggleConfirm) return;
+    const patron = toggleConfirm;
     toggleMutation.mutate(
       { id: patron.id, activo: !patron.activo },
       {
         onSuccess: () => {
           toast.success(patron.activo ? 'Patrón desactivado' : 'Patrón activado');
+          setToggleConfirm(null);
         },
-        onError: () => toast.error('Error al cambiar estado'),
+        onError: () => {
+          toast.error('Error al cambiar estado');
+          setToggleConfirm(null);
+        },
       },
     );
   }
@@ -235,7 +262,7 @@ export default function PatronesPage() {
                   </TableRow>
                 ) : (
                   filtered.map((patron) => (
-                    <TableRow key={patron.id}>
+                    <TableRow key={patron.id} className={!patron.activo ? 'opacity-50' : undefined}>
                       <TableCell className="font-medium">{patron.nombre}</TableCell>
                       <TableCell>
                         {tiposMap.get(patron.tipo_actividad_id)?.nombre ?? patron.tipo_actividad_id}
@@ -302,9 +329,34 @@ export default function PatronesPage() {
         tiposActividad={tiposActividad}
         grupos={grupos}
         isEditing={!!editing}
+        patronesInactivos={patronesInactivos}
       />
 
       <GenerarInstanciasModal open={generarOpen} onOpenChange={setGenerarOpen} />
+
+      <AlertDialog open={!!toggleConfirm} onOpenChange={(open) => !open && setToggleConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {toggleConfirm?.activo ? 'Desactivar patrón' : 'Activar patrón'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleConfirm?.activo
+                ? `¿Desactivar "${toggleConfirm?.nombre}"? No se generarán nuevas instancias a partir de este patrón.`
+                : `¿Activar "${toggleConfirm?.nombre}"? Se podrán volver a generar instancias desde este patrón.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmToggleEstado}
+              disabled={toggleMutation.isPending}
+            >
+              {toggleConfirm?.activo ? 'Desactivar' : 'Activar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -34,6 +34,8 @@ export const ActividadSchema = z.object({
   es_publica: z.boolean().openapi({ example: false }),
   estado: z.enum(ESTADOS_ACTIVIDAD).openapi({ example: 'programada' }),
   motivo_cancelacion: z.string().nullable().openapi({ example: null }),
+  reprogramada_en_id: z.number().nullable().optional().openapi({ example: null }),
+  reprogramacion_de_id: z.number().nullable().optional().openapi({ example: null }),
   creador_id: z.number().openapi({ example: 1 }),
   fecha_creacion: z.string().openapi({ example: '2024-01-10T10:00:00Z' }),
 });
@@ -190,6 +192,27 @@ export const PatchEstadoActividadSchema = z.object({
 });
 
 /**
+ * Schema para duplicar (reprogramar) una actividad cancelada
+ */
+export const DuplicarActividadSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    fecha: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)')
+      .openapi({ example: '2026-04-20' }),
+    hora_inicio: z
+      .string()
+      .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato de hora inválido (HH:MM o HH:MM:SS)')
+      .openapi({ example: '10:00' }),
+    hora_fin: z
+      .string()
+      .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato de hora inválido (HH:MM o HH:MM:SS)')
+      .openapi({ example: '11:30' }),
+  }),
+});
+
+/**
  * Schema para query params de listado de actividades (query params)
  */
 export const ListActividadesQuerySchema = z.object({
@@ -228,4 +251,3 @@ export interface PaginatedActividadesResponse {
     totalPages: number;
   };
 }
-

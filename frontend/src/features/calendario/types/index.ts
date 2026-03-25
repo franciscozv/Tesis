@@ -9,6 +9,7 @@ export interface CalendarioEvento {
   hora_inicio: string;
   hora_fin: string;
   lugar: string | null;
+  estado: 'programada' | 'cancelada';
   grupo_organizador: {
     id: number;
     nombre: string;

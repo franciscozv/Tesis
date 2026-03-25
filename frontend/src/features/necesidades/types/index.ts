@@ -1,6 +1,6 @@
-export type EstadoNecesidad = 'abierta' | 'cubierta' | 'cerrada';
+export type EstadoNecesidad = 'abierta' | 'cubierta' | 'cerrada' | 'cancelada';
 
-export interface NecesidadLogistica {
+export interface NecesidadMaterial {
   id: number;
   actividad_id: number;
   tipo_necesidad_id: number;
@@ -24,6 +24,9 @@ export interface NecesidadLogistica {
     nombre: string;
   };
 }
+
+// Alias para compatibilidad con código existente
+export type NecesidadLogistica = NecesidadMaterial;
 
 export interface NecesidadFilters {
   actividad_id?: number;

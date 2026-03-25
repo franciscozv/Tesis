@@ -10,7 +10,7 @@ import {
   CreateColaboradorSchema,
   GetColaboradorSchema,
   ListColaboradoresQuerySchema,
-  PatchDecisionColaboradorSchema,
+  PatchCumplioColaboradorSchema,
 } from './colaboradoresModel';
 
 export const colaboradoresRegistry = new OpenAPIRegistry();
@@ -27,7 +27,7 @@ colaboradoresRegistry.registerPath({
   method: 'get',
   path: '/api/colaboradores',
   tags: ['Colaboradores'],
-  summary: 'Obtener colaboradores con filtros opcionales (necesidad_id, miembro_id, estado)',
+  summary: 'Obtener compromisos de colaboración con filtros opcionales (necesidad_id, miembro_id)',
   request: {
     query: ListColaboradoresQuerySchema.shape.query,
   },
@@ -44,7 +44,7 @@ colaboradoresRegistry.registerPath({
   method: 'get',
   path: '/api/colaboradores/{id}',
   tags: ['Colaboradores'],
-  summary: 'Obtener un colaborador por ID',
+  summary: 'Obtener un compromiso de colaboración por ID',
   request: { params: GetColaboradorSchema.shape.params },
   responses: createApiResponse(ColaboradorSchema, 'Success'),
 });
@@ -54,12 +54,12 @@ colaboradoresRouter.get(
   colaboradoresController.getById,
 );
 
-// POST /api/colaboradores - Crear oferta voluntaria
+// POST /api/colaboradores - Registrar compromiso
 colaboradoresRegistry.registerPath({
   method: 'post',
   path: '/api/colaboradores',
   tags: ['Colaboradores'],
-  summary: 'Registrar una oferta voluntaria de colaboración',
+  summary: 'Registrar un compromiso de colaboración (confirmado automáticamente)',
   request: {
     body: {
       content: {
@@ -77,18 +77,18 @@ colaboradoresRouter.post(
   colaboradoresController.create,
 );
 
-// PATCH /api/colaboradores/:id/decision - Aceptar o rechazar oferta
+// PATCH /api/colaboradores/:id/cumplio - Marcar si cumplió
 colaboradoresRegistry.registerPath({
   method: 'patch',
-  path: '/api/colaboradores/{id}/decision',
+  path: '/api/colaboradores/{id}/cumplio',
   tags: ['Colaboradores'],
-  summary: 'Aceptar o rechazar una oferta de colaboración',
+  summary: 'Marcar si un colaborador cumplió su compromiso (verificación post-actividad)',
   request: {
-    params: PatchDecisionColaboradorSchema.shape.params,
+    params: PatchCumplioColaboradorSchema.shape.params,
     body: {
       content: {
         'application/json': {
-          schema: PatchDecisionColaboradorSchema.shape.body,
+          schema: PatchCumplioColaboradorSchema.shape.body,
         },
       },
     },
@@ -96,18 +96,18 @@ colaboradoresRegistry.registerPath({
   responses: createApiResponse(ColaboradorSchema, 'Success'),
 });
 colaboradoresRouter.patch(
-  '/:id/decision',
+  '/:id/cumplio',
   verificarRol('administrador', 'usuario'),
-  validateRequest(PatchDecisionColaboradorSchema),
-  colaboradoresController.updateDecision,
+  validateRequest(PatchCumplioColaboradorSchema),
+  colaboradoresController.marcarCumplio,
 );
 
-// DELETE /api/colaboradores/:id - Eliminar (solo si pendiente)
+// DELETE /api/colaboradores/:id - Eliminar compromiso
 colaboradoresRegistry.registerPath({
   method: 'delete',
   path: '/api/colaboradores/{id}',
   tags: ['Colaboradores'],
-  summary: 'Eliminar una oferta de colaboración (solo si está pendiente)',
+  summary: 'Eliminar un compromiso de colaboración',
   request: { params: GetColaboradorSchema.shape.params },
   responses: createApiResponse(z.null(), 'Success'),
 });

@@ -1,14 +1,11 @@
-export type EstadoColaborador = 'pendiente' | 'aceptada' | 'rechazada';
-
-export interface Colaborador {
+﻿export interface Colaborador {
   id: number;
   necesidad_id: number;
   miembro_id: number;
-  cantidad_ofrecida: number;
+  cantidad_comprometida: number;
   observaciones: string | null;
-  estado: EstadoColaborador;
-  fecha_oferta: string;
-  fecha_decision: string | null;
+  cumplio: boolean;
+  fecha_compromiso: string;
   miembro?: {
     id: number;
     nombre: string;
@@ -31,16 +28,16 @@ export interface Colaborador {
 export interface ColaboradorFilters {
   necesidad_id?: number;
   miembro_id?: number;
-  estado?: EstadoColaborador;
+  estado?: string;
 }
 
 export interface CreateColaboradorInput {
   necesidad_id: number;
   miembro_id: number;
-  cantidad_ofrecida: number;
+  cantidad_comprometida: number;
   observaciones?: string;
 }
 
-export interface DecidirOfertaInput {
-  estado: 'aceptada' | 'rechazada';
+export interface MarcarCumplioInput {
+  cumplio: boolean;
 }

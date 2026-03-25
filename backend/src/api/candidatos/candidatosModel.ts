@@ -12,7 +12,7 @@ export const ConflictoDetalleSchema = z.object({
 });
 
 /**
- * Schema de detalle de un servicio confirmado esta semana
+ * Schema de detalle de un servicio confirmado este mes
  */
 export const ServicioSemanaDetalleSchema = z.object({
   actividad: z.string().openapi({ example: 'Culto Dominical' }),
@@ -38,29 +38,25 @@ export const IndicadoresResponsabilidadSchema = z.object({
   }),
   ultimo_uso_nombre: z.string().nullable().optional().openapi({
     example: 'Culto Dominical',
-    description: 'Nombre de la actividad en la que realizó el rol por última vez. Null si nunca lo ha realizado.',
+    description:
+      'Nombre de la actividad en la que realizó el rol por última vez. Null si nunca lo ha realizado.',
   }),
   ultimo_uso_tipo_actividad: z.string().nullable().optional().openapi({
     example: 'Culto',
-    description: 'Tipo de la actividad en la que realizó el rol por última vez. Null si nunca lo ha realizado o si no tiene tipo.',
+    description:
+      'Tipo de la actividad en la que realizó el rol por última vez. Null si nunca lo ha realizado o si no tiene tipo.',
   }),
-  servicios_esta_semana: z.number().int().openapi({
+  servicios_este_mes: z.number().int().openapi({
     example: 2,
     description: 'Servicios confirmados en la semana de la fecha objetivo.',
   }),
-  asistencias_count: z.number().int().openapi({
-    example: 47,
-    description: 'Total de asistencias realizadas en el período de análisis.',
-  }),
-  servicios_esta_semana_detalle: z
+  servicios_este_mes_detalle: z
     .array(ServicioSemanaDetalleSchema)
     .optional()
     .openapi({
-      description: 'Detalle de los servicios confirmados esta semana (actividad, rol y fecha).',
+      description: 'Detalle de los servicios confirmados este mes (actividad, rol y fecha).',
       example: [{ actividad: 'Culto Dominical', rol: 'Músico', fecha: '2025-03-16' }],
     }),
-  asistencia_ratio_periodo: z.number().openapi({ example: 0.95 }),
-  confirmadas_count: z.number().openapi({ example: 22 }),
   antiguedad_anios: z.number().openapi({ example: 5 }),
   resumen_servicios: z
     .array(
@@ -118,7 +114,12 @@ export const IndicadoresCargoSchema = z.object({
   }),
   historial_otros_cargos: z.array(ExperienciaCargoHistorialSchema).openapi({
     example: [
-      { cargo_nombre: 'Secretario', grupo_nombre: 'Damas', fecha_inicio: '2021-01-01', fecha_fin: '2021-12-31' },
+      {
+        cargo_nombre: 'Secretario',
+        grupo_nombre: 'Damas',
+        fecha_inicio: '2021-01-01',
+        fecha_fin: '2021-12-31',
+      },
     ],
   }),
   grupos_activos_count: z.number().int().openapi({ example: 2 }),
@@ -152,7 +153,6 @@ export const IndicadoresCargoSchema = z.object({
   fecha_vinculacion_grupo: z.string().optional().nullable().openapi({ example: '2021-01-01' }),
   plena_comunion: z.boolean().openapi({ example: true }),
 });
-
 
 /**
  * Schema de candidato para cargo en grupo (indicadores crudos, sin puntuación)
@@ -231,34 +231,15 @@ export const SugerirResponsabilidadSchema = z.object({
         description: 'Solo para ADMIN: filtra candidatos de un grupo específico',
         example: 2,
       }),
-    periodo_meses: z
-      .number()
-      .int('Debe ser un número entero')
-      .min(1, 'Mínimo 1 mes')
-      .max(60, 'Máximo 60 meses')
-      .default(12)
-      .openapi({ example: 12 }),
     filtro_plena_comunion: z.boolean().optional().openapi({ example: false }),
-    solo_con_experiencia: z.boolean().optional().default(false).openapi({
-      description: 'Si es true, excluye candidatos sin experiencia previa en el rol',
-      example: false,
-    }),
-    solo_sin_experiencia: z.boolean().optional().default(false).openapi({
-      description:
-        'Si es true, excluye candidatos con experiencia previa (rotación/nuevos talentos)',
-      example: false,
-    }),
-    prioridad: z
-      .array(z.enum(['disponibilidad', 'experiencia_tipo', 'rotacion', 'carga', 'fidelidad']))
-      .optional()
-      .openapi({
-        description:
-          'Criterios de ordenamiento. Solo los criterios presentes en este array se evalúan. Si se omite, se aplica el orden completo por defecto.',
-        example: ['disponibilidad', 'rotacion'],
-      }),
     incluir_con_conflictos: z.boolean().optional().default(false).openapi({
       description:
         'Si es true, incluye candidatos con conflicto de horario en los resultados (aparecen resaltados). Si es false (default), se excluyen del listado.',
+      example: false,
+    }),
+    priorizar_experiencia_tipo: z.boolean().optional().default(false).openapi({
+      description:
+        'Si es true, entre candidatos con igual rotación y carga, se priorizan quienes tienen experiencia en este tipo de actividad.',
       example: false,
     }),
   }),
@@ -299,7 +280,7 @@ export const SugerirCargoSchema = z.object({
       example: false,
     }),
     criterios_prioridad: z
-      .array(z.enum(['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad']))
+      .array(z.enum(['experiencia', 'carga_trabajo', 'fidelidad', 'colaboracion', 'antiguedad']))
       .optional()
       .openapi({
         description:
@@ -308,4 +289,3 @@ export const SugerirCargoSchema = z.object({
       }),
   }),
 });
-

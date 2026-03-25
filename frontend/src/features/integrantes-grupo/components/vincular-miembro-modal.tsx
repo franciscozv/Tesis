@@ -45,11 +45,11 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { ApiResponse } from '@/features/auth/types';
+import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 import { cn } from '@/lib/utils';
 import { useAsignacionesMiembro } from '../hooks/use-integraciones-miembro';
 import { useIntegrantesGrupo } from '../hooks/use-integrantes-grupo';
-import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import { useVincularMiembro } from '../hooks/use-vincular-miembro';
 import { type VincularMiembroFormData, vincularMiembroSchema } from '../schemas';
 
@@ -187,10 +187,11 @@ export function VincularMiembroModal({
                 <AlertTitle className="text-sm font-semibold">Vinculación Activa</AlertTitle>
                 <AlertDescription className="text-xs">
                   Este miembro ya está activo en{' '}
-                  {membresiasActivas.length === 1 ? 'un grupo' : `${membresiasActivas.length} grupos`}
-                  :{' '}
-                  <strong>{membresiasActivas.map((mg) => mg.grupo.nombre).join(', ')}</strong>.
-                  La vinculación múltiple está permitida.
+                  {membresiasActivas.length === 1
+                    ? 'un grupo'
+                    : `${membresiasActivas.length} grupos`}
+                  : <strong>{membresiasActivas.map((mg) => mg.grupo.nombre).join(', ')}</strong>. La
+                  vinculación múltiple está permitida.
                 </AlertDescription>
               </Alert>
             )}

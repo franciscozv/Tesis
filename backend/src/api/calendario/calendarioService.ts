@@ -3,6 +3,8 @@ import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
 import type { CalendarioEvento, Responsabilidad } from './calendarioModel';
 import { CalendarioRepository } from './calendarioRepository';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
+import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
 
 /**
  * Servicio para lógica de negocio del Calendario
@@ -60,10 +62,21 @@ export class CalendarioService {
   async getCalendarioConsolidado(
     mes: number,
     anio: number,
+    usuario: JwtPayload,
     grupoId?: number,
   ): Promise<ServiceResponse<CalendarioEvento[] | null>> {
     try {
-      const eventos = await this.calendarioRepository.findConsolidadoAsync(mes, anio, grupoId);
+      // Determinar si el usuario tiene permisos para ver el pasado (Admin o Directiva)
+      const esAdmin = usuario.rol === 'administrador';
+      const esDirectiva = await isDirectivaEnAlgunGrupo(usuario.id);
+      const includePast = esAdmin || esDirectiva;
+
+      const eventos = await this.calendarioRepository.findConsolidadoAsync(
+        mes,
+        anio,
+        grupoId,
+        includePast,
+      );
 
       if (!eventos) {
         return ServiceResponse.failure(

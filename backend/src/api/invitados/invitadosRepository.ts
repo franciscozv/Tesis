@@ -21,7 +21,9 @@ export class InvitadosRepository {
   async findAllAsync(filters: InvitadoFilters = {}): Promise<Invitado[]> {
     let query = supabase
       .from('invitado')
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
+      .select(
+        '*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)',
+      )
       .order('fecha_invitacion', { ascending: false });
 
     if (filters.actividad_id) {
@@ -48,7 +50,9 @@ export class InvitadosRepository {
   async findByIdAsync(id: number): Promise<Invitado | null> {
     const { data, error } = await supabase
       .from('invitado')
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
+      .select(
+        '*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)',
+      )
       .eq('id', id)
       .single();
 
@@ -81,10 +85,10 @@ export class InvitadosRepository {
    */
   async findActividadDatosAsync(
     actividadId: number,
-  ): Promise<{ estado: string; fecha: string; hora_fin: string } | null> {
+  ): Promise<{ estado: string; fecha: string; hora_fin: string; nombre: string } | null> {
     const { data, error } = await supabase
       .from('actividad')
-      .select('estado, fecha, hora_fin')
+      .select('estado, fecha, hora_fin, nombre')
       .eq('id', actividadId)
       .single();
 
@@ -92,7 +96,7 @@ export class InvitadosRepository {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as { estado: string; fecha: string; hora_fin: string };
+    return data as { estado: string; fecha: string; hora_fin: string; nombre: string };
   }
 
   /**
@@ -194,7 +198,9 @@ export class InvitadosRepository {
     const { data, error } = await supabase
       .from('invitado')
       .insert(insertData)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
+      .select(
+        '*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)',
+      )
       .single();
 
     if (error) throw error;
@@ -226,7 +232,9 @@ export class InvitadosRepository {
       .from('invitado')
       .update(updateData)
       .eq('id', id)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
+      .select(
+        '*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)',
+      )
       .single();
 
     if (error) {
@@ -237,14 +245,26 @@ export class InvitadosRepository {
   }
 
   /**
-   * Actualiza el campo asistio de un invitado
+   * Actualiza el campo asistio de un invitado (y opcionalmente su estado)
    */
-  async updateAsistenciaAsync(id: number, asistio: boolean): Promise<Invitado | null> {
+  async updateAsistenciaAsync(
+    id: number,
+    asistio: boolean,
+    extra?: { estado?: string; fecha_respuesta?: string; motivo_rechazo?: string | null },
+  ): Promise<Invitado | null> {
+    const updateData: Record<string, unknown> = { asistio };
+
+    if (extra?.estado) updateData.estado = extra.estado;
+    if (extra?.fecha_respuesta) updateData.fecha_respuesta = extra.fecha_respuesta;
+    if (extra?.motivo_rechazo !== undefined) updateData.motivo_rechazo = extra.motivo_rechazo;
+
     const { data, error } = await supabase
       .from('invitado')
-      .update({ asistio })
+      .update(updateData)
       .eq('id', id)
-      .select('*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)')
+      .select(
+        '*, miembro:miembro_id(id, nombre, apellido), rol:responsabilidad_id(id_responsabilidad, nombre)',
+      )
       .single();
 
     if (error) {
@@ -252,6 +272,45 @@ export class InvitadosRepository {
       throw error;
     }
     return data as Invitado;
+  }
+
+  /**
+   * Cancela masivamente todas las invitaciones pendientes/confirmadas de una actividad.
+   * Se usa en la cascada de cancelación de actividad.
+   * Retorna la cantidad de filas afectadas y los miembro_ids notificables.
+   */
+  async cancelAllByActividadAsync(
+    actividadId: number,
+  ): Promise<{ count: number; miembroIds: number[] }> {
+    const { data, error } = await supabase
+      .from('invitado')
+      .update({ estado: 'cancelado', fecha_respuesta: new Date().toISOString() })
+      .eq('actividad_id', actividadId)
+      .in('estado', ['pendiente', 'confirmado'])
+      .select('id, miembro_id');
+
+    if (error) throw error;
+    const rows = data ?? [];
+    return {
+      count: rows.length,
+      miembroIds: rows.map((r: { miembro_id: number }) => r.miembro_id),
+    };
+  }
+
+  /**
+   * Retorna los miembro_ids únicos de invitados cancelados de una actividad.
+   * Se usa para notificarles cuando la actividad es reprogramada.
+   */
+  async findMiembroIdsCanceladosByActividadAsync(actividadId: number): Promise<number[]> {
+    const { data, error } = await supabase
+      .from('invitado')
+      .select('miembro_id')
+      .eq('actividad_id', actividadId)
+      .eq('estado', 'cancelado');
+
+    if (error) throw error;
+    // Deduplicar por si un miembro tenía más de un rol en la actividad
+    return [...new Set((data ?? []).map((r: { miembro_id: number }) => r.miembro_id))];
   }
 
   /**
@@ -264,4 +323,3 @@ export class InvitadosRepository {
     return true;
   }
 }
-

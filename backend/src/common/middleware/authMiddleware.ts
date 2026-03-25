@@ -3,15 +3,15 @@ import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { env } from '@/common/utils/envConfig';
+import { supabase } from '@/common/utils/supabaseClient';
 
 /**
- * Payload del JWT (roles globales permitidos: 'administrador' | 'usuario')
+ * Payload del JWT — id corresponde al miembro.id (tabla unificada)
  */
 export interface JwtPayload {
   id: number;
   email: string;
   rol: 'administrador' | 'usuario';
-  miembro_id: number | null;
 }
 
 /**
@@ -26,9 +26,13 @@ declare global {
 }
 
 /**
- * Middleware que valida el JWT en el header Authorization Bearer.
+ * Middleware que valida el JWT y verifica que el miembro siga activo en BD.
  */
-export const verificarToken = (req: Request, res: Response, next: NextFunction): void => {
+export const verificarToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -43,30 +47,41 @@ export const verificarToken = (req: Request, res: Response, next: NextFunction):
 
   const token = authHeader.split(' ')[1];
 
+  let payload: JwtPayload;
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-
-    if (payload.rol !== 'administrador' && payload.rol !== 'usuario') {
-      const response = ServiceResponse.failure(
-        'Token inválido: rol no permitido',
-        null,
-        StatusCodes.UNAUTHORIZED,
-      );
-      res.status(response.statusCode).send(response);
-      return;
-    }
-
-    req.usuario = payload;
-    next();
+    payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
   } catch (error) {
     const message =
       (error as Error).name === 'TokenExpiredError'
         ? 'Token expirado, inicie sesión nuevamente'
         : 'Token inválido';
-
-    const response = ServiceResponse.failure(message, null, StatusCodes.UNAUTHORIZED);
-    res.status(response.statusCode).send(response);
+    res
+      .status(StatusCodes.UNAUTHORIZED)
+      .send(ServiceResponse.failure(message, null, StatusCodes.UNAUTHORIZED));
+    return;
   }
+
+  if (payload.rol !== 'administrador' && payload.rol !== 'usuario') {
+    res
+      .status(StatusCodes.UNAUTHORIZED)
+      .send(
+        ServiceResponse.failure('Token inválido: rol no permitido', null, StatusCodes.UNAUTHORIZED),
+      );
+    return;
+  }
+
+  // Verificar que el miembro siga activo en BD (cubre inactivación con token vigente)
+  const { data } = await supabase.from('miembro').select('activo').eq('id', payload.id).single();
+
+  if (!data?.activo) {
+    res
+      .status(StatusCodes.UNAUTHORIZED)
+      .send(ServiceResponse.failure('Cuenta inactiva o eliminada', null, StatusCodes.UNAUTHORIZED));
+    return;
+  }
+
+  req.usuario = payload;
+  next();
 };
 
 /**

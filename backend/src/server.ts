@@ -16,12 +16,12 @@ import { invitadosRouter } from '@/api/invitados/invitadosRouter';
 import { miembrosRouter } from '@/api/miembros/miembrosRouter';
 import { misResponsabilidadesRouter } from '@/api/misResponsabilidades/misResponsabilidadesRouter';
 import { necesidadesLogisticasRouter } from '@/api/necesidadesLogisticas/necesidadesLogisticasRouter';
+import { notificacionesRouter } from '@/api/notificaciones/notificacionesRouter';
 import { patronesActividadRouter } from '@/api/patronesActividad/patronesActividadRouter';
 import { responsabilidadesActividadRouter } from '@/api/rolesActividad/rolesActividadRouter';
 import { rolesGrupoRouter } from '@/api/rolesGrupo/rolesGrupoRouter';
 import { tiposActividadRouter } from '@/api/tiposActividad/tiposActividadRouter';
 import { tiposNecesidadRouter } from '@/api/tiposNecesidad/tiposNecesidadRouter';
-import { usuariosRouter } from '@/api/usuarios/usuariosRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
 import errorHandler from '@/common/middleware/errorHandler';
 // import rateLimiter from "@/common/middleware/rateLimiter";
@@ -77,7 +77,7 @@ app.use('/api/responsabilidades-actividad', responsabilidadesActividadRouter);
 app.use('/api/roles-grupo', rolesGrupoRouter);
 app.use('/api/tipos-actividad', tiposActividadRouter);
 app.use('/api/tipos-necesidad', tiposNecesidadRouter);
-app.use('/api/usuarios', usuariosRouter);
+app.use('/api/notificaciones', notificacionesRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
@@ -86,5 +86,3 @@ app.use(openAPIRouter);
 app.use(errorHandler());
 
 export { app, logger };
-
-

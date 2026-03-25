@@ -1,5 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
+import { emitAndPersist } from '@/api/notificaciones/notificacionesService';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { nowEnZona } from '@/common/utils/dateTime';
+import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type {
   IntegranteGrupo,
@@ -33,9 +37,21 @@ export class IntegranteGrupoService {
     grupoId: number,
     rolId: number,
     fechaVinculacion?: string,
-    rolUsuario?: string,
+    usuario?: JwtPayload,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
+      // Validar permisos generales de gestión en el grupo
+      if (usuario?.rol === 'usuario') {
+        const esEncargado = await isEncargadoDeGrupo(usuario.id, grupoId);
+        if (!esEncargado) {
+          return ServiceResponse.failure(
+            'No tienes permiso para gestionar integrantes en este grupo',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
       // 1. Verificar que miembro exista y está activo
       const miembroStatus = await this.integranteGrupoRepository.verificarMiembroActivo(miembroId);
 
@@ -95,7 +111,7 @@ export class IntegranteGrupoService {
       }
 
       // 4b. Solo administradores pueden asignar cargos de directiva
-      if (rolStatus.es_directiva && rolUsuario !== 'administrador') {
+      if (rolStatus.es_directiva && usuario?.rol !== 'administrador') {
         return ServiceResponse.failure(
           'Solo un administrador puede asignar cargos de directiva',
           null,
@@ -164,6 +180,15 @@ export class IntegranteGrupoService {
         fechaVinculacion,
       );
 
+      // 8. Notificar al usuario (opcionalmente no esperar a que termine para no bloquear respuesta)
+      emitAndPersist(miembroId, {
+        tipo: 'grupo_vinculacion',
+        mensaje: `Has sido vinculado al grupo ${grupoStatus.nombre}`,
+        detalle: `Tu rol asignado es: ${rolStatus.nombre}`,
+        href: `/dashboard/grupos/${grupoId}?from=mis-grupos`,
+        timestamp: Date.now(),
+      }).catch((err) => logger.warn({ err }, 'Error al notificar vinculación'));
+
       return ServiceResponse.success<IntegranteGrupo>(
         'Miembro vinculado exitosamente al grupo ministerial',
         integrante,
@@ -190,7 +215,7 @@ export class IntegranteGrupoService {
   async desvincularMiembro(
     id: number,
     fechaDesvinculacion?: string,
-    rolUsuario?: string,
+    usuario?: JwtPayload,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
       // 1. Verificar que la integración exista
@@ -198,6 +223,18 @@ export class IntegranteGrupoService {
 
       if (!integranteExistente) {
         return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
+      }
+
+      // Validar permisos generales de gestión en el grupo
+      if (usuario?.rol === 'usuario') {
+        const esEncargado = await isEncargadoDeGrupo(usuario.id, integranteExistente.grupo_id);
+        if (!esEncargado) {
+          return ServiceResponse.failure(
+            'No tienes permiso para gestionar integrantes en este grupo',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       // 3. Verificar que fecha_desvinculacion sea NULL (integración activa)
@@ -213,7 +250,7 @@ export class IntegranteGrupoService {
       const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(
         integranteExistente.rol_grupo_id,
       );
-      if (rolStatus.es_directiva && rolUsuario !== 'administrador') {
+      if (rolStatus.es_directiva && usuario?.rol !== 'administrador') {
         return ServiceResponse.failure(
           'No tiene permisos para desvincular a un miembro de la directiva',
           null,
@@ -234,6 +271,18 @@ export class IntegranteGrupoService {
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
+
+      // 5. Notificar al usuario
+      const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(
+        integranteExistente.grupo_id,
+      );
+      emitAndPersist(integranteExistente.miembro_id, {
+        tipo: 'grupo_desvinculacion',
+        mensaje: `Has sido desvinculado del grupo ${grupoStatus.nombre || ''}`,
+        detalle: `Anteriormente tenías el rol: ${rolStatus.nombre}`,
+        href: '/dashboard/mis-grupos',
+        timestamp: Date.now(),
+      }).catch((err) => logger.warn({ err }, 'Error al notificar desvinculación'));
 
       return ServiceResponse.success<IntegranteGrupo>(
         'Miembro desvinculado exitosamente del grupo ministerial',
@@ -256,7 +305,7 @@ export class IntegranteGrupoService {
   async cambiarRol(
     id: number,
     rolGrupoId: number,
-    rolUsuario?: string,
+    usuario?: JwtPayload,
   ): Promise<ServiceResponse<IntegranteGrupo | null>> {
     try {
       // 1. Verificar que la integración exista
@@ -264,6 +313,18 @@ export class IntegranteGrupoService {
 
       if (!integranteExistente) {
         return ServiceResponse.failure('La integración no existe', null, StatusCodes.NOT_FOUND);
+      }
+
+      // Validar permisos generales de gestión en el grupo
+      if (usuario?.rol === 'usuario') {
+        const esEncargado = await isEncargadoDeGrupo(usuario.id, integranteExistente.grupo_id);
+        if (!esEncargado) {
+          return ServiceResponse.failure(
+            'No tienes permiso para gestionar integrantes en este grupo',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       // 2. Verificar que está activa
@@ -279,7 +340,7 @@ export class IntegranteGrupoService {
       const rolActualStatus = await this.integranteGrupoRepository.verificarRolActivo(
         integranteExistente.rol_grupo_id,
       );
-      if (rolActualStatus.es_directiva && rolUsuario !== 'administrador') {
+      if (rolActualStatus.es_directiva && usuario?.rol !== 'administrador') {
         return ServiceResponse.failure(
           'No tiene permisos para cambiar el cargo de un miembro de la directiva',
           null,
@@ -312,11 +373,10 @@ export class IntegranteGrupoService {
       }
 
       // Verificar que el nuevo rol está habilitado para este grupo
-      const rolHabilitadoNuevo =
-        await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(
-          integranteExistente.grupo_id,
-          rolGrupoId,
-        );
+      const rolHabilitadoNuevo = await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(
+        integranteExistente.grupo_id,
+        rolGrupoId,
+      );
       if (!rolHabilitadoNuevo) {
         return ServiceResponse.failure(
           'Este rol no está configurado para este grupo. Un administrador debe habilitarlo primero.',
@@ -326,7 +386,7 @@ export class IntegranteGrupoService {
       }
 
       // Solo administradores pueden asignar cargos de directiva
-      if (rolStatus.es_directiva && rolUsuario !== 'administrador') {
+      if (rolStatus.es_directiva && usuario?.rol !== 'administrador') {
         return ServiceResponse.failure(
           'Solo un administrador puede asignar cargos de directiva',
           null,
@@ -377,6 +437,18 @@ export class IntegranteGrupoService {
         integranteExistente.grupo_id,
         rolGrupoId,
       );
+
+      // 6. Notificar al usuario
+      const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(
+        integranteExistente.grupo_id,
+      );
+      emitAndPersist(integranteExistente.miembro_id, {
+        tipo: 'grupo_rol_cambio',
+        mensaje: `Tu rol ha cambiado en el grupo ${grupoStatus.nombre || ''}`,
+        detalle: `Nuevo rol: ${rolStatus.nombre}`,
+        href: `/dashboard/grupos/${integranteExistente.grupo_id}?from=mis-grupos`,
+        timestamp: Date.now(),
+      }).catch((err) => logger.warn({ err }, 'Error al notificar cambio de rol'));
 
       return ServiceResponse.success<IntegranteGrupo>('Rol cambiado exitosamente', integrante);
     } catch (error) {
@@ -441,7 +513,7 @@ export class IntegranteGrupoService {
   }
 
   /**
-   * Renovación masiva de directiva de un grupo (solo administradores)
+   * Renovación masiva de directiva de un grupo
    *
    * Para cada par (cargo_id, nuevo_miembro_id):
    *  1. Valida cargo y miembro (sin escritura)
@@ -453,15 +525,18 @@ export class IntegranteGrupoService {
     grupoId: number,
     renovaciones: RenovarDirectivaItem[],
     fecha?: string,
-    rolUsuario?: string,
+    usuario?: JwtPayload,
   ): Promise<ServiceResponse<IntegranteGrupo[] | null>> {
     try {
-      if (rolUsuario !== 'administrador') {
-        return ServiceResponse.failure(
-          'Solo un administrador puede ejecutar una renovación de directiva',
-          null,
-          StatusCodes.FORBIDDEN,
-        );
+      if (usuario?.rol === 'usuario') {
+        const esEncargado = await isEncargadoDeGrupo(usuario.id, grupoId);
+        if (!esEncargado) {
+          return ServiceResponse.failure(
+            'No tienes permiso para renovar la directiva de este grupo',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       const grupoStatus = await this.integranteGrupoRepository.verificarGrupoActivo(grupoId);
@@ -493,6 +568,7 @@ export class IntegranteGrupoService {
       }
 
       // Validación previa completa (sin escritura)
+      const rolesInfo = new Map<number, string>();
       for (const { cargo_id, nuevo_miembro_id } of renovaciones) {
         const rolStatus = await this.integranteGrupoRepository.verificarRolActivo(cargo_id);
         if (!rolStatus.existe) {
@@ -502,6 +578,8 @@ export class IntegranteGrupoService {
             StatusCodes.NOT_FOUND,
           );
         }
+        rolesInfo.set(cargo_id, rolStatus.nombre || '');
+
         if (!rolStatus.activo) {
           return ServiceResponse.failure(
             `El cargo con ID ${cargo_id} no está activo`,
@@ -518,8 +596,10 @@ export class IntegranteGrupoService {
         }
 
         // Verificar que el cargo directivo está habilitado para este grupo
-        const cargoHabilitado =
-          await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(grupoId, cargo_id);
+        const cargoHabilitado = await this.integranteGrupoRepository.verificarRolHabilitadoEnGrupo(
+          grupoId,
+          cargo_id,
+        );
         if (!cargoHabilitado) {
           return ServiceResponse.failure(
             `El cargo con ID ${cargo_id} no está configurado para este grupo`,
@@ -552,12 +632,25 @@ export class IntegranteGrupoService {
           );
         }
       }
-      const fechaRenovacion = fecha || new Date().toISOString();
+      const fechaRenovacion = fecha || nowEnZona().toISOString();
       await this.integranteGrupoRepository.renovarDirectivaMasivaAsync(
         grupoId,
         renovaciones,
         fechaRenovacion,
       );
+
+      // 4. Notificar a cada miembro (sin bloquear la respuesta)
+      for (const { cargo_id, nuevo_miembro_id } of renovaciones) {
+        emitAndPersist(nuevo_miembro_id, {
+          tipo: 'grupo_directiva_renovacion',
+          mensaje: `Has sido asignado a la directiva del grupo ${grupoStatus.nombre}`,
+          detalle: `Cargo: ${rolesInfo.get(cargo_id)}`,
+          href: `/dashboard/grupos/${grupoId}?from=mis-grupos`,
+          timestamp: Date.now(),
+        }).catch((err) =>
+          logger.warn({ err }, `Error al notificar renovación a miembro ${nuevo_miembro_id}`),
+        );
+      }
 
       return ServiceResponse.success<null>(
         'Directiva renovada exitosamente.',
@@ -576,14 +669,26 @@ export class IntegranteGrupoService {
   }
 
   /**
-   * Obtiene el historial completo de directiva de un grupo (activos + pasados)
+   * Obtiene el historial completo de directiva de un grupo (activos + pasados).
+   * Usuarios con rol 'usuario' solo pueden acceder si son directiva activa del grupo.
    */
   async getHistorialDirectiva(
     grupoId: number,
+    usuario: JwtPayload,
   ): Promise<ServiceResponse<IntegranteGrupoConNombres[] | null>> {
     try {
-      const historial =
-        await this.integranteGrupoRepository.findHistorialDirectivaAsync(grupoId);
+      if (usuario.rol === 'usuario') {
+        const esDirectiva = await isEncargadoDeGrupo(usuario.id, grupoId);
+        if (!esDirectiva) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver el historial de directiva de este grupo',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
+      const historial = await this.integranteGrupoRepository.findHistorialDirectivaAsync(grupoId);
       return ServiceResponse.success<IntegranteGrupoConNombres[]>(
         'Historial de directiva obtenido',
         historial,

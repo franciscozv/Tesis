@@ -9,6 +9,6 @@ export function useMisResponsabilidades() {
   return useQuery({
     queryKey: [MIS_RESPONSABILIDADES_KEY],
     queryFn: misResponsabilidadesApi.getAll,
-    enabled: !!usuario?.miembro_id,
+    enabled: !!usuario?.id,
   });
 }

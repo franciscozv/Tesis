@@ -54,10 +54,19 @@ class MiembrosController {
   };
 
   /**
+   * PATCH /miembros/:id/reactivar - Reactiva un miembro inactivo
+   */
+  public reactivar: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id as string, 10);
+    const serviceResponse = await miembrosService.reactivar(id);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
    * PATCH /miembros/mi-perfil - Actualiza datos de contacto del perfil propio
    */
   public updateMiPerfil: RequestHandler = async (req: Request, res: Response) => {
-    const miembroId = req.usuario!.miembro_id;
+    const miembroId = req.usuario!.id;
     const serviceResponse = await miembrosService.updateMiPerfil(miembroId, req.body);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -68,13 +77,32 @@ class MiembrosController {
   public changeEstadoComunion: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
     const { estado_nuevo, motivo } = req.body;
-    const usuario_id = req.usuario!.id; // Usuario autenticado del JWT
+    const usuario_id = req.usuario!.id;
     const serviceResponse = await miembrosService.changeEstadoComunion(
       id,
       estado_nuevo,
       motivo,
       usuario_id,
     );
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
+   * PUT /miembros/:id/cuenta - Actualiza cuenta de acceso de un miembro
+   */
+  public actualizarCuenta: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id as string, 10);
+    const serviceResponse = await miembrosService.actualizarCuenta(id, req.body);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
+   * PATCH /miembros/:id/password - Restablece contraseÃ±a de un miembro
+   */
+  public resetPassword: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id as string, 10);
+    const { nueva_password } = req.body;
+    const serviceResponse = await miembrosService.resetPassword(id, nueva_password);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }

@@ -1,9 +1,11 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, Eye, X } from 'lucide-react';
+import { Bell, Check, Eye, X } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +21,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ResponderInvitacionModal } from '@/features/invitados/components/responder-invitacion-modal';
 import type { Invitado } from '@/features/invitados/types';
 import {
@@ -27,6 +28,7 @@ import {
   useMisResponsabilidades,
 } from '@/features/mis-responsabilidades/hooks/use-mis-responsabilidades';
 import type { Responsabilidad } from '@/features/mis-responsabilidades/types';
+import { cn } from '@/lib/utils';
 
 function formatFecha(fecha: string) {
   return new Date(`${fecha}T12:00:00`).toLocaleDateString('es-CL', {
@@ -71,13 +73,32 @@ function responsabilidadToInvitado(r: Responsabilidad): Invitado {
 type Respondiendo = { invitado: Invitado; accion: 'aceptar' | 'rechazar' };
 
 export default function MisResponsabilidadesPage() {
-  const { usuario } = useAuth();
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8">
+          <Skeleton className="h-20 w-full mb-4" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
+      }
+    >
+      <MisResponsabilidadesContent />
+    </Suspense>
+  );
+}
+
+function MisResponsabilidadesContent() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const actividadIdParam = searchParams.get('actividadId');
+  const invitadoIdParam = searchParams.get('invitadoId');
   const { data: responsabilidades, isLoading } = useMisResponsabilidades();
 
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [respondiendo, setRespondiendo] = useState<Respondiendo | null>(null);
+  const [tabActual, setTabActual] = useState<'proximas' | 'historial'>('proximas');
+  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const hoy = getHoy();
 
@@ -95,6 +116,50 @@ export default function MisResponsabilidadesPage() {
     );
   }, [responsabilidades, hoy]);
 
+  // Determinar la fila resaltada: invitadoId tiene prioridad sobre actividadId
+  const resaltadaId = useMemo(() => {
+    if (!responsabilidades) return null;
+    if (invitadoIdParam) {
+      const inv = parseInt(invitadoIdParam);
+      return isNaN(inv) ? null : responsabilidades.find((r) => r.invitado_id === inv) ?? null;
+    }
+    if (actividadIdParam) {
+      const act = parseInt(actividadIdParam);
+      return isNaN(act) ? null : responsabilidades.find((r) => r.actividad.id === act) ?? null;
+    }
+    return null;
+  }, [invitadoIdParam, actividadIdParam, responsabilidades]);
+
+  // Reset alerta si cambia el param
+  useEffect(() => {
+    setAlertDismissed(false);
+  }, [invitadoIdParam, actividadIdParam]);
+
+  // Decidir pestaña y hacer scroll al elemento resaltado
+  useEffect(() => {
+    if (!resaltadaId || !responsabilidades) return;
+
+    const enProximas = proximas.some((r) => r === resaltadaId);
+    if (enProximas) {
+      setTabActual('proximas');
+    } else {
+      const enHistorial = historial.some((r) => r === resaltadaId);
+      if (enHistorial) setTabActual('historial');
+    }
+
+    const timer = setTimeout(() => {
+      const element = document.getElementById(`resaltada-${resaltadaId.id}`);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [resaltadaId, responsabilidades, proximas, historial]);
+
+  function scrollToHighlighted() {
+    if (!resaltadaId) return;
+    const element = document.getElementById(`resaltada-${resaltadaId.id}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   function filtrarPorFechas(items: Responsabilidad[]) {
     return items.filter((r) => {
       if (fechaDesde && r.actividad.fecha < fechaDesde) return false;
@@ -111,19 +176,6 @@ export default function MisResponsabilidadesPage() {
     queryClient.invalidateQueries({ queryKey: [MIS_RESPONSABILIDADES_KEY] });
   }
 
-  if (!usuario?.miembro_id) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-light">Mis Responsabilidades</h1>
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-6">
       <div>
@@ -132,6 +184,40 @@ export default function MisResponsabilidadesPage() {
           Tus invitaciones confirmadas/pendientes y colaboraciones aceptadas en actividades.
         </p>
       </div>
+
+      {/* Banner de navegación desde notificación */}
+      {resaltadaId && !alertDismissed && (
+        <Alert className="border-primary/30 bg-primary/5 py-3">
+          <div className="flex items-center gap-3">
+            <Bell className="size-4 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-none">Invitación recibida</p>
+              <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                {resaltadaId.actividad.nombre}
+              </p>
+            </div>
+            <AlertDescription className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={scrollToHighlighted}
+              >
+                Ver fila
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground hover:text-foreground"
+                onClick={() => setAlertDismissed(true)}
+              >
+                <X className="size-3.5" />
+                <span className="sr-only">Cerrar</span>
+              </Button>
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="grid gap-1.5">
@@ -160,7 +246,7 @@ export default function MisResponsabilidadesPage() {
         )}
       </div>
 
-      <Tabs defaultValue="proximas" className="min-w-0">
+      <Tabs value={tabActual} onValueChange={(v) => setTabActual(v as any)} className="min-w-0">
         <TabsList>
           <TabsTrigger value="proximas">Próximas ({proximas.length})</TabsTrigger>
           <TabsTrigger value="historial">Historial ({historial.length})</TabsTrigger>
@@ -172,6 +258,7 @@ export default function MisResponsabilidadesPage() {
             isLoading={isLoading}
             resaltarProximos
             onResponder={handleResponder}
+            resaltadaRowId={resaltadaId?.id}
           />
         </TabsContent>
 
@@ -181,6 +268,7 @@ export default function MisResponsabilidadesPage() {
             isLoading={isLoading}
             resaltarProximos={false}
             onResponder={handleResponder}
+            resaltadaRowId={resaltadaId?.id}
           />
         </TabsContent>
       </Tabs>
@@ -205,11 +293,13 @@ function ResponsabilidadesTable({
   isLoading,
   resaltarProximos,
   onResponder,
+  resaltadaRowId,
 }: {
   items: Responsabilidad[];
   isLoading: boolean;
   resaltarProximos: boolean;
   onResponder: (r: Responsabilidad, accion: 'aceptar' | 'rechazar') => void;
+  resaltadaRowId?: number;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -219,7 +309,7 @@ function ResponsabilidadesTable({
             <TableRow>
               <TableHead>Tipo</TableHead>
               <TableHead>Actividad</TableHead>
-              <TableHead className="hidden md:table-cell">Rol / Necesidad</TableHead>
+              <TableHead>Rol / Necesidad</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead className="hidden md:table-cell">Hora</TableHead>
               <TableHead className="hidden lg:table-cell">Grupo</TableHead>
@@ -245,14 +335,26 @@ function ResponsabilidadesTable({
               </TableRow>
             ) : (
               items.map((r) => {
-                const highlight = resaltarProximos && isProximos7Dias(r.actividad.fecha);
+                const esResaltada = r.id === resaltadaRowId;
+                const highlight =
+                  !esResaltada && resaltarProximos && isProximos7Dias(r.actividad.fecha);
                 const esPendiente =
-                  r.tipo === 'invitacion' && r.estado_invitacion === 'pendiente';
+                  r.tipo === 'invitacion' &&
+                  r.estado_invitacion === 'pendiente' &&
+                  r.actividad.estado === 'programada';
 
                 return (
                   <TableRow
                     key={`${r.tipo}-${r.id}`}
-                    className={highlight ? 'bg-info/8' : undefined}
+                    id={esResaltada ? `resaltada-${r.id}` : undefined}
+                    className={cn(
+                      'transition-colors border-l-4',
+                      esResaltada
+                        ? 'bg-primary/5 border-l-primary'
+                        : highlight
+                          ? 'bg-muted/40 border-l-transparent'
+                          : 'border-l-transparent',
+                    )}
                   >
                     <TableCell>
                       <Badge variant={r.tipo === 'invitacion' ? 'info' : 'secondary'}>
@@ -261,19 +363,19 @@ function ResponsabilidadesTable({
                     </TableCell>
                     <TableCell className="font-medium">
                       <Link
-                        href={`/dashboard/actividades/${r.actividad.id}`}
+                        href={`/dashboard/actividades/${r.actividad.id}?origin=mis-responsabilidades`}
                         className="hover:underline"
                       >
                         {r.actividad.nombre}
                       </Link>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell>
                       {r.tipo === 'invitacion' ? (
                         <Badge variant="outline">{r.rol?.nombre ?? '—'}</Badge>
                       ) : (
                         <span className="text-sm">
                           {r.tipo_necesidad?.nombre ?? r.necesidad?.descripcion ?? '—'}
-                          {r.cantidad_ofrecida ? ` (${r.cantidad_ofrecida})` : ''}
+                          {r.cantidad_comprometida ? ` (${r.cantidad_comprometida})` : ''}
                         </span>
                       )}
                     </TableCell>
@@ -283,21 +385,29 @@ function ResponsabilidadesTable({
                     <TableCell className="hidden whitespace-nowrap md:table-cell">
                       {formatHora(r.actividad.hora_inicio)} - {formatHora(r.actividad.hora_fin)}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {r.grupo?.nombre ?? '—'}
-                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">{r.grupo?.nombre ?? '—'}</TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {r.tipo_actividad.nombre}
                     </TableCell>
                     <TableCell>
                       {r.tipo === 'invitacion' ? (
                         <Badge
-                          variant={r.estado_invitacion === 'pendiente' ? 'warning' : 'success'}
+                          variant={
+                            r.estado_invitacion === 'pendiente'
+                              ? 'warning'
+                              : r.estado_invitacion === 'cancelado'
+                                ? 'destructive'
+                                : 'success'
+                          }
                         >
-                          {r.estado_invitacion === 'pendiente' ? 'Pendiente' : 'Confirmado'}
+                          {r.estado_invitacion === 'pendiente'
+                            ? 'Pendiente'
+                            : r.estado_invitacion === 'cancelado'
+                              ? 'Cancelado'
+                              : 'Confirmado'}
                         </Badge>
                       ) : (
-                        <Badge variant="success">Aceptada</Badge>
+                        <Badge variant="success">Comprometido</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -324,7 +434,9 @@ function ResponsabilidadesTable({
                         </div>
                       ) : (
                         <Button variant="ghost" size="icon" className="size-8" asChild>
-                          <Link href={`/dashboard/actividades/${r.actividad.id}`}>
+                          <Link
+                            href={`/dashboard/actividades/${r.actividad.id}?origin=mis-responsabilidades`}
+                          >
                             <Eye className="size-4" />
                             <span className="sr-only">Ver actividad</span>
                           </Link>

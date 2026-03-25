@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,14 +22,14 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { authApi } from '@/features/auth/api';
-import { extractApiMessage } from '@/lib/api-error';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { type CambiarPasswordFormData, cambiarPasswordSchema } from '@/features/auth/schemas';
 import { useAsignacionesMiembro } from '@/features/integrantes-grupo/hooks/use-integraciones-miembro';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import { useUpdateMiPerfil } from '@/features/miembros/hooks/use-update-mi-perfil';
-import { type MiPerfilFormData, miPerfilSchema } from '@/features/miembros/schemas';
+import { miPerfilSchema } from '@/features/miembros/schemas';
 import type { EstadoComunion } from '@/features/miembros/types';
+import { extractApiMessage } from '@/lib/api-error';
 
 const estadoLabels: Record<EstadoComunion, string> = {
   asistente: 'Asistente',
@@ -44,36 +45,47 @@ const estadoVariant: Record<EstadoComunion, 'default' | 'secondary' | 'outline'>
 
 export default function MiPerfilPage() {
   const { usuario } = useAuth();
-  const miembroId = usuario?.miembro_id ?? 0;
+  const miembroId = usuario?.id ?? 0;
   const { data: miembro, isLoading } = useMiembro(miembroId);
   const { data: comunions } = useAsignacionesMiembro(miembroId);
   const mutation = useUpdateMiPerfil();
 
-  const form = useForm<MiPerfilFormData>({
-    resolver: zodResolver(miPerfilSchema),
+  const contactoSchema = miPerfilSchema.pick({ direccion: true, telefono: true });
+  type ContactoFormData = z.infer<typeof contactoSchema>;
+  const emailSchema = miPerfilSchema.pick({ email: true });
+  type EmailFormData = z.infer<typeof emailSchema>;
+
+  const contactoForm = useForm<ContactoFormData>({
+    resolver: zodResolver(contactoSchema),
     defaultValues: {
       direccion: '',
       telefono: '',
+    },
+  });
+  const emailForm = useForm<EmailFormData>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
       email: '',
     },
   });
 
   useEffect(() => {
     if (miembro) {
-      form.reset({
+      contactoForm.reset({
         direccion: miembro.direccion ?? '',
         telefono: miembro.telefono ?? '',
+      });
+      emailForm.reset({
         email: miembro.email ?? '',
       });
     }
-  }, [miembro, form]);
+  }, [miembro, contactoForm, emailForm]);
 
-  function onSubmit(data: MiPerfilFormData) {
+  function onSubmitContacto(data: ContactoFormData) {
     mutation.mutate(
       {
         direccion: data.direccion || null,
         telefono: data.telefono || null,
-        email: data.email || null,
       },
       {
         onSuccess: () => toast.success('Perfil actualizado exitosamente'),
@@ -84,16 +96,17 @@ export default function MiPerfilPage() {
     );
   }
 
-  if (!usuario?.miembro_id) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-light">Mi Perfil</h1>
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">Tu usuario no tiene un miembro asociado.</p>
-          </CardContent>
-        </Card>
-      </div>
+  function onSubmitEmail(data: EmailFormData) {
+    mutation.mutate(
+      {
+        email: data.email || null,
+      },
+      {
+        onSuccess: () => toast.success('Email actualizado exitosamente'),
+        onError: (error: unknown) => {
+          toast.error(extractApiMessage(error, 'Error al actualizar el email'));
+        },
+      },
     );
   }
 
@@ -177,24 +190,10 @@ export default function MiPerfilPage() {
             <CardTitle>Datos de Contacto</CardTitle>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Form {...contactoForm}>
+              <form onSubmit={contactoForm.handleSubmit(onSubmitContacto)} className="space-y-4">
                 <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="correo@ejemplo.cl" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
+                  control={contactoForm.control}
                   name="telefono"
                   render={({ field }) => (
                     <FormItem>
@@ -208,7 +207,7 @@ export default function MiPerfilPage() {
                 />
 
                 <FormField
-                  control={form.control}
+                  control={contactoForm.control}
                   name="direccion"
                   render={({ field }) => (
                     <FormItem>
@@ -238,7 +237,39 @@ export default function MiPerfilPage() {
         </Card>
       </div>
 
-      {/* Cambiar contraseña */}
+      {/* Cuenta y seguridad */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cuenta y seguridad</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...emailForm}>
+            <form onSubmit={emailForm.handleSubmit(onSubmitEmail)} className="space-y-4">
+              <FormField
+                control={emailForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email de acceso</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="correo@ejemplo.cl" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" disabled={mutation.isPending}>
+                  {mutation.isPending && <Loader2 className="animate-spin" />}
+                  Actualizar Email
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Cambiar contrasena */}
       <CambiarPasswordCard />
     </div>
   );
@@ -258,10 +289,10 @@ function CambiarPasswordCard() {
     setIsPending(true);
     try {
       await authApi.cambiarPassword(data);
-      toast.success('Contraseña actualizada exitosamente');
+      toast.success('Contrasena actualizada exitosamente');
       form.reset();
     } catch (error: unknown) {
-      toast.error(extractApiMessage(error, 'Error al cambiar la contraseña'));
+      toast.error(extractApiMessage(error, 'Error al cambiar la contrasena'));
     } finally {
       setIsPending(false);
     }
@@ -272,7 +303,7 @@ function CambiarPasswordCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Lock className="size-4" />
-          Cambiar Contraseña
+          Cambiar Contrasena
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -283,12 +314,12 @@ function CambiarPasswordCard() {
               name="password_actual"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contraseña actual</FormLabel>
+                  <FormLabel>Contrasena actual</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showActual ? 'text' : 'password'}
-                        placeholder="Ingrese su contraseña actual"
+                        placeholder="Ingrese su contrasena actual"
                         {...field}
                       />
                       <Button
@@ -313,12 +344,12 @@ function CambiarPasswordCard() {
               name="password_nueva"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nueva contraseña</FormLabel>
+                  <FormLabel>Nueva contrasena</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showNueva ? 'text' : 'password'}
-                        placeholder="Mínimo 8 caracteres"
+                        placeholder="Minimo 8 caracteres"
                         {...field}
                       />
                       <Button
@@ -334,7 +365,7 @@ function CambiarPasswordCard() {
                     </div>
                   </FormControl>
                   <p className="text-muted-foreground text-xs">
-                    Debe contener mayúscula, minúscula y número.
+                    Debe contener mayuscula, minuscula y numero.
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -344,7 +375,7 @@ function CambiarPasswordCard() {
             <div className="flex justify-end">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="animate-spin" />}
-                Cambiar Contraseña
+                Cambiar Contrasena
               </Button>
             </div>
           </form>

@@ -1,4 +1,4 @@
-export type EstadoInvitado = 'pendiente' | 'confirmado' | 'rechazado';
+export type EstadoInvitado = 'pendiente' | 'confirmado' | 'rechazado' | 'cancelado';
 
 export interface Invitado {
   id: number;

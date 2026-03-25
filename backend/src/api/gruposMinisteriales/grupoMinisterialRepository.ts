@@ -81,10 +81,7 @@ export class GrupoMinisterialRepository {
    * Elimina lógicamente un grupo ministerial (soft delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase
-      .from('grupo')
-      .update({ activo: false })
-      .eq('id_grupo', id);
+    const { error } = await supabase.from('grupo').update({ activo: false }).eq('id_grupo', id);
 
     if (error) throw error;
     return true;
@@ -138,20 +135,45 @@ export class GrupoMinisterialRepository {
   }
 
   /**
-   * Obtiene los grupos donde el miembro tiene un rol de directiva activo (es_directiva = true).
+   * Verifica si un miembro tiene membresía activa en un grupo específico.
    */
-  async findGruposByDirectivaAsync(miembro_id: number): Promise<GrupoMinisterial[]> {
-    const { data: comunions, error: memError } = await supabase
+  async isMemberOfGrupoAsync(miembro_id: number, grupo_id: number): Promise<boolean> {
+    const { count, error } = await supabase
+      .from('integrante_grupo')
+      .select('*', { count: 'exact', head: true })
+      .eq('miembro_id', miembro_id)
+      .eq('grupo_id', grupo_id)
+      .is('fecha_desvinculacion', null);
+
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  }
+
+  /**
+   * Obtiene todos los grupos donde el miembro tiene una membresía activa (cualquier rol),
+   * incluyendo un flag `es_directiva_miembro` que indica si tiene rol directivo en ese grupo.
+   */
+  async findTodosGruposByMiembroAsync(
+    miembro_id: number,
+  ): Promise<(GrupoMinisterial & { es_directiva_miembro: boolean })[]> {
+    const { data: memberships, error: memError } = await supabase
       .from('integrante_grupo')
       .select('grupo_id, rol_grupo!inner(es_directiva)')
       .eq('miembro_id', miembro_id)
-      .is('fecha_desvinculacion', null)
-      .eq('rol_grupo.es_directiva', true);
+      .is('fecha_desvinculacion', null);
 
     if (memError) throw memError;
-    if (!comunions || comunions.length === 0) return [];
+    if (!memberships || memberships.length === 0) return [];
 
-    const grupoIds = [...new Set(comunions.map((m: { grupo_id: number }) => m.grupo_id))];
+    // Un miembro puede aparecer con múltiples roles en el mismo grupo;
+    // es directiva si ALGUNO de sus roles activos lo es.
+    const directivaMap = new Map<number, boolean>();
+    for (const m of memberships as unknown as { grupo_id: number; rol_grupo: { es_directiva: boolean } }[]) {
+      const prev = directivaMap.get(m.grupo_id) ?? false;
+      directivaMap.set(m.grupo_id, prev || m.rol_grupo.es_directiva);
+    }
+
+    const grupoIds = [...directivaMap.keys()];
 
     const { data, error } = await supabase
       .from('grupo')
@@ -161,7 +183,10 @@ export class GrupoMinisterialRepository {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data as GrupoMinisterial[]) || [];
+    return ((data as GrupoMinisterial[]) || []).map((g) => ({
+      ...g,
+      es_directiva_miembro: directivaMap.get(g.id_grupo) ?? false,
+    }));
   }
 }
 

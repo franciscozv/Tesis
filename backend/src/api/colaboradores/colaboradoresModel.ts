@@ -1,32 +1,26 @@
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+﻿import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
 
 /**
- * Estados permitidos para colaboradores
- */
-export const ESTADOS_COLABORADOR = ['pendiente', 'aceptada', 'rechazada'] as const;
-
-/**
- * Schema para Colaborador
+ * Schema para Colaborador (compromiso de colaboración confirmado)
  */
 export const ColaboradorSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   necesidad_id: z.number().openapi({ example: 1 }),
   miembro_id: z.number().openapi({ example: 5 }),
-  cantidad_ofrecida: z.number().openapi({ example: 10 }),
+  cantidad_comprometida: z.number().openapi({ example: 10 }),
   observaciones: z.string().nullable().openapi({ example: 'Puedo traer pan casero' }),
-  estado: z.enum(ESTADOS_COLABORADOR).openapi({ example: 'pendiente' }),
-  fecha_oferta: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
-  fecha_decision: z.string().nullable().openapi({ example: null }),
+  cumplio: z.boolean().openapi({ example: false }),
+  fecha_compromiso: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
 });
 
 export type Colaborador = z.infer<typeof ColaboradorSchema>;
 
 /**
- * Schema para crear un Colaborador (oferta voluntaria)
+ * Schema para registrar un compromiso de colaboración
  */
 export const CreateColaboradorSchema = z.object({
   body: z.object({
@@ -40,9 +34,9 @@ export const CreateColaboradorSchema = z.object({
       .int('Debe ser un número entero')
       .positive('Debe ser un ID válido')
       .openapi({ example: 5 }),
-    cantidad_ofrecida: z
+    cantidad_comprometida: z
       .number()
-      .positive('Cantidad ofrecida debe ser mayor a 0')
+      .positive('Cantidad comprometida debe ser mayor a 0')
       .openapi({ example: 10 }),
     observaciones: z
       .string()
@@ -60,18 +54,12 @@ export const GetColaboradorSchema = z.object({
 });
 
 /**
- * Schema para aceptar/rechazar una oferta
+ * Schema para marcar si un colaborador cumplió su compromiso
  */
-export const PatchDecisionColaboradorSchema = z.object({
+export const PatchCumplioColaboradorSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: z.object({
-    estado: z
-      .enum(['aceptada', 'rechazada'] as const, {
-        errorMap: () => ({
-          message: 'Estado debe ser: aceptada o rechazada',
-        }),
-      })
-      .openapi({ example: 'aceptada' }),
+    cumplio: z.boolean().openapi({ example: true }),
   }),
 });
 
@@ -92,6 +80,5 @@ export const ListColaboradoresQuerySchema = z.object({
       .transform(Number)
       .pipe(z.number().positive())
       .optional(),
-    estado: z.enum(ESTADOS_COLABORADOR).optional(),
   }),
 });

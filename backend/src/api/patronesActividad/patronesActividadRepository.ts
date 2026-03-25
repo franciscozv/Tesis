@@ -6,14 +6,16 @@ import type { PatronActividad } from './patronesActividadModel';
  */
 export class PatronesActividadRepository {
   /**
-   * Obtiene todos los patrones de actividad activos
+   * Obtiene patrones de actividad. Por defecto solo activos; con includeInactive=true retorna todos.
    */
-  async findAllAsync(): Promise<PatronActividad[]> {
-    const { data, error } = await supabase
-      .from('patron_actividad')
-      .select('*')
-      .eq('activo', true)
-      .order('fecha_creacion', { ascending: false });
+  async findAllAsync(includeInactive = false): Promise<PatronActividad[]> {
+    let query = supabase.from('patron_actividad').select('*');
+
+    if (!includeInactive) {
+      query = query.eq('activo', true);
+    }
+
+    const { data, error } = await query.order('activo', { ascending: false }).order('fecha_creacion', { ascending: false });
 
     if (error) throw error;
     return data as PatronActividad[];

@@ -9,8 +9,10 @@ import type {
 } from '../types';
 
 export const patronesApi = {
-  getAll: async () => {
-    const { data } = await apiClient.get<ApiResponse<PatronActividad[]>>('/patrones');
+  getAll: async (includeInactive = false) => {
+    const { data } = await apiClient.get<ApiResponse<PatronActividad[]>>('/patrones', {
+      params: includeInactive ? { includeInactive: 'true' } : undefined,
+    });
     return data.responseObject;
   },
 

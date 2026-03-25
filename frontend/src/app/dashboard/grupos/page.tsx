@@ -1,14 +1,11 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { AccessDenied } from '@/components/access-denied';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -17,32 +14,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { gruposApi } from '@/features/grupos-ministeriales/api';
-import { GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { GrupoFormModal } from '@/features/grupos-ministeriales/components/grupo-form-modal';
+import { GruposTable } from '@/features/grupos-ministeriales/components/grupos-table';
+import { GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-grupos';
 import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
 import { MIS_GRUPOS_QUERY_KEY } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
 
 export default function GruposPage() {
-  const router = useRouter();
   const { grupos, isLoading, isAdmin } = useGruposPermitidos();
+
+  if (!isAdmin) {
+    return (
+      <AccessDenied
+        message="Solo los administradores pueden gestionar todos los grupos ministeriales."
+        backHref="/dashboard/mis-grupos"
+        backLabel="Ver mis grupos"
+      />
+    );
+  }
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -65,8 +57,9 @@ export default function GruposPage() {
       toast.success('Grupo eliminado exitosamente');
       setDeleteTarget(null);
     },
-    onError: () => {
-      toast.error('Error al eliminar grupo');
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message;
+      toast.error(msg || 'Error al eliminar grupo');
     },
   });
 
@@ -78,7 +71,7 @@ export default function GruposPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-light tracking-tight">Grupos Ministeriales</h1>
-          <p className="text-muted-foreground">Gestión de grupos de la iglesia</p>
+          <p className="text-muted-foreground text-sm">Gestión de todos los grupos de la iglesia</p>
         </div>
         {isAdmin && (
           <Button onClick={() => setCreateOpen(true)}>
@@ -97,83 +90,12 @@ export default function GruposPage() {
         />
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead className="hidden md:table-cell">Descripción</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  ['s1', 's2', 's3'].map((key) => (
-                    <TableRow key={key}>
-                      <TableCell colSpan={4}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      No se encontraron grupos.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((grupo) => (
-                    <TableRow
-                      key={grupo.id_grupo}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/dashboard/grupos/${grupo.id_grupo}`)}
-                    >
-                      <TableCell className="font-medium">{grupo.nombre}</TableCell>
-                      <TableCell className="text-muted-foreground hidden max-w-xs truncate md:table-cell">
-                        {grupo.descripcion ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={grupo.activo ? 'success' : 'secondary'}>
-                          {grupo.activo ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon-sm">
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/grupos/${grupo.id_grupo}/editar`}>
-                                  <Pencil className="size-4" />
-                                  Editar
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteTarget(grupo)}
-                              >
-                                <Trash2 className="size-4" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <GruposTable
+        grupos={filtered}
+        isLoading={isLoading}
+        isAdmin={isAdmin}
+        onEliminar={setDeleteTarget}
+      />
 
       <GrupoFormModal open={createOpen} onOpenChange={setCreateOpen} />
 

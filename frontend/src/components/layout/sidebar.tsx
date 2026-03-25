@@ -10,7 +10,6 @@ import {
   Home,
   Package,
   Repeat,
-  ShieldCheck,
   UserPen,
   Users,
   UsersRound,
@@ -77,11 +76,18 @@ const navGroups: NavGroup[] = [
         requiresDirectiva: true,
       },
       {
-        label: 'Grupos Ministeriales',
-        href: '/dashboard/grupos',
+        label: 'Mis Grupos',
+        href: '/dashboard/mis-grupos',
         icon: UsersRound,
         iconClassName: 'text-sky-500',
         roles: ['administrador', 'usuario'],
+      },
+      {
+        label: 'Grupos Ministeriales',
+        href: '/dashboard/grupos',
+        icon: UsersRound,
+        iconClassName: 'text-sky-700',
+        roles: ['administrador'],
       },
       {
         label: 'Actividades',
@@ -116,13 +122,6 @@ const navGroups: NavGroup[] = [
   {
     label: 'Administración',
     items: [
-      {
-        label: 'Usuarios',
-        href: '/dashboard/usuarios',
-        icon: ShieldCheck,
-        iconClassName: 'text-rose-500',
-        roles: ['administrador'],
-      },
       {
         label: 'Configuración',
         href: '/dashboard/configuracion',
@@ -182,7 +181,10 @@ export function Sidebar({
         />
         {!isCollapsed && (
           <div className="min-w-0">
-            <p className="text-sidebar-foreground text-sm leading-tight truncate uppercase tracking-wide" style={{ fontFamily: 'var(--font-condensed)' }}>
+            <p
+              className="text-sidebar-foreground text-sm leading-tight truncate uppercase tracking-wide"
+              style={{ fontFamily: 'var(--font-condensed)' }}
+            >
               Sistema IEP
             </p>
           </div>
@@ -206,9 +208,7 @@ export function Sidebar({
                   {group.label}
                 </p>
               )}
-              {isCollapsed && (
-                <div className="mx-3 my-1.5 border-t border-sidebar-border/40" />
-              )}
+              {isCollapsed && <div className="mx-3 my-1.5 border-t border-sidebar-border/40" />}
 
               <div className={cn('flex flex-col gap-0.5', isCollapsed ? 'px-2' : 'px-3')}>
                 {visibleItems.map((item) => {
@@ -281,11 +281,7 @@ export function Sidebar({
           title={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
           className="rounded p-1 text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
         >
-          {isCollapsed ? (
-            <ChevronsRight className="size-4" />
-          ) : (
-            <ChevronsLeft className="size-4" />
-          )}
+          {isCollapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
         </button>
       </div>
     </aside>

@@ -34,7 +34,11 @@ function getNombreMiembro(entry: HistorialDirectivaEntry): string {
 }
 
 function formatFecha(iso: string): string {
-  return new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 function AnioSection({ grupo }: { grupo: EntradaAnio }) {

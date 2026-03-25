@@ -14,7 +14,7 @@ export const GeneroEnum = z.enum(['masculino', 'femenino']);
 export type Genero = z.infer<typeof GeneroEnum>;
 
 /**
- * Schema principal para Miembro
+ * Schema principal para Miembro (incluye campos de cuenta opcionales)
  */
 export const MiembroSchema = z.object({
   id: z.number(),
@@ -31,6 +31,10 @@ export const MiembroSchema = z.object({
   activo: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+  // Campos de cuenta (null = sin acceso al sistema)
+  rol: z.enum(['administrador', 'usuario']).nullable(),
+  fecha_creacion: z.string().nullable(),
+  ultimo_acceso: z.string().nullable(),
 });
 
 export type Miembro = z.infer<typeof MiembroSchema>;
@@ -54,12 +58,7 @@ export const CreateMiembroSchema = z.object({
       .max(10),
     nombre: z.string().min(2, 'Nombre debe tener mínimo 2 caracteres').max(100),
     apellido: z.string().min(2, 'Apellido debe tener mínimo 2 caracteres').max(100),
-    email: z
-      .string()
-      .email('Email inválido')
-      .max(150)
-      .optional()
-      .transform((val) => val || null),
+    email: z.string().email('Email inválido').max(150),
     telefono: z
       .string()
       .max(20)
@@ -84,6 +83,11 @@ export const CreateMiembroSchema = z.object({
       .transform((val) => val || null),
     genero: GeneroEnum.optional().transform((val) => val || null),
     estado_comunion: EstadoComunionEnum.default('asistente'),
+    rol: z
+      .enum(['administrador', 'usuario'], {
+        errorMap: () => ({ message: 'Rol debe ser: administrador o usuario' }),
+      })
+      .default('usuario'),
     fecha_ingreso: z
       .string()
       .date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)')
@@ -115,18 +119,18 @@ export const UpdateMiembroSchema = z.object({
       .string()
       .email('Email inválido')
       .max(150)
-      .optional()
-      .transform((val) => val || null),
+      .nullish()
+      .transform((val) => val ?? null),
     telefono: z
       .string()
       .max(20)
-      .optional()
-      .transform((val) => val || null),
+      .nullish()
+      .transform((val) => val ?? null),
     fecha_nacimiento: z
       .string()
       .date('Fecha de nacimiento debe ser una fecha válida (YYYY-MM-DD)')
-      .optional()
-      .transform((val) => val || null)
+      .nullish()
+      .transform((val) => val ?? null)
       .refine((date) => {
         if (!date) return true;
         const [year, month, day] = date.split('-').map(Number);
@@ -137,9 +141,9 @@ export const UpdateMiembroSchema = z.object({
       }, 'La fecha de nacimiento no puede ser futura'),
     direccion: z
       .string()
-      .optional()
-      .transform((val) => val || null),
-    genero: GeneroEnum.optional().transform((val) => val || null),
+      .nullish()
+      .transform((val) => val ?? null),
+    genero: GeneroEnum.nullish().transform((val) => val ?? null),
     fecha_ingreso: z
       .string()
       .date('Fecha de ingreso debe ser una fecha válida (YYYY-MM-DD)')
@@ -191,10 +195,19 @@ export const GetMiembrosQuerySchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(10),
     search: z.string().optional(),
     estado_comunion: EstadoComunionEnum.optional(),
+    incluir_inactivos: z.coerce.boolean().default(false),
   }),
 });
 
 export type GetMiembrosQuery = z.infer<typeof GetMiembrosQuerySchema>['query'];
+
+/**
+ * Resultado de la operación de eliminación (soft o hard delete)
+ */
+export interface DeleteMiembroResult {
+  tipo: 'inactivado' | 'eliminado';
+  tieneDependencias: boolean;
+}
 
 export interface PaginatedMiembrosResponse {
   data: Miembro[];
@@ -214,5 +227,36 @@ export const ChangeEstadoComunionSchema = z.object({
   body: z.object({
     estado_nuevo: EstadoComunionEnum,
     motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres').max(500),
+  }),
+});
+
+/**
+ * Schema para actualizar cuenta de acceso (email y/o rol)
+ */
+export const UpdateCuentaSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    email: z
+      .string()
+      .email('Email inválido')
+      .max(150)
+      .optional()
+      .openapi({ example: 'nuevo@iglesia.cl' }),
+    rol: z
+      .enum(['administrador', 'usuario'], {
+        errorMap: () => ({ message: 'Rol debe ser: administrador o usuario' }),
+      })
+      .optional()
+      .openapi({ example: 'usuario' }),
+  }),
+});
+
+/**
+ * Schema para restablecer la contraseÃ±a de un miembro (admin)
+ */
+export const ResetPasswordMiembroSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    nueva_password: z.string().min(8, 'La contraseÃ±a debe tener al menos 8 caracteres').max(100),
   }),
 });

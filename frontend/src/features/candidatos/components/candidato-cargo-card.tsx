@@ -84,7 +84,8 @@ export function CandidatoCargoCard({ candidato }: CandidatoCargoCardProps) {
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {indicadores.resumen_servicios.map((s, idx) => (
                 <span key={idx} className="text-xs text-muted-foreground">
-                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} ({s.rol})
+                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} (
+                  {s.rol})
                 </span>
               ))}
             </div>

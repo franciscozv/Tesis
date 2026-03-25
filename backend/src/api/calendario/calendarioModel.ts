@@ -32,6 +32,7 @@ export const CalendarioEventoSchema = z.object({
   hora_fin: z.string().openapi({ example: '21:00' }),
   lugar: z.string().nullable().openapi({ example: 'Templo Central' }),
   grupo_organizador: GrupoOrganizadorRefSchema.nullable(),
+  estado: z.enum(['programada', 'cancelada']).openapi({ example: 'programada' }),
 });
 
 export type CalendarioEvento = z.infer<typeof CalendarioEventoSchema>;
@@ -93,4 +94,3 @@ export const CalendarioQuerySchema = z.object({
 export const MisResponsabilidadesSchema = z.object({
   params: z.object({ miembro_id: commonValidations.id }),
 });
-

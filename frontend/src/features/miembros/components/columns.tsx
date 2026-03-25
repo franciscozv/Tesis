@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Pencil, RefreshCw } from 'lucide-react';
+import { MoreHorizontal, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,11 +28,13 @@ const estadoVariant: Record<EstadoComunion, 'success' | 'secondary' | 'outline'>
 interface ColumnOptions {
   isAdmin: boolean;
   onCambiarEstado: (miembro: Miembro) => void;
+  onEliminar: (miembro: Miembro) => void;
 }
 
 export function getMiembrosColumns({
   isAdmin,
   onCambiarEstado,
+  onEliminar,
 }: ColumnOptions): ColumnDef<Miembro>[] {
   return [
     {
@@ -44,9 +46,16 @@ export function getMiembrosColumns({
       id: 'nombre_completo',
       header: 'Nombre Completo',
       cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.nombre} {row.original.apellido}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">
+            {row.original.nombre} {row.original.apellido}
+          </span>
+          {!row.original.activo && (
+            <Badge variant="outline" className="text-muted-foreground text-xs">
+              Inactivo
+            </Badge>
+          )}
+        </div>
       ),
     },
     {
@@ -89,7 +98,7 @@ export function getMiembrosColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {isAdmin && (
+              {isAdmin && miembro.activo && (
                 <>
                   <DropdownMenuItem asChild>
                     <Link href={`/dashboard/miembros/${miembro.id}/editar`}>
@@ -100,6 +109,13 @@ export function getMiembrosColumns({
                   <DropdownMenuItem onClick={() => onCambiarEstado(miembro)}>
                     <RefreshCw className="size-4" />
                     Cambiar estado
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onEliminar(miembro)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                    Dar de baja
                   </DropdownMenuItem>
                 </>
               )}

@@ -27,11 +27,11 @@ export class PatronesActividadService {
   }
 
   /**
-   * Obtiene todos los patrones de actividad activos
+   * Obtiene patrones de actividad. Con includeInactive=true retorna todos (para admins).
    */
-  async findAll(): Promise<ServiceResponse<PatronActividad[] | null>> {
+  async findAll(includeInactive = false): Promise<ServiceResponse<PatronActividad[] | null>> {
     try {
-      const patrones = await this.patronesActividadRepository.findAllAsync();
+      const patrones = await this.patronesActividadRepository.findAllAsync(includeInactive);
 
       if (!patrones || patrones.length === 0) {
         return ServiceResponse.success<PatronActividad[]>(

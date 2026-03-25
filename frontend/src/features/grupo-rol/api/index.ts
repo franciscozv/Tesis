@@ -1,5 +1,5 @@
-import type { RolGrupo } from '@/features/catalogos/types';
 import type { ApiResponse } from '@/features/auth/types';
+import type { RolGrupo } from '@/features/catalogos/types';
 import apiClient from '@/lib/api-client';
 import type { HabilitarRolInput } from '../types';
 
@@ -9,7 +9,9 @@ export const grupoRolApi = {
     return data.responseObject ?? [];
   },
 
-  habilitar: async (input: HabilitarRolInput): Promise<{ grupo_id: number; rol_grupo_id: number }> => {
+  habilitar: async (
+    input: HabilitarRolInput,
+  ): Promise<{ grupo_id: number; rol_grupo_id: number }> => {
     const { data } = await apiClient.post<ApiResponse<{ grupo_id: number; rol_grupo_id: number }>>(
       '/grupo-rol',
       input,

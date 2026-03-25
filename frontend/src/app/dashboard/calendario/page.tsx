@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import {
@@ -10,8 +11,9 @@ import {
   ChevronsUpDown,
   Eye,
   Pencil,
-  RefreshCw,
   Search,
+  ShieldOff,
+  XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
@@ -91,7 +93,7 @@ function toCalendarActividad(evento: CalendarioEvento): Actividad {
     grupo_id: evento.grupo_organizador?.id ?? null,
     descripcion: null,
     es_publica: false,
-    estado: 'programada',
+    estado: evento.estado,
     motivo_cancelacion: null,
     patron_id: null,
     creador_id: 0,
@@ -144,12 +146,20 @@ export default function CalendarioPage() {
   if (soloPublicas) filters.es_publica = true;
   if (selectedGrupoId) filters.grupo_id = selectedGrupoId;
 
-  const { data: actividadesAll, isError: isErrorAdmin } = useActividades(filters, { enabled: !!usuario && isAdmin });
-  const { data: consolidado, isError: isErrorUsuario } = useCalendarioConsolidado(mes, anio, selectedGrupoId, {
+  const { data: actividadesAll, isError: isErrorAdmin } = useActividades(filters, {
+    enabled: !!usuario && isAdmin,
+  });
+  const {
+    data: consolidado,
+    isError: isErrorUsuario,
+    error: errorUsuario,
+  } = useCalendarioConsolidado(mes, anio, selectedGrupoId, {
     enabled: isUsuario,
   });
   const isError = isErrorAdmin || isErrorUsuario;
-  
+
+  const isForbidden = axios.isAxiosError(errorUsuario) && errorUsuario.response?.status === 403;
+
   const actividades = useMemo(
     () => (isUsuario ? (consolidado ?? []).map(toCalendarActividad) : (actividadesAll ?? [])),
     [isUsuario, consolidado, actividadesAll],
@@ -158,7 +168,11 @@ export default function CalendarioPage() {
   const { data: tiposActividad } = tiposActividadHooks.useAll();
   const { data: tiposActividadActivos } = tiposActividadHooks.useAllActivos();
   const { data: todosLosGrupos } = useGrupos();
-  const { grupos: gruposPermitidos, misGruposIds } = useGruposPermitidos();
+  const {
+    grupos: gruposPermitidos,
+    gruposDirectivaIds,
+    gruposGestionables,
+  } = useGruposPermitidos();
 
   const createMutation = useCreateActividad();
   const updateMutation = useUpdateActividad();
@@ -224,7 +238,21 @@ export default function CalendarioPage() {
     [tiposMap],
   );
 
-  const canCreate = isAdmin || (isUsuario && misGruposIds.size > 0);
+  const canCreate = isAdmin || (isUsuario && gruposDirectivaIds.size > 0);
+
+  if (isForbidden) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+        <ShieldOff className="size-12 text-muted-foreground" />
+        <div>
+          <h2 className="text-xl font-semibold">Acceso restringido</h2>
+          <p className="text-muted-foreground mt-1">
+            Solo los miembros de directiva pueden ver el calendario consolidado completo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelectSlot = useCallback(
     ({ start }: { start: Date }) => {
@@ -325,7 +353,9 @@ export default function CalendarioPage() {
 
   const canManageDetalleActividad =
     isAdmin ||
-    (isUsuario && !!detalleActividad?.grupo_id && misGruposIds.has(detalleActividad.grupo_id));
+    (isUsuario &&
+      !!detalleActividad?.grupo_id &&
+      gruposDirectivaIds.has(detalleActividad.grupo_id));
 
   const detalleTipo = detalleActividad
     ? (tiposMap.get(detalleActividad.tipo_actividad_id) ??
@@ -427,7 +457,7 @@ export default function CalendarioPage() {
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
         tiposActividad={tiposActividadActivos}
-        grupos={gruposPermitidos}
+        grupos={gruposGestionables}
         isEditing={!!editing}
       />
 
@@ -636,7 +666,7 @@ function DetalleRapidoModal({
   tipo,
   grupoNombre,
   canManageActividad,
-  isAdmin,
+  isAdmin: _isAdmin,
   onEdit,
   onCambiarEstado,
 }: DetalleRapidoModalProps) {
@@ -684,7 +714,7 @@ function DetalleRapidoModal({
             <span>{actividad.lugar}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Estado</span>
+            <span className="text-muted-foreground">Situación</span>
             <Badge
               variant={
                 actividad.estado === 'programada'
@@ -731,11 +761,10 @@ function DetalleRapidoModal({
               Editar
             </Button>
           )}
-          {(canManageActividad && actividad.estado !== 'cancelada') ||
-          (isAdmin && actividad.estado === 'cancelada') ? (
+          {canManageActividad && actividad.estado === 'programada' ? (
             <Button variant="outline" size="sm" onClick={() => onCambiarEstado(actividad)}>
-              <RefreshCw className="size-4" />
-              Estado
+              <XCircle className="size-4" />
+              Cancelar actividad
             </Button>
           ) : null}
         </div>
@@ -847,7 +876,9 @@ function MobileCalendarList({
                   const tipo = tiposMap.get(event.resource.tipo_actividad_id);
                   const color = tipo?.color ?? estadoColors[event.resource.estado];
                   const isCancelled = event.resource.estado === 'cancelada';
-                  const grupo = event.resource.grupo_id ? gruposMap.get(event.resource.grupo_id) : null;
+                  const grupo = event.resource.grupo_id
+                    ? gruposMap.get(event.resource.grupo_id)
+                    : null;
 
                   return (
                     <button
@@ -865,12 +896,17 @@ function MobileCalendarList({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
-                           <p className="truncate text-sm font-medium">{event.title.replace(/^\[.*?\]\s/, '')}</p>
-                           {grupo && (
-                             <Badge variant="secondary" className="px-1 py-0 text-[9px] h-3.5 leading-none">
-                               {grupo.nombre}
-                             </Badge>
-                           )}
+                          <p className="truncate text-sm font-medium">
+                            {event.title.replace(/^\[.*?\]\s/, '')}
+                          </p>
+                          {grupo && (
+                            <Badge
+                              variant="secondary"
+                              className="px-1 py-0 text-[9px] h-3.5 leading-none"
+                            >
+                              {grupo.nombre}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-muted-foreground text-xs">
                           {formatHora(event.resource.hora_inicio)} –{' '}

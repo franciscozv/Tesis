@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
-import { IBM_Plex_Sans, IBM_Plex_Serif, IBM_Plex_Mono, Barlow_Condensed } from 'next/font/google';
+import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/providers/query-provider';
@@ -44,7 +44,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${fontCondensed.variable}`}>
+      <body
+        className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${fontCondensed.variable}`}
+      >
         <ThemeProvider>
           <QueryProvider>
             {children}

@@ -26,7 +26,7 @@ const ResponsabilidadSchema = z.object({
   estado_invitacion: z.string().optional(),
   necesidad: z.object({ id: z.number(), descripcion: z.string() }).optional(),
   tipo_necesidad: z.object({ id: z.number(), nombre: z.string() }).optional(),
-  cantidad_ofrecida: z.number().optional(),
+  cantidad_comprometida: z.number().optional(),
   invitado_id: z.number().optional(),
 });
 

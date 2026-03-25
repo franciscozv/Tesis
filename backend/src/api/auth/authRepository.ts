@@ -1,14 +1,13 @@
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
- * Tipo interno para usuario con password_hash (solo para auth)
+ * Tipo interno para miembro con password_hash (solo para auth)
  */
-export interface UsuarioAuth {
+export interface MiembroAuth {
   id: number;
   email: string;
   password_hash: string;
   rol: 'administrador' | 'usuario';
-  miembro_id: number | null;
   activo: boolean;
 }
 
@@ -17,45 +16,47 @@ export interface UsuarioAuth {
  */
 export class AuthRepository {
   /**
-   * Busca un usuario por email (incluye password_hash para verificación)
+   * Busca un miembro por email (incluye password_hash para verificación)
    */
-  async findByEmailAsync(email: string): Promise<UsuarioAuth | null> {
+  async findByEmailAsync(email: string): Promise<MiembroAuth | null> {
     const { data, error } = await supabase
-      .from('usuario')
-      .select('id, email, password_hash, rol, miembro_id, activo')
+      .from('miembro')
+      .select('id, email, password_hash, rol, activo')
       .eq('email', email)
+      .not('rol', 'is', null)
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as UsuarioAuth;
+    return data as MiembroAuth;
   }
 
   /**
-   * Busca un usuario por ID (incluye password_hash para cambio de contraseña)
+   * Busca un miembro por ID (incluye password_hash para cambio de contraseña)
    */
-  async findByIdWithPasswordAsync(id: number): Promise<UsuarioAuth | null> {
+  async findByIdWithPasswordAsync(id: number): Promise<MiembroAuth | null> {
     const { data, error } = await supabase
-      .from('usuario')
-      .select('id, email, password_hash, rol, miembro_id, activo')
+      .from('miembro')
+      .select('id, email, password_hash, rol, activo')
       .eq('id', id)
+      .not('rol', 'is', null)
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data as UsuarioAuth;
+    return data as MiembroAuth;
   }
 
   /**
-   * Actualiza el último acceso del usuario
+   * Actualiza el último acceso del miembro
    */
   async updateUltimoAccesoAsync(id: number): Promise<void> {
     const { error } = await supabase
-      .from('usuario')
+      .from('miembro')
       .update({ ultimo_acceso: new Date().toISOString() })
       .eq('id', id);
 
@@ -63,11 +64,11 @@ export class AuthRepository {
   }
 
   /**
-   * Actualiza el password_hash de un usuario
+   * Actualiza el password_hash de un miembro
    */
   async updatePasswordAsync(id: number, passwordHash: string): Promise<void> {
     const { error } = await supabase
-      .from('usuario')
+      .from('miembro')
       .update({ password_hash: passwordHash })
       .eq('id', id);
 

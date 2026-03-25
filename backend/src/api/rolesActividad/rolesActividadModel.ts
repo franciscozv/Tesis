@@ -62,4 +62,3 @@ export const UpdateResponsabilidadActividadSchema = z.object({
     descripcion: z.string().optional().openapi({ example: 'Coordinador de la actividad' }),
   }),
 });
-

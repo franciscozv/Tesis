@@ -1,7 +1,8 @@
-import dayjs from 'dayjs';
+﻿import dayjs from 'dayjs';
 import { StatusCodes } from 'http-status-codes';
 import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { isDirectivaEnAlgunGrupo, isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type { Candidato, CandidatoCargo, SugerirCargoResponse } from './candidatosModel';
 import { CandidatosRepository } from './candidatosRepository';
@@ -25,14 +26,11 @@ export class CandidatosService {
     opciones: {
       tipoActividadId?: number;
       actividadId?: number;
-      periodoMeses: number;
       filtroPlenaComun?: boolean;
       grupoIdBody?: number;
       usuario?: JwtPayload;
-      soloConExperiencia?: boolean;
-      soloSinExperiencia?: boolean;
-      prioridad?: string[];
       incluirConConflictos?: boolean;
+      priorizarExperienciaTipo?: boolean;
     },
   ): Promise<ServiceResponse<Candidato[] | null>> {
     try {
@@ -45,8 +43,6 @@ export class CandidatosService {
         );
       }
 
-      const nombreRol = await this.candidatosRepository.getResponsabilidadActividadNombreAsync(rolId);
-
       // ── Resolución del filtro de grupo ─────────────────────────────────────
       let grupoIdEfectivo: number | undefined = opciones.grupoIdBody;
 
@@ -56,21 +52,35 @@ export class CandidatosService {
         );
 
         if (grupoIdActividad !== null) {
+          // SEGURIDAD: Validar que el usuario tenga permisos sobre este grupo
           if (opciones.usuario?.rol === 'usuario') {
+            const esEncargado = await isEncargadoDeGrupo(opciones.usuario.id, grupoIdActividad);
+            if (!esEncargado) {
+              return ServiceResponse.failure(
+                'No tienes permiso para solicitar sugerencias para este grupo',
+                null,
+                StatusCodes.FORBIDDEN,
+              );
+            }
             grupoIdEfectivo = grupoIdActividad;
           } else {
             if (opciones.grupoIdBody === undefined) {
               grupoIdEfectivo = grupoIdActividad;
             }
           }
+        } else if (opciones.usuario?.rol === 'usuario') {
+          // Actividad sin grupo (global), el usuario común no debería poder sugerir
+          // a menos que sea directiva en AL MENOS un grupo (permiso global mínimo)
+          const esDirectivaGlobal = await isDirectivaEnAlgunGrupo(opciones.usuario.id);
+          if (!esDirectivaGlobal) {
+            return ServiceResponse.failure(
+              'No tienes permiso para solicitar sugerencias globales',
+              null,
+              StatusCodes.FORBIDDEN,
+            );
+          }
         }
       }
-
-      // Fecha de inicio del periodo para cálculo de asistencia
-      const fechaFin = fecha;
-      const fechaInicio = dayjs(fecha)
-        .subtract(opciones.periodoMeses, 'month')
-        .format('YYYY-MM-DD');
 
       // Obtener miembros con filtros efectivos (incluyendo grupoIdEfectivo)
       const miembros = await this.candidatosRepository.findMiembrosActivosFiltradosAsync({
@@ -86,17 +96,12 @@ export class CandidatosService {
 
       // Queries batch: una sola llamada por indicador para todos los miembros
       const [
-        expTotalMap,
         conflictosMap,
-        asistenciaMap,
         expTipoMap,
         ultimoUsoMap,
         cargaSemanalMap,
-        resumenServiciosMap,
       ] = await Promise.all([
-        this.candidatosRepository.getExperienciaRolBatchAsync(miembroIds, rolId),
         this.candidatosRepository.getConflictosBatchAsync(miembroIds, fecha, opciones.actividadId),
-        this.candidatosRepository.getAsistenciaBatchAsync(miembroIds, fechaInicio, fechaFin),
         opciones.tipoActividadId !== undefined
           ? this.candidatosRepository.getExperienciaRolEnTipoBatchAsync(
               miembroIds,
@@ -104,31 +109,23 @@ export class CandidatosService {
               opciones.tipoActividadId,
             )
           : Promise.resolve(new Map<number, number>()),
-        this.candidatosRepository.getUltimoUsoRolBatchAsync(miembroIds, rolId),
+        this.candidatosRepository.getUltimoUsoRolBatchAsync(miembroIds, rolId, fecha),
         this.candidatosRepository.getCargaSemanalBatchAsync(miembroIds, fecha),
-        this.candidatosRepository.getResumenServiciosBatchAsync(miembroIds, fechaInicio, fechaFin),
       ]);
 
       // Ensamblar candidatos con indicadores
       const candidatos: Candidato[] = miembros.map((miembro) => {
-        const expTotal = expTotalMap.get(miembro.id) ?? 0;
         const conflictosDetalle = conflictosMap.get(miembro.id) ?? [];
         const conflictos = conflictosDetalle.length;
-        const asistencia = asistenciaMap.get(miembro.id) ?? { confirmadas: 0, asistidas: 0 };
         const expTipo = expTipoMap.get(miembro.id) ?? 0;
         const ultimoUsoData = ultimoUsoMap.get(miembro.id) ?? null;
         const ultimoUso = ultimoUsoData?.fecha ?? null;
         const ultimoUsoNombre = ultimoUsoData?.nombre_actividad ?? null;
         const ultimoUsoTipo = ultimoUsoData?.tipo_actividad ?? null;
         const serviciosDetalle = cargaSemanalMap.get(miembro.id) ?? [];
-        const serviciosEstaSemana = serviciosDetalle.length;
-        const resumenServicios = resumenServiciosMap.get(miembro.id) ?? [];
+        const serviciosEsteMes = serviciosDetalle.length;
 
         const disponible = conflictos === 0;
-        const asistenciaRatio =
-          asistencia.confirmadas > 0
-            ? Math.round((asistencia.asistidas / asistencia.confirmadas) * 100) / 100
-            : 0;
         const antiguedadAnios = dayjs(fecha).diff(dayjs(miembro.fecha_ingreso), 'year');
         const plenaComun = miembro.estado_comunion === 'plena_comunion';
         const diasDesdeUltimoUso =
@@ -138,18 +135,15 @@ export class CandidatosService {
           disponible_en_fecha: disponible,
           conflictos_en_fecha_count: conflictos,
           conflictos_detalle: conflictosDetalle,
-          experiencia_rol_total: expTotal,
+          experiencia_rol_total: 0,
           experiencia_rol_en_tipo: expTipo,
           dias_desde_ultimo_uso: diasDesdeUltimoUso,
           ultimo_uso_nombre: ultimoUsoNombre,
           ultimo_uso_tipo_actividad: ultimoUsoTipo,
-          servicios_esta_semana: serviciosEstaSemana,
-          servicios_esta_semana_detalle: serviciosDetalle,
-          asistencia_ratio_periodo: asistenciaRatio,
-          asistencias_count: asistencia.asistidas,
-          confirmadas_count: asistencia.confirmadas,
+          servicios_este_mes: serviciosEsteMes,
+          servicios_este_mes_detalle: serviciosDetalle,
           antiguedad_anios: antiguedadAnios,
-          resumen_servicios: resumenServicios,
+          resumen_servicios: [],
           plena_comunion: plenaComun,
         };
 
@@ -159,65 +153,32 @@ export class CandidatosService {
           telefono: miembro.telefono,
           email: miembro.email,
           indicadores,
-          justificacion: this.generarJustificacionRol(
-            nombreRol ?? 'Rol desconocido',
-            indicadores,
-            opciones.periodoMeses,
-          ),
+          justificacion: '',
         };
       });
 
-      // ── Filtrado por experiencia ──────────────────────────────────────────────
-      let candidatosFiltrados = candidatos as Candidato[];
-      if (opciones.soloConExperiencia) {
-        candidatosFiltrados = candidatosFiltrados.filter(
-          (c) => c.indicadores.experiencia_rol_total > 0,
-        );
-      }
-      if (opciones.soloSinExperiencia) {
-        candidatosFiltrados = candidatosFiltrados.filter(
-          (c) => c.indicadores.experiencia_rol_total === 0,
-        );
-      }
-
       // ── Filtrado por conflictos ───────────────────────────────────────────────
+      let candidatosFiltrados = candidatos as Candidato[];
       if (!opciones.incluirConConflictos) {
         candidatosFiltrados = candidatosFiltrados.filter((c) => c.indicadores.disponible_en_fecha);
       }
 
-      // ── Ordenamiento dinámico por criterios ───────────────────────────────────
-      const COMPARADORES: Record<string, (a: Candidato, b: Candidato) => number> = {
-        disponibilidad: (a, b) => {
-          const dispA = a.indicadores.disponible_en_fecha ? 1 : 0;
-          const dispB = b.indicadores.disponible_en_fecha ? 1 : 0;
-          return dispB - dispA;
-        },
-        experiencia_tipo: (a, b) =>
-          b.indicadores.experiencia_rol_en_tipo - a.indicadores.experiencia_rol_en_tipo,
-        rotacion: (a, b) => {
-          // DESC: el que más descansó va primero; null (nunca realizado) tiene máxima prioridad
-          const dA = a.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
-          const dB = b.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
-          return dB - dA;
-        },
-        carga: (a, b) => a.indicadores.servicios_esta_semana - b.indicadores.servicios_esta_semana,
-        fidelidad: (a, b) =>
-          b.indicadores.asistencias_count - a.indicadores.asistencias_count,
-      };
-
-      // Si prioridad se envía explícitamente, solo esos criterios rigen el orden.
-      // Si no se envía (undefined), se aplica el orden completo por defecto.
-      const criterios =
-        opciones.prioridad !== undefined
-          ? opciones.prioridad
-          : ['disponibilidad', 'experiencia_tipo', 'rotacion', 'carga', 'fidelidad'];
-
+      // ── Ordenamiento fijo: disponible → rotación → carga → (expTipo si activo) ──
       candidatosFiltrados.sort((a, b) => {
-        for (const criterio of criterios) {
-          const comparar = COMPARADORES[criterio];
-          if (!comparar) continue;
-          const resultado = comparar(a, b);
-          if (resultado !== 0) return resultado;
+        // 1. Disponibles primero
+        if (a.indicadores.disponible_en_fecha !== b.indicadores.disponible_en_fecha) {
+          return a.indicadores.disponible_en_fecha ? -1 : 1;
+        }
+        // 2. Más días sin este rol primero (null = nunca asignado → máxima prioridad)
+        const dA = a.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
+        const dB = b.indicadores.dias_desde_ultimo_uso ?? Number.MAX_SAFE_INTEGER;
+        if (dA !== dB) return dB - dA;
+        // 3. Menos actividades este mes primero
+        const cargaDiff = a.indicadores.servicios_este_mes - b.indicadores.servicios_este_mes;
+        if (cargaDiff !== 0) return cargaDiff;
+        // 4. (Opcional) Más experiencia en este tipo de actividad primero
+        if (opciones.priorizarExperienciaTipo) {
+          return b.indicadores.experiencia_rol_en_tipo - a.indicadores.experiencia_rol_en_tipo;
         }
         return 0;
       });
@@ -261,11 +222,19 @@ export class CandidatosService {
       const {
         existe,
         requiere_plena_comunion,
+        es_directiva,
         nombre: nombreCargo,
       } = await this.candidatosRepository.getCargoRequisitosAsync(cargoId);
       if (!existe) {
         return ServiceResponse.failure(
           'El cargo de grupo especificado no existe o no está activo',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+      if (!es_directiva) {
+        return ServiceResponse.failure(
+          'El cargo especificado no es un cargo directivo',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -306,6 +275,7 @@ export class CandidatosService {
         asistenciaMap,
         historialCompletoMap,
         resumenServiciosMap,
+        colaboracionesMap,
       ] = await Promise.all([
         grupoIdEfectivo !== undefined
           ? this.candidatosRepository.getExperienciaCargoEnGrupoBatchAsync(
@@ -317,11 +287,8 @@ export class CandidatosService {
         this.candidatosRepository.getGruposActivosBatchAsync(miembroIds),
         this.candidatosRepository.getAsistenciaBatchAsync(miembroIds, fechaInicio, fechaHoy),
         this.candidatosRepository.getHistorialGruposCompletoBatchAsync(miembroIds),
-        this.candidatosRepository.getResumenServiciosBatchAsync(
-          miembroIds,
-          fechaInicio,
-          fechaHoy,
-        ),
+        this.candidatosRepository.getResumenServiciosBatchAsync(miembroIds, fechaInicio, fechaHoy),
+        this.candidatosRepository.getColaboracionesBatchAsync(miembroIds, fechaInicio, fechaHoy),
       ]);
 
       // ── Ensamblar candidatos ──────────────────────────────────────────────────
@@ -344,17 +311,23 @@ export class CandidatosService {
 
         const asistencia = asistenciaMap.get(miembro.id) || { confirmadas: 0, asistidas: 0 };
         const resumenServicios = resumenServiciosMap.get(miembro.id) || [];
+        const colabStats = colaboracionesMap.get(miembro.id) || { cumplidas: 0, totales: 0 };
 
         const asistenciaRatio =
           asistencia.confirmadas > 0
             ? Math.round((asistencia.asistidas / asistencia.confirmadas) * 100) / 100
             : 0;
-        
+
+        const colaboracionRatio =
+          colabStats.totales > 0
+            ? Math.round((colabStats.cumplidas / colabStats.totales) * 100) / 100
+            : 0;
+
         // Calcular antigüedades con fallback a 0 si la fecha es inválida
-        const antiguedadAnios = miembro.fecha_ingreso 
-          ? dayjs(fechaHoy).diff(dayjs(miembro.fecha_ingreso), 'year') 
+        const antiguedadAnios = miembro.fecha_ingreso
+          ? dayjs(fechaHoy).diff(dayjs(miembro.fecha_ingreso), 'year')
           : 0;
-        
+
         const antiguedadGrupoAnios = miembro.fecha_vinculacion_grupo
           ? dayjs(fechaHoy).diff(dayjs(miembro.fecha_vinculacion_grupo), 'year')
           : 0;
@@ -371,6 +344,8 @@ export class CandidatosService {
           asistencias_count: asistencia.asistidas || 0,
           confirmadas_count: asistencia.confirmadas || 0,
           resumen_servicios: resumenServicios,
+          colaboracion_ratio: colaboracionRatio,
+          colaboraciones_count: colabStats.cumplidas,
           antiguedad_anios: isNaN(antiguedadAnios) ? 0 : antiguedadAnios,
           antiguedad_grupo_anios: isNaN(antiguedadGrupoAnios) ? 0 : antiguedadGrupoAnios,
           fecha_ingreso: miembro.fecha_ingreso || fechaHoy,
@@ -412,8 +387,9 @@ export class CandidatosService {
           b.indicadores.experiencia_cargo_en_grupo - a.indicadores.experiencia_cargo_en_grupo,
         carga_trabajo: (a, b) =>
           a.indicadores.grupos_activos_count - b.indicadores.grupos_activos_count,
-        fidelidad: (a, b) =>
-          b.indicadores.asistencias_count - a.indicadores.asistencias_count,
+        fidelidad: (a, b) => b.indicadores.asistencias_count - a.indicadores.asistencias_count,
+        colaboracion: (a, b) =>
+          (b.indicadores as any).colaboracion_ratio - (a.indicadores as any).colaboracion_ratio,
         antiguedad: (a, b) => {
           // Priorizar antigüedad en el grupo
           if (a.indicadores.antiguedad_grupo_anios !== b.indicadores.antiguedad_grupo_anios) {
@@ -476,9 +452,8 @@ export class CandidatosService {
       dias_desde_ultimo_uso: number | null;
       ultimo_uso_nombre?: string | null;
       ultimo_uso_tipo_actividad?: string | null;
-      servicios_esta_semana: number;
-      servicios_esta_semana_detalle?: Array<{ actividad: string; rol: string; fecha: string }>;
-      asistencia_ratio_periodo: number;
+      servicios_este_mes: number;
+      servicios_este_mes_detalle?: Array<{ actividad: string; rol: string; fecha: string }>;
       antiguedad_anios: number;
       plena_comunion: boolean;
     },
@@ -515,19 +490,19 @@ export class CandidatosService {
       partes.push(`No ha realizado este servicio en ${ind.dias_desde_ultimo_uso} días`);
     }
 
-    if (ind.servicios_esta_semana > 0) {
-      const s = ind.servicios_esta_semana;
-      if (ind.servicios_esta_semana_detalle && ind.servicios_esta_semana_detalle.length > 0) {
+    if (ind.servicios_este_mes > 0) {
+      const s = ind.servicios_este_mes;
+      if (ind.servicios_este_mes_detalle && ind.servicios_este_mes_detalle.length > 0) {
         const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-        const nombres = ind.servicios_esta_semana_detalle
+        const nombres = ind.servicios_este_mes_detalle
           .map((d) => {
             const dia = d.fecha ? DIAS[dayjs(d.fecha).day()] : null;
             return dia ? `${d.rol} en ${d.actividad} (${dia})` : `${d.rol} en ${d.actividad}`;
           })
           .join(', ');
-        partes.push(`Tiene ${s} servicio${s !== 1 ? 's' : ''} esta semana: ${nombres}`);
+        partes.push(`Tiene ${s} servicio${s !== 1 ? 's' : ''} este mes: ${nombres}`);
       } else {
-        partes.push(`Tiene ${s} servicio${s !== 1 ? 's' : ''} esta semana`);
+        partes.push(`Tiene ${s} servicio${s !== 1 ? 's' : ''} este mes`);
       }
     }
 
@@ -543,7 +518,12 @@ export class CandidatosService {
     nombreCargo: string,
     ind: {
       experiencia_cargo_en_grupo: number;
-      historial_experiencia: Array<{ cargo_nombre?: string; grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>;
+      historial_experiencia: Array<{
+        cargo_nombre?: string;
+        grupo_nombre: string;
+        fecha_inicio: string;
+        fecha_fin: string | null;
+      }>;
       grupos_activos_count: number;
       grupos_activos_detalle: Array<{ grupo: string; rol: string }>;
       asistencia_ratio_periodo: number;
@@ -578,9 +558,7 @@ export class CandidatosService {
     }
 
     if (ind.grupos_activos_count > 0) {
-      const gruposStr = ind.grupos_activos_detalle
-        .map((g) => `${g.grupo} (${g.rol})`)
-        .join(', ');
+      const gruposStr = ind.grupos_activos_detalle.map((g) => `${g.grupo} (${g.rol})`).join(', ');
       partes.push(
         `participa en ${ind.grupos_activos_count} grupo${ind.grupos_activos_count !== 1 ? 's' : ''}: ${gruposStr}`,
       );

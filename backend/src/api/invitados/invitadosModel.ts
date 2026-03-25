@@ -7,7 +7,7 @@ extendZodWithOpenApi(z);
 /**
  * Estados permitidos para invitados
  */
-export const ESTADOS_INVITADO = ['pendiente', 'confirmado', 'rechazado'] as const;
+export const ESTADOS_INVITADO = ['pendiente', 'confirmado', 'rechazado', 'cancelado'] as const;
 
 /**
  * Schema para Invitado
@@ -138,4 +138,3 @@ export const ListInvitadosQuerySchema = z.object({
     estado: z.enum(ESTADOS_INVITADO).optional(),
   }),
 });
-

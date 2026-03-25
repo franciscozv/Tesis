@@ -18,7 +18,6 @@ import { responsabilidadesActividadRegistry } from '@/api/rolesActividad/rolesAc
 import { rolesGrupoRegistry } from '@/api/rolesGrupo/rolesGrupoRouter';
 import { tiposActividadRegistry } from '@/api/tiposActividad/tiposActividadRouter';
 import { tiposNecesidadRegistry } from '@/api/tiposNecesidad/tiposNecesidadRouter';
-import { usuariosRegistry } from '@/api/usuarios/usuariosRouter';
 
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3['generateDocument']>;
 
@@ -43,7 +42,6 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     rolesGrupoRegistry,
     tiposActividadRegistry,
     tiposNecesidadRegistry,
-    usuariosRegistry,
   ]);
 
   // Registrar el esquema de seguridad en el registry
@@ -69,5 +67,3 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
     security: [{ bearerAuth: [] }],
   });
 }
-
-

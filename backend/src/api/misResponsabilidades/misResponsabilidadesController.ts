@@ -6,7 +6,7 @@ class MisResponsabilidadesController {
    * GET /mis-responsabilidades - Obtiene invitaciones + colaboraciones del usuario autenticado
    */
   public getAll: RequestHandler = async (req: Request, res: Response) => {
-    const miembroId = req.usuario!.miembro_id;
+    const miembroId = req.usuario!.id;
     const serviceResponse = await misResponsabilidadesService.findAll(miembroId);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };

@@ -12,7 +12,7 @@ export function useCreateActividad() {
     onSuccess: () => {
       // Invalidar la lista general de actividades
       queryClient.invalidateQueries({ queryKey: [ACTIVIDADES_QUERY_KEY] });
-      
+
       // Invalidar el calendario para que la nueva actividad aparezca sin recargar
       queryClient.invalidateQueries({ queryKey: [CALENDARIO_QUERY_KEY] });
     },

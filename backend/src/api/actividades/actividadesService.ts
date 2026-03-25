@@ -1,9 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import { ColaboradoresRepository } from '@/api/colaboradores/colaboradoresRepository';
+import { InvitadosRepository } from '@/api/invitados/invitadosRepository';
 import { NecesidadesLogisticasRepository } from '@/api/necesidadesLogisticas/necesidadesLogisticasRepository';
+import { emitAndPersist } from '@/api/notificaciones/notificacionesService';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { hoyCL, nowEnZona, parseActividadFin, parseActividadInicio } from '@/common/utils/dateTime';
-import { requireEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
+import { isDirectivaEnAlgunGrupo, requireEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type {
   Actividad,
@@ -19,15 +21,18 @@ export class ActividadesService {
   private actividadesRepository: ActividadesRepository;
   private necesidadesRepository: NecesidadesLogisticasRepository;
   private colaboradoresRepository: ColaboradoresRepository;
+  private invitadosRepository: InvitadosRepository;
 
   constructor(
     repository: ActividadesRepository = new ActividadesRepository(),
     necesidadesRepository: NecesidadesLogisticasRepository = new NecesidadesLogisticasRepository(),
     colaboradoresRepository: ColaboradoresRepository = new ColaboradoresRepository(),
+    invitadosRepository: InvitadosRepository = new InvitadosRepository(),
   ) {
     this.actividadesRepository = repository;
     this.necesidadesRepository = necesidadesRepository;
     this.colaboradoresRepository = colaboradoresRepository;
+    this.invitadosRepository = invitadosRepository;
   }
 
   /**
@@ -173,13 +178,31 @@ export class ActividadesService {
   /**
    * Obtiene una actividad por ID
    */
-  async findById(id: number): Promise<ServiceResponse<Actividad | null>> {
+  async findById(
+    id: number,
+    usuario?: { rol: string; id: number },
+  ): Promise<ServiceResponse<Actividad | null>> {
     try {
       await this.syncProgramadasVencidas();
       const actividad = await this.actividadesRepository.findByIdAsync(id);
 
       if (!actividad) {
         return ServiceResponse.failure('Actividad no encontrada', null, StatusCodes.NOT_FOUND);
+      }
+
+      // Restricción: Si la actividad ya pasó, solo Admin o Directiva pueden verla.
+      const esPasada = actividad.fecha < hoyCL();
+      if (esPasada && usuario) {
+        const esAdmin = usuario.rol === 'administrador';
+        const esDirectiva = await isDirectivaEnAlgunGrupo(usuario.id);
+
+        if (!esAdmin && !esDirectiva) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver los detalles de una actividad pasada',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       return ServiceResponse.success<Actividad>('Actividad encontrada', actividad);
@@ -199,7 +222,7 @@ export class ActividadesService {
    */
   async create(
     actividadData: Omit<Actividad, 'id' | 'fecha_creacion' | 'estado' | 'motivo_cancelacion'>,
-    usuario?: { rol: string; miembro_id: number | null },
+    usuario?: { rol: string; id: number },
   ): Promise<ServiceResponse<Actividad | null>> {
     try {
       // Validar que el tipo de actividad exista
@@ -238,14 +261,7 @@ export class ActividadesService {
             StatusCodes.BAD_REQUEST,
           );
         }
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'Tu usuario no tiene un miembro asociado',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
-        const forbidden = await requireEncargadoDeGrupo(usuario.miembro_id, actividadData.grupo_id);
+        const forbidden = await requireEncargadoDeGrupo(usuario.id, actividadData.grupo_id);
         if (forbidden) return forbidden;
       }
 
@@ -316,7 +332,7 @@ export class ActividadesService {
   async update(
     id: number,
     actividadData: Partial<Actividad>,
-    usuario?: { rol: string; miembro_id: number | null },
+    usuario?: { rol: string; id: number },
   ): Promise<ServiceResponse<Actividad | null>> {
     try {
       // Verificar que la actividad exista
@@ -328,13 +344,6 @@ export class ActividadesService {
       // Validar que un líder solo pueda modificar actividades de sus grupos
       // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_grupo.
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'Tu usuario no tiene un miembro asociado',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
         if (!actividadExistente.grupo_id) {
           return ServiceResponse.failure(
             'No tienes permiso para modificar esta actividad',
@@ -342,10 +351,7 @@ export class ActividadesService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const forbidden = await requireEncargadoDeGrupo(
-          usuario.miembro_id,
-          actividadExistente.grupo_id,
-        );
+        const forbidden = await requireEncargadoDeGrupo(usuario.id, actividadExistente.grupo_id);
         if (forbidden) return forbidden;
       }
 
@@ -379,6 +385,18 @@ export class ActividadesService {
 
       // Validar grupo ministerial (si se proporcionó)
       if (actividadData.grupo_id) {
+        // Si el usuario es líder, validar que sea líder del nuevo grupo asignado
+        if (usuario?.rol === 'usuario') {
+          const forbiddenNuevoGrupo = await requireEncargadoDeGrupo(usuario.id, actividadData.grupo_id);
+          if (forbiddenNuevoGrupo) {
+            return ServiceResponse.failure(
+              'No tienes permiso para asignar la actividad a este grupo ministerial.',
+              null,
+              StatusCodes.FORBIDDEN,
+            );
+          }
+        }
+
         const grupoExiste = await this.actividadesRepository.grupoExistsAsync(
           actividadData.grupo_id,
         );
@@ -427,7 +445,7 @@ export class ActividadesService {
     id: number,
     estado: (typeof ESTADOS_ACTIVIDAD)[number],
     motivo_cancelacion?: string,
-    usuario?: { rol: string; miembro_id: number | null },
+    usuario?: { rol: string; id: number },
   ): Promise<ServiceResponse<Actividad | null>> {
     try {
       await this.syncProgramadasVencidas();
@@ -440,13 +458,6 @@ export class ActividadesService {
       // Validar que un líder solo pueda cambiar el estado de actividades de sus grupos
       // Admin: bypass total. Lider: debe ser encargado vigente del grupo en integrante_grupo.
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'Tu usuario no tiene un miembro asociado',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
         if (!actividad.grupo_id) {
           return ServiceResponse.failure(
             'No tienes permiso para modificar esta actividad',
@@ -454,7 +465,7 @@ export class ActividadesService {
             StatusCodes.FORBIDDEN,
           );
         }
-        const forbidden = await requireEncargadoDeGrupo(usuario.miembro_id, actividad.grupo_id);
+        const forbidden = await requireEncargadoDeGrupo(usuario.id, actividad.grupo_id);
         if (forbidden) return forbidden;
       }
 
@@ -468,52 +479,19 @@ export class ActividadesService {
       }
 
       if (actividad.estado === 'cancelada') {
-        // Solo el administrador puede revertir una cancelación
-        if (usuario?.rol !== 'administrador') {
-          return ServiceResponse.failure(
-            'No se puede cambiar el estado de una actividad cancelada',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-
-        const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
-        const now = nowEnZona();
-        const esFutura = finActividad.isAfter(now);
-
-        if (estado === 'programada' && !esFutura) {
-          return ServiceResponse.failure(
-            'Solo se puede reprogramar una actividad cancelada cuya fecha aún no ha pasado',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-
-        if (estado === 'realizada' && esFutura) {
-          return ServiceResponse.failure(
-            'Solo se puede marcar como realizada una actividad cancelada cuya fecha ya pasó',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-      }
-
-      if (actividad.estado === 'realizada' && estado === 'programada') {
         return ServiceResponse.failure(
-          'No se puede volver a programar una actividad ya realizada',
+          'No se puede cambiar el estado de una actividad cancelada',
           null,
           StatusCodes.CONFLICT,
         );
       }
 
-      if (actividad.estado === 'realizada' && estado === 'cancelada') {
-        if (usuario?.rol === 'usuario') {
-          return ServiceResponse.failure(
-            'Solo el administrador puede cancelar una actividad ya realizada (corrección administrativa).',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
+      if (actividad.estado === 'realizada') {
+        return ServiceResponse.failure(
+          'No se puede cambiar el estado de una actividad realizada',
+          null,
+          StatusCodes.CONFLICT,
+        );
       }
 
       const actividadActualizada = await this.actividadesRepository.updateEstadoAsync(
@@ -532,6 +510,9 @@ export class ActividadesService {
 
       // Al cancelar una actividad: cascada completa hacia necesidades y colaboradores.
       if (estado === 'cancelada') {
+        let miembrosColaboradores: number[] = [];
+        let miembrosInvitados: number[] = [];
+
         try {
           const { count: necesidadesCerradas, ids: necesidadIds } =
             await this.necesidadesRepository.closeAllByActividadAsync(id);
@@ -543,28 +524,80 @@ export class ActividadesService {
           }
 
           try {
-            const colaboradoresRechazados =
-              await this.colaboradoresRepository.rejectAllByNecesidadesAsync(necesidadIds);
+            const { count: colaboradoresEliminados, miembroIds } =
+              await this.colaboradoresRepository.deleteAllByNecesidadesAsync(necesidadIds);
 
-            if (colaboradoresRechazados > 0) {
+            miembrosColaboradores = [...new Set(miembroIds)];
+
+            if (colaboradoresEliminados > 0) {
               logger.info(
-                `Actividad ${id} cancelada: ${colaboradoresRechazados} oferta(s) de colaboración rechazada(s) automáticamente.`,
+                `Actividad ${id} cancelada: ${colaboradoresEliminados} compromiso(s) de colaboración eliminado(s) automáticamente.`,
               );
             }
           } catch (colabError) {
             logger.error(
-              `Actividad ${id} cancelada y necesidades cerradas, pero falló el rechazo de colaboradores: ${(colabError as Error).message}`,
+              `Actividad ${id} cancelada y necesidades canceladas, pero falló la cancelación de colaboradores: ${(colabError as Error).message}`,
             );
           }
         } catch (needsError) {
           logger.error(
-            `Actividad ${id} cancelada, pero falló el cierre de necesidades: ${(needsError as Error).message}`,
+            `Actividad ${id} cancelada, pero falló la cancelación de necesidades: ${(needsError as Error).message}`,
           );
         }
+
+        try {
+          const { count: invitadosCancelados, miembroIds } =
+            await this.invitadosRepository.cancelAllByActividadAsync(id);
+
+          miembrosInvitados = [...new Set(miembroIds)];
+
+          if (invitadosCancelados > 0) {
+            logger.info(
+              `Actividad ${id} cancelada: ${invitadosCancelados} invitación(es) cancelada(s) automáticamente.`,
+            );
+          }
+        } catch (invitError) {
+          logger.error(
+            `Actividad ${id} cancelada, pero falló la cancelación de invitaciones: ${(invitError as Error).message}`,
+          );
+        }
+
+        // Notificar a invitados y colaboradores afectados (fire-and-forget)
+        const nombreActividad = actividad.nombre;
+        const timestamp = Date.now();
+
+        const notifInvitados = miembrosInvitados.map((miembroId) =>
+          emitAndPersist(miembroId, {
+            tipo: 'actividad_cancelada',
+            mensaje: `Actividad cancelada: ${nombreActividad}`,
+            detalle: 'Tu participación fue cancelada',
+            href: `/dashboard/mis-responsabilidades?actividadId=${id}`,
+            timestamp,
+          }).catch((err) =>
+            logger.warn({ err }, `[notif] error notificando invitado ${miembroId}`),
+          ),
+        );
+
+        // Evitar duplicados: no notificar dos veces al mismo miembro
+        const invitadosSet = new Set(miembrosInvitados);
+        const miembrosColabUnicos = miembrosColaboradores.filter((id) => !invitadosSet.has(id));
+
+        const notifColab = miembrosColabUnicos.map((miembroId) =>
+          emitAndPersist(miembroId, {
+            tipo: 'actividad_cancelada',
+            mensaje: `Actividad cancelada: ${nombreActividad}`,
+            detalle: 'Tu oferta de colaboración fue cancelada',
+            href: `/dashboard/mis-responsabilidades?actividadId=${id}`,
+            timestamp,
+          }).catch((err) =>
+            logger.warn({ err }, `[notif] error notificando colaborador ${miembroId}`),
+          ),
+        );
+
+        Promise.all([...notifInvitados, ...notifColab]).catch(() => {});
       }
 
       const mensajes: Record<string, string> = {
-        programada: 'Actividad reprogramada exitosamente',
         realizada: 'Actividad marcada como realizada exitosamente',
         cancelada: 'Actividad cancelada exitosamente',
       };
@@ -575,6 +608,134 @@ export class ActividadesService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         'Error al cambiar el estado de la actividad',
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Duplica una actividad cancelada con nueva fecha/hora (reprogramar)
+   * Copia solo datos base: NO copia necesidades, invitaciones ni colaboraciones
+   */
+  async duplicar(
+    id: number,
+    datos: { fecha: string; hora_inicio: string; hora_fin: string },
+    usuario?: { rol: string; id: number },
+  ): Promise<ServiceResponse<Actividad | null>> {
+    try {
+      const original = await this.actividadesRepository.findByIdAsync(id);
+      if (!original) {
+        return ServiceResponse.failure('Actividad no encontrada', null, StatusCodes.NOT_FOUND);
+      }
+
+      if (original.estado !== 'cancelada') {
+        return ServiceResponse.failure(
+          'Solo se pueden reprogramar actividades canceladas',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      if (original.reprogramada_en_id) {
+        return ServiceResponse.failure(
+          'Esta actividad ya fue reprogramada anteriormente',
+          null,
+          StatusCodes.CONFLICT,
+        );
+      }
+
+      if (usuario?.rol === 'usuario') {
+        if (!original.grupo_id) {
+          return ServiceResponse.failure(
+            'No tienes permiso para reprogramar esta actividad',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+        const forbidden = await requireEncargadoDeGrupo(usuario.id, original.grupo_id);
+        if (forbidden) return forbidden;
+      }
+
+      if (datos.fecha < hoyCL()) {
+        return ServiceResponse.failure(
+          'La nueva fecha no puede ser anterior a hoy',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      if (datos.hora_fin <= datos.hora_inicio) {
+        return ServiceResponse.failure(
+          'La hora de fin debe ser posterior a la hora de inicio',
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      const nuevaActividad = await this.actividadesRepository.createAsync({
+        patron_id: original.patron_id,
+        tipo_actividad_id: original.tipo_actividad_id,
+        nombre: original.nombre,
+        descripcion: original.descripcion,
+        fecha: datos.fecha,
+        hora_inicio: datos.hora_inicio,
+        hora_fin: datos.hora_fin,
+        lugar: original.lugar,
+        grupo_id: original.grupo_id,
+        es_publica: original.es_publica,
+        creador_id: usuario?.id ?? original.creador_id,
+      });
+
+      await this.actividadesRepository.setReprogramadaEnAsync(id, nuevaActividad.id);
+
+      // Notificar a los ex-invitados de la actividad cancelada (fire-and-forget)
+      try {
+        const miembrosNotificar =
+          await this.invitadosRepository.findMiembroIdsCanceladosByActividadAsync(id);
+
+        if (miembrosNotificar.length > 0) {
+          const fechaFormateada = new Date(`${datos.fecha}T12:00:00`).toLocaleDateString('es-CL', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+          });
+
+          const notifs = miembrosNotificar.map((miembroId) =>
+            emitAndPersist(miembroId, {
+              tipo: 'actividad_reprogramada',
+              mensaje: `Actividad reprogramada: ${original.nombre}`,
+              detalle: `Nueva fecha: ${fechaFormateada}`,
+              href: `/dashboard/actividades/${nuevaActividad.id}`,
+              timestamp: Date.now(),
+            }).catch((err) =>
+              logger.warn({ err }, `[notif] error notificando reprogramación a ${miembroId}`),
+            ),
+          );
+
+          Promise.all(notifs).catch(() => {});
+
+          logger.info(
+            `Actividad ${id} reprogramada: notificación enviada a ${miembrosNotificar.length} ex-invitado(s).`,
+          );
+        }
+      } catch (notifError) {
+        logger.warn(
+          `[notif] error al obtener ex-invitados para notificar reprogramación: ${(notifError as Error).message}`,
+        );
+      }
+
+      return ServiceResponse.success<Actividad>(
+        'Actividad reprogramada exitosamente',
+        nuevaActividad,
+        StatusCodes.CREATED,
+      );
+    } catch (error) {
+      const errorMessage = `Error al reprogramar actividad: ${(error as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        'Error al reprogramar actividad',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

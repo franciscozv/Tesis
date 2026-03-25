@@ -16,13 +16,13 @@ class IntegranteGrupoController {
       grupo_id,
       rol_grupo_id,
       fecha_vinculacion,
-      req.usuario?.rol,
+      req.usuario!,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
   /**
-   * Desvincula un miembro de un grupo ministerial (RF_07)
+   * Desvincular un miembro de un grupo ministerial (RF_07)
    * PATCH /api/integrantes-grupo/:id/desvincular
    */
   public desvincularMiembro: RequestHandler = async (req: Request, res: Response) => {
@@ -31,7 +31,7 @@ class IntegranteGrupoController {
     const serviceResponse = await integranteGrupoService.desvincularMiembro(
       id,
       fecha_desvinculacion,
-      req.usuario?.rol,
+      req.usuario!,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -46,7 +46,7 @@ class IntegranteGrupoController {
     const serviceResponse = await integranteGrupoService.cambiarRol(
       id,
       rol_grupo_id,
-      req.usuario?.rol,
+      req.usuario!,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -60,7 +60,7 @@ class IntegranteGrupoController {
     const serviceResponse = await integranteGrupoService.getIntegrantesByMiembro(
       miembroId,
       req.usuario?.rol,
-      req.usuario?.miembro_id ?? null,
+      req.usuario?.id ?? null,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -86,7 +86,7 @@ class IntegranteGrupoController {
       grupoId,
       renovaciones,
       fecha,
-      req.usuario?.rol,
+      req.usuario!,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
@@ -97,7 +97,10 @@ class IntegranteGrupoController {
    */
   public getHistorialDirectiva: RequestHandler = async (req: Request, res: Response) => {
     const grupoId = Number.parseInt(req.params.grupo_id, 10);
-    const serviceResponse = await integranteGrupoService.getHistorialDirectiva(grupoId);
+    const serviceResponse = await integranteGrupoService.getHistorialDirectiva(
+      grupoId,
+      req.usuario!,
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }

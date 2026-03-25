@@ -28,7 +28,8 @@ class ActividadesController {
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await actividadesService.findById(id);
+    const usuario = req.usuario!;
+    const serviceResponse = await actividadesService.findById(id, usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -38,7 +39,7 @@ class ActividadesController {
   public create: RequestHandler = async (req: Request, res: Response) => {
     const usuario = {
       rol: req.usuario!.rol,
-      miembro_id: req.usuario!.miembro_id,
+      id: req.usuario!.id,
     };
     const serviceResponse = await actividadesService.create(req.body, usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
@@ -51,9 +52,22 @@ class ActividadesController {
     const id = Number.parseInt(req.params.id, 10);
     const usuario = {
       rol: req.usuario!.rol,
-      miembro_id: req.usuario!.miembro_id,
+      id: req.usuario!.id,
     };
     const serviceResponse = await actividadesService.update(id, req.body, usuario);
+    res.status(serviceResponse.statusCode).send(serviceResponse);
+  };
+
+  /**
+   * Duplica una actividad cancelada con nueva fecha/hora (reprogramar)
+   */
+  public duplicar: RequestHandler = async (req: Request, res: Response) => {
+    const id = Number.parseInt(req.params.id, 10);
+    const usuario = {
+      rol: req.usuario!.rol,
+      id: req.usuario!.id,
+    };
+    const serviceResponse = await actividadesService.duplicar(id, req.body, usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -64,7 +78,7 @@ class ActividadesController {
     const id = Number.parseInt(req.params.id, 10);
     const usuario = {
       rol: req.usuario!.rol,
-      miembro_id: req.usuario!.miembro_id,
+      id: req.usuario!.id,
     };
     const serviceResponse = await actividadesService.updateEstado(
       id,

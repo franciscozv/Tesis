@@ -16,7 +16,7 @@ export class CalendarioRepository {
     const { data, error } = await supabase
       .from('actividad')
       .select(
-        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
+        'id, nombre, fecha, hora_inicio, hora_fin, lugar, estado, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
       )
       .eq('es_publica', true)
       .eq('estado', 'programada')
@@ -31,20 +31,38 @@ export class CalendarioRepository {
 
   /**
    * Obtiene todas las actividades programadas dentro de un mes/año (públicas y privadas)
-   * Permite filtrar opcionalmente por grupo_id
+   * Permite filtrar opcionalmente por grupo_id e incluir actividades pasadas
    */
-  async findConsolidadoAsync(mes: number, anio: number, grupoId?: number): Promise<CalendarioEvento[]> {
+  async findConsolidadoAsync(
+    mes: number,
+    anio: number,
+    grupoId?: number,
+    includePast: boolean = false,
+  ): Promise<CalendarioEvento[]> {
     const startDate = `${anio}-${String(mes).padStart(2, '0')}-01`;
     const lastDay = new Date(anio, mes, 0).getDate();
     const endDate = `${anio}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+    const currentTime = new Date().toLocaleTimeString('en-GB', {
+      timeZone: 'America/Santiago',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const fromDate = includePast
+      ? startDate
+      : today > startDate
+        ? today
+        : startDate;
 
     let query = supabase
       .from('actividad')
       .select(
-        'id, nombre, fecha, hora_inicio, hora_fin, lugar, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
+        'id, nombre, fecha, hora_inicio, hora_fin, lugar, estado, tipo_actividad:tipo_actividad_id(id_tipo, nombre), grupo_organizador:grupo_id(id_grupo, nombre)',
       )
-      .eq('estado', 'programada')
-      .gte('fecha', startDate)
+      .in('estado', ['programada', 'cancelada', 'realizada'])
+      .gte('fecha', fromDate)
       .lte('fecha', endDate);
 
     if (grupoId) {
@@ -56,7 +74,18 @@ export class CalendarioRepository {
       .order('hora_inicio', { ascending: true });
 
     if (error) throw error;
-    return this.mapEventos(data);
+
+    if (includePast) {
+      return this.mapEventos(data);
+    }
+
+    // Excluir actividades de hoy que ya terminaron (comparando hora_fin con la hora actual en Chile)
+    const filtradas = (data ?? []).filter((row: any) => {
+      if (row.fecha > today) return true;
+      return (row.hora_fin ?? '23:59') > currentTime;
+    });
+
+    return this.mapEventos(filtradas);
   }
 
   /**
@@ -125,6 +154,7 @@ export class CalendarioRepository {
         hora_inicio: r.hora_inicio as string,
         hora_fin: r.hora_fin as string,
         lugar: (r.lugar as string) ?? null,
+        estado: (r.estado as 'programada' | 'cancelada') ?? 'programada',
         tipo_actividad: tipo
           ? { id: tipo.id_tipo as number, nombre: tipo.nombre as string }
           : { id: 0, nombre: 'Desconocido' },
@@ -135,4 +165,3 @@ export class CalendarioRepository {
     });
   }
 }
-

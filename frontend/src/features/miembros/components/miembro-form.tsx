@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import type { ZodType } from 'zod';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -31,6 +32,8 @@ interface MiembroFormProps {
   submitLabel?: string;
   disableRut?: boolean;
   allowEstadoComunion?: boolean;
+  showRol?: boolean;
+  schema?: ZodType<any>;
   apiErrors?: Partial<Record<keyof CreateMiembroFormData, string>>;
   onCancel?: () => void;
 }
@@ -42,11 +45,14 @@ export function MiembroForm({
   submitLabel = 'Guardar',
   disableRut = false,
   allowEstadoComunion = true,
+  showRol = true,
+  schema,
   apiErrors,
   onCancel,
 }: MiembroFormProps) {
   const form = useForm<CreateMiembroFormData>({
-    resolver: zodResolver(createMiembroSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver((schema ?? createMiembroSchema) as any),
     defaultValues: {
       rut: '',
       nombre: '',
@@ -57,6 +63,7 @@ export function MiembroForm({
       direccion: '',
       genero: '',
       estado_comunion: 'asistente',
+      rol: 'usuario',
       fecha_ingreso: new Date().toISOString().split('T')[0],
       ...defaultValues,
     },
@@ -116,7 +123,7 @@ export function MiembroForm({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email *</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="correo@ejemplo.cl" {...field} />
               </FormControl>
@@ -193,7 +200,7 @@ export function MiembroForm({
             name="estado_comunion"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Estado Membresía *</FormLabel>
+                <FormLabel>Estado Comunión *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -204,6 +211,29 @@ export function MiembroForm({
                     <SelectItem value="asistente">Asistente</SelectItem>
                     <SelectItem value="probando">Probando</SelectItem>
                     <SelectItem value="plena_comunion">Plena Comunión</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        {showRol && (
+          <FormField
+            control={form.control}
+            name="rol"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Rol de Cuenta *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="usuario">Usuario</SelectItem>
+                    <SelectItem value="administrador">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

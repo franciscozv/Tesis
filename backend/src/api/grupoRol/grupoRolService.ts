@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
-import { ServiceResponse } from '@/common/models/serviceResponse';
-import { logger } from '@/server';
 import type { RolGrupo } from '@/api/rolesGrupo/rolesGrupoModel';
+import { ServiceResponse } from '@/common/models/serviceResponse';
 import { supabase } from '@/common/utils/supabaseClient';
+import { logger } from '@/server';
 import type { GrupoRol } from './grupoRolModel';
 import { GrupoRolRepository } from './grupoRolRepository';
 
@@ -27,10 +27,7 @@ export class GrupoRolService {
     }
   }
 
-  async habilitarRol(
-    grupoId: number,
-    rolId: number,
-  ): Promise<ServiceResponse<GrupoRol | null>> {
+  async habilitarRol(grupoId: number, rolId: number): Promise<ServiceResponse<GrupoRol | null>> {
     try {
       const { data: grupo, error: gErr } = await supabase
         .from('grupo')
@@ -81,10 +78,7 @@ export class GrupoRolService {
     }
   }
 
-  async deshabilitarRol(
-    grupoId: number,
-    rolId: number,
-  ): Promise<ServiceResponse<boolean | null>> {
+  async deshabilitarRol(grupoId: number, rolId: number): Promise<ServiceResponse<boolean | null>> {
     try {
       const existe = await this.repo.existeAsync(grupoId, rolId);
       if (!existe) {

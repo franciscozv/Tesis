@@ -1,5 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
+import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
+import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
 import { logger } from '@/server';
 import type {
   ESTADOS_COMUNION,
@@ -58,12 +60,25 @@ export class HistorialEstadoService {
   }
 
   /**
-   * Obtiene historial de un miembro con datos del usuario que hizo el cambio
+   * Obtiene historial de un miembro con datos del usuario que hizo el cambio.
+   * Usuarios con rol 'usuario' solo pueden acceder si son directiva en al menos un grupo.
    */
   async findByMiembro(
     miembroId: number,
+    usuario: JwtPayload,
   ): Promise<ServiceResponse<HistorialEstadoConUsuario[] | null>> {
     try {
+      if (usuario.rol === 'usuario') {
+        const esDirectiva = await isDirectivaEnAlgunGrupo(usuario.id);
+        if (!esDirectiva) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver el historial de estado',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
       const registros = await this.historialRepository.findByMiembroAsync(miembroId);
 
       if (!registros) {
@@ -97,10 +112,25 @@ export class HistorialEstadoService {
   }
 
   /**
-   * Obtiene un registro de historial por ID
+   * Obtiene un registro de historial por ID.
+   * Usuarios con rol 'usuario' solo pueden acceder si son directiva en al menos un grupo.
    */
-  async findById(id: number): Promise<ServiceResponse<HistorialEstado | null>> {
+  async findById(
+    id: number,
+    usuario: JwtPayload,
+  ): Promise<ServiceResponse<HistorialEstado | null>> {
     try {
+      if (usuario.rol === 'usuario') {
+        const esDirectiva = await isDirectivaEnAlgunGrupo(usuario.id);
+        if (!esDirectiva) {
+          return ServiceResponse.failure(
+            'No tienes permiso para ver el historial de estado',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
+      }
+
       const registro = await this.historialRepository.findByIdAsync(id);
 
       if (!registro) {

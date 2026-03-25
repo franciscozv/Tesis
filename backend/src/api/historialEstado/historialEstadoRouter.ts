@@ -19,8 +19,8 @@ export const historialEstadoRouter: Router = express.Router();
 // Registrar schema en OpenAPI
 historialEstadoRegistry.register('HistorialEstado', HistorialEstadoSchema);
 
-// Todas las rutas requieren autenticación + rol administrador
-historialEstadoRouter.use(verificarToken, verificarRol('administrador'));
+// POST requiere administrador; GET permite también a usuarios directiva (verificado en service)
+historialEstadoRouter.use(verificarToken);
 
 // GET /api/historial-estado?miembro_id=X - Obtener historial por miembro con datos del usuario
 historialEstadoRegistry.registerPath({
@@ -73,6 +73,7 @@ historialEstadoRegistry.registerPath({
 });
 historialEstadoRouter.post(
   '/',
+  verificarRol('administrador'),
   validateRequest(CreateHistorialEstadoSchema),
   historialEstadoController.create,
 );

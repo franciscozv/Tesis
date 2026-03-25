@@ -3,9 +3,12 @@ import apiClient from '@/lib/api-client';
 import type {
   CambiarEstadoInput,
   CreateMiembroInput,
+  DeleteMiembroResult,
   Miembro,
   MiembrosQueryParams,
   PaginatedMiembrosResponse,
+  ResetPasswordInput,
+  UpdateCuentaInput,
   UpdateMiembroInput,
   UpdateMiPerfilInput,
 } from '../types';
@@ -53,7 +56,23 @@ export const miembrosApi = {
     return data.responseObject;
   },
 
-  delete: async (id: number) => {
-    await apiClient.delete(`/miembros/${id}`);
+  delete: async (id: number): Promise<DeleteMiembroResult | null> => {
+    const { data } = await apiClient.delete<ApiResponse<DeleteMiembroResult>>(`/miembros/${id}`);
+    return data.responseObject;
+  },
+
+  actualizarCuenta: async (id: number, input: UpdateCuentaInput) => {
+    const { data } = await apiClient.put<ApiResponse<Miembro>>(`/miembros/${id}/cuenta`, input);
+    return data.responseObject;
+  },
+
+  resetPassword: async (id: number, input: ResetPasswordInput) => {
+    const { data } = await apiClient.patch<ApiResponse<Miembro>>(`/miembros/${id}/password`, input);
+    return data.responseObject;
+  },
+
+  reactivar: async (id: number) => {
+    const { data } = await apiClient.patch<ApiResponse<Miembro>>(`/miembros/${id}/reactivar`);
+    return data.responseObject;
   },
 };

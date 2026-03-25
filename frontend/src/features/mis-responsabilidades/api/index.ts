@@ -5,7 +5,8 @@ import type { Responsabilidad } from '../types';
 export const misResponsabilidadesApi = {
   getAll: async (): Promise<Responsabilidad[]> => {
     try {
-      const { data } = await apiClient.get<ApiResponse<Responsabilidad[]>>('/mis-responsabilidades');
+      const { data } =
+        await apiClient.get<ApiResponse<Responsabilidad[]>>('/mis-responsabilidades');
       return data.responseObject ?? [];
     } catch {
       return [];

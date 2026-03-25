@@ -10,7 +10,9 @@ import { ResponsabilidadesActividadRepository } from './rolesActividadRepository
 export class ResponsabilidadesActividadService {
   private responsabilidadesActividadRepository: ResponsabilidadesActividadRepository;
 
-  constructor(repository: ResponsabilidadesActividadRepository = new ResponsabilidadesActividadRepository()) {
+  constructor(
+    repository: ResponsabilidadesActividadRepository = new ResponsabilidadesActividadRepository(),
+  ) {
     this.responsabilidadesActividadRepository = repository;
   }
 
@@ -30,10 +32,16 @@ export class ResponsabilidadesActividadService {
       }
 
       if (roles.length === 0) {
-        return ServiceResponse.success<ResponsabilidadActividad[]>('No se encontraron responsabilidades de actividad', []);
+        return ServiceResponse.success<ResponsabilidadActividad[]>(
+          'No se encontraron responsabilidades de actividad',
+          [],
+        );
       }
 
-      return ServiceResponse.success<ResponsabilidadActividad[]>('Roles de actividad encontrados', roles);
+      return ServiceResponse.success<ResponsabilidadActividad[]>(
+        'Roles de actividad encontrados',
+        roles,
+      );
     } catch (error) {
       const errorMessage = `Error al obtener responsabilidades de actividad: ${(error as Error).message}`;
       logger.error(errorMessage);
@@ -76,11 +84,16 @@ export class ResponsabilidadesActividadService {
    * Crea un nuevo rol
    */
   async create(
-    rolData: Omit<ResponsabilidadActividad, 'id_responsabilidad' | 'created_at' | 'updated_at' | 'activo'>,
+    rolData: Omit<
+      ResponsabilidadActividad,
+      'id_responsabilidad' | 'created_at' | 'updated_at' | 'activo'
+    >,
   ): Promise<ServiceResponse<ResponsabilidadActividad | null>> {
     try {
       // Validar que el nombre no exista
-      const existeNombre = await this.responsabilidadesActividadRepository.existsByNombreAsync(rolData.nombre);
+      const existeNombre = await this.responsabilidadesActividadRepository.existsByNombreAsync(
+        rolData.nombre,
+      );
       if (existeNombre) {
         return ServiceResponse.failure(
           'Ya existe un responsabilidad de actividad con ese nombre',
@@ -170,7 +183,10 @@ export class ResponsabilidadesActividadService {
       }
 
       const estado = rol.activo ? 'activado' : 'desactivado';
-      return ServiceResponse.success<ResponsabilidadActividad>(`Rol de actividad ${estado} exitosamente`, rol);
+      return ServiceResponse.success<ResponsabilidadActividad>(
+        `Rol de actividad ${estado} exitosamente`,
+        rol,
+      );
     } catch (error) {
       const errorMessage = `Error al cambiar estado del responsabilidad de actividad: ${(error as Error).message}`;
       logger.error(errorMessage);
@@ -221,5 +237,3 @@ export class ResponsabilidadesActividadService {
 }
 
 export const responsabilidadesActividadService = new ResponsabilidadesActividadService();
-
-

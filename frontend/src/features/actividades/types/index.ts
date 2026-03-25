@@ -16,6 +16,8 @@ export interface Actividad {
   es_publica: boolean;
   estado: EstadoActividad;
   motivo_cancelacion: string | null;
+  reprogramada_en_id?: number | null;
+  reprogramacion_de_id?: number | null;
   creador_id: number;
   fecha_creacion: string;
 }
@@ -39,6 +41,12 @@ export type UpdateActividadInput = Partial<Omit<CreateActividadInput, 'creador_i
 export interface CambiarEstadoActividadInput {
   estado: EstadoActividad;
   motivo_cancelacion?: string;
+}
+
+export interface DuplicarActividadInput {
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
 }
 
 export interface ActividadFilters {

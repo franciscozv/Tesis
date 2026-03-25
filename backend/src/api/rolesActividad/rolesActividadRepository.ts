@@ -62,7 +62,10 @@ export class ResponsabilidadesActividadRepository {
    * Crea un nuevo rol
    */
   async createAsync(
-    rolData: Omit<ResponsabilidadActividad, 'id_responsabilidad' | 'created_at' | 'updated_at' | 'activo'>,
+    rolData: Omit<
+      ResponsabilidadActividad,
+      'id_responsabilidad' | 'created_at' | 'updated_at' | 'activo'
+    >,
   ): Promise<ResponsabilidadActividad> {
     const { data, error } = await supabase
       .from('responsabilidad_actividad')
@@ -77,7 +80,10 @@ export class ResponsabilidadesActividadRepository {
   /**
    * Actualiza un rol existente
    */
-  async updateAsync(id: number, rolData: Partial<ResponsabilidadActividad>): Promise<ResponsabilidadActividad | null> {
+  async updateAsync(
+    id: number,
+    rolData: Partial<ResponsabilidadActividad>,
+  ): Promise<ResponsabilidadActividad | null> {
     const { data, error } = await supabase
       .from('responsabilidad_actividad')
       .update(rolData)
@@ -136,11 +142,12 @@ export class ResponsabilidadesActividadRepository {
    * Elimina un rol permanentemente (hard delete)
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase.from('responsabilidad_actividad').delete().eq('id_responsabilidad', id);
+    const { error } = await supabase
+      .from('responsabilidad_actividad')
+      .delete()
+      .eq('id_responsabilidad', id);
 
     if (error) throw error;
     return true;
   }
 }
-
-

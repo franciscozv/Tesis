@@ -5,8 +5,8 @@ import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { emailService } from '@/common/utils/emailService';
 import { env } from '@/common/utils/envConfig';
-import { logger } from '@/server';
 import { isDirectivaEnAlgunGrupo } from '@/common/utils/grupoPermissions';
+import { logger } from '@/server';
 import type { LoginResponse } from './authModel';
 import { AuthRepository } from './authRepository';
 
@@ -51,7 +51,6 @@ export class AuthService {
         id: usuario.id,
         email: usuario.email,
         rol: rolNormalizado,
-        miembro_id: usuario.miembro_id,
       };
 
       const token = jwt.sign(payload, env.JWT_SECRET, {
@@ -63,9 +62,7 @@ export class AuthService {
 
       // Verificar si el usuario es directiva en algún grupo
       const esDirectiva =
-        rolNormalizado === 'usuario' && usuario.miembro_id !== null
-          ? await isDirectivaEnAlgunGrupo(usuario.miembro_id)
-          : false;
+        rolNormalizado === 'usuario' ? await isDirectivaEnAlgunGrupo(usuario.id) : false;
 
       const loginResponse: LoginResponse = {
         token,
@@ -73,7 +70,6 @@ export class AuthService {
           id: usuario.id,
           email: usuario.email,
           rol: rolNormalizado,
-          miembro_id: usuario.miembro_id,
           es_directiva: esDirectiva,
         },
       };

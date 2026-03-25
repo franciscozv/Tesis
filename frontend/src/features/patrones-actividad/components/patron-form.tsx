@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarClock, Loader2 } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { TimePicker } from '@/components/ui/time-picker';
 import {
   Select,
   SelectContent,
@@ -31,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TimePicker } from '@/components/ui/time-picker';
 import type { TipoActividad } from '@/features/catalogos/types';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';
 import { type CreatePatronFormData, createPatronSchema } from '../schemas';
@@ -110,6 +110,7 @@ interface PatronFormProps {
   tiposActividad: TipoActividad[] | undefined;
   grupos: GrupoMinisterial[] | undefined;
   isEditing?: boolean;
+  patronesInactivos?: { id: number; nombre: string }[];
 }
 
 export function PatronFormModal({
@@ -121,6 +122,7 @@ export function PatronFormModal({
   tiposActividad,
   grupos,
   isEditing = false,
+  patronesInactivos = [],
 }: PatronFormProps) {
   const form = useForm<CreatePatronFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce creates input type mismatch with zodResolver
@@ -160,8 +162,16 @@ export function PatronFormModal({
   const diaSemana = form.watch('dia_semana');
   const horaInicio = form.watch('hora_inicio');
   const duracion = form.watch('duracion_minutos');
+  const nombreActual = form.watch('nombre');
 
   const resumen = buildResumen(frecuencia, diaSemana, horaInicio, Number(duracion));
+
+  const patronInactivoConflicto =
+    !isEditing && nombreActual.trim().length > 0
+      ? patronesInactivos.find(
+          (p) => p.nombre.trim().toLowerCase() === nombreActual.trim().toLowerCase(),
+        )
+      : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -185,6 +195,15 @@ export function PatronFormModal({
                   <FormControl>
                     <Input placeholder="Nombre del patrón" {...field} />
                   </FormControl>
+                  {patronInactivoConflicto && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                      <span>
+                        Ya existe un patrón inactivo con este nombre. Puedes reactivarlo desde la
+                        tabla en lugar de crear uno nuevo.
+                      </span>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -248,9 +267,7 @@ export function PatronFormModal({
                         ))}
                       </SelectContent>
                     </Select>
-                    {field.value && (
-                      <FormDescription>{descripciones[field.value]}</FormDescription>
-                    )}
+                    {field.value && <FormDescription>{descripciones[field.value]}</FormDescription>}
                     <FormMessage />
                   </FormItem>
                 );

@@ -17,7 +17,10 @@ export const responsabilidadesActividadRegistry = new OpenAPIRegistry();
 export const responsabilidadesActividadRouter: Router = express.Router();
 
 // Registrar schema en OpenAPI
-responsabilidadesActividadRegistry.register('ResponsabilidadActividad', ResponsabilidadActividadSchema);
+responsabilidadesActividadRegistry.register(
+  'ResponsabilidadActividad',
+  ResponsabilidadActividadSchema,
+);
 
 // Todas las rutas requieren autenticación
 responsabilidadesActividadRouter.use(verificarToken);
@@ -127,5 +130,3 @@ responsabilidadesActividadRouter.delete(
   validateRequest(GetResponsabilidadActividadSchema),
   responsabilidadesActividadController.delete,
 );
-
-

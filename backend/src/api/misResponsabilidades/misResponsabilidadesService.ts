@@ -1,4 +1,4 @@
-import { StatusCodes } from 'http-status-codes';
+﻿import { StatusCodes } from 'http-status-codes';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { logger } from '@/server';
 import { MisResponsabilidadesRepository } from './misResponsabilidadesRepository';
@@ -20,7 +20,7 @@ export interface Responsabilidad {
   estado_invitacion?: string;
   necesidad?: { id: number; descripcion: string };
   tipo_necesidad?: { id: number; nombre: string };
-  cantidad_ofrecida?: number;
+  cantidad_comprometida?: number;
   invitado_id?: number;
 }
 
@@ -62,15 +62,16 @@ export class MisResponsabilidadesService {
             hora_fin: act.hora_fin,
             estado: act.estado,
           },
-          grupo: act.grupo
-            ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre }
-            : null,
+          grupo: act.grupo ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre } : null,
           tipo_actividad: {
             id: act.tipo_actividad.id_tipo,
             nombre: act.tipo_actividad.nombre,
           },
           rol: inv.responsabilidad_actividad
-            ? { id: (inv.responsabilidad_actividad as any).id_responsabilidad, nombre: (inv.responsabilidad_actividad as any).nombre }
+            ? {
+                id: (inv.responsabilidad_actividad as any).id_responsabilidad,
+                nombre: (inv.responsabilidad_actividad as any).nombre,
+              }
             : undefined,
           estado_invitacion: inv.estado,
           invitado_id: inv.id,
@@ -79,7 +80,7 @@ export class MisResponsabilidadesService {
 
       // Mapear colaboraciones
       for (const col of colaboraciones ?? []) {
-        const nec = col.necesidad_logistica as any;
+        const nec = col.necesidad as any;
         const act = nec.actividad;
         responsabilidades.push({
           id: col.id,
@@ -92,21 +93,19 @@ export class MisResponsabilidadesService {
             hora_fin: act.hora_fin,
             estado: act.estado,
           },
-          grupo: act.grupo
-            ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre }
-            : null,
+          grupo: act.grupo ? { id: act.grupo.id_grupo, nombre: act.grupo.nombre } : null,
           tipo_actividad: {
             id: act.tipo_actividad.id_tipo,
             nombre: act.tipo_actividad.nombre,
           },
           necesidad: { id: nec.id, descripcion: nec.descripcion },
-          tipo_necesidad: nec.tipo_necesidad_logistica
+          tipo_necesidad: nec.tipo_necesidad
             ? {
-                id: nec.tipo_necesidad_logistica.id_tipo,
-                nombre: nec.tipo_necesidad_logistica.nombre,
+                id: nec.tipo_necesidad.id_tipo,
+                nombre: nec.tipo_necesidad.nombre,
               }
             : undefined,
-          cantidad_ofrecida: col.cantidad_ofrecida,
+          cantidad_comprometida: col.cantidad_comprometida,
         });
       }
 
@@ -130,4 +129,3 @@ export class MisResponsabilidadesService {
 }
 
 export const misResponsabilidadesService = new MisResponsabilidadesService();
-

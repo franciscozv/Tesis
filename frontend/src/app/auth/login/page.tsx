@@ -5,14 +5,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-svh flex">
       {/* Panel izquierdo — Identidad institucional */}
-      <div
-        className="hidden md:flex md:w-[42%] flex-col items-center justify-center relative overflow-hidden bg-primary"
-      >
+      <div className="hidden md:flex md:w-[42%] flex-col items-center justify-center relative overflow-hidden bg-primary">
         <div className="relative flex flex-col items-center gap-8 px-14 text-primary-foreground">
           {/* Logo */}
-          <div
-            className="rounded-full p-1.5 ring-1 ring-primary-foreground/15 bg-primary-foreground/5"
-          >
+          <div className="rounded-full p-1.5 ring-1 ring-primary-foreground/15 bg-primary-foreground/5">
             <Image
               src="/logo_iep.png"
               alt="Logo Iglesia Evangélica Pentecostal"
@@ -25,16 +21,12 @@ export default function LoginPage() {
 
           {/* Textos */}
           <div className="text-center space-y-3">
-            <h1
-              className="text-2xl font-semibold leading-snug tracking-wide font-serif"
-            >
+            <h1 className="text-2xl font-semibold leading-snug tracking-wide font-serif">
               Iglesia Evangélica
               <br />
               Pentecostal
             </h1>
-            <p
-              className="text-[11px] tracking-[0.22em] uppercase text-primary-foreground/45"
-            >
+            <p className="text-[11px] tracking-[0.22em] uppercase text-primary-foreground/45">
               Sistema de Gestión Ministerial
             </p>
           </div>
@@ -43,17 +35,13 @@ export default function LoginPage() {
           <div className="w-12 h-px bg-primary-foreground/15" />
 
           {/* Descripción */}
-          <p
-            className="text-sm text-center max-w-[240px] leading-relaxed text-primary-foreground/60"
-          >
+          <p className="text-sm text-center max-w-[240px] leading-relaxed text-primary-foreground/60">
             Administración de miembros, grupos ministeriales y actividades de la comunidad.
           </p>
         </div>
 
         {/* Pie del panel */}
-        <div
-          className="absolute bottom-6 text-[11px] tracking-widest uppercase text-primary-foreground/25"
-        >
+        <div className="absolute bottom-6 text-[11px] tracking-widest uppercase text-primary-foreground/25">
           IEP &mdash; Uso interno
         </div>
       </div>

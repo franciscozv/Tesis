@@ -94,8 +94,7 @@ const ERROR_CONFIG = {
       </svg>
     ),
     title: 'Ocurrió un error inesperado',
-    description:
-      'Algo salió mal al cargar la página. Puedes intentar recargar o volver al inicio.',
+    description: 'Algo salió mal al cargar la página. Puedes intentar recargar o volver al inicio.',
     showAutoReload: false,
   },
 } as const;
@@ -198,9 +197,7 @@ export default function GlobalError({
                 gap: '0.5rem',
                 fontSize: '0.75rem',
                 color: isOnline ? 'oklch(0.55 0.15 145)' : 'oklch(0.52 0.022 248)',
-                backgroundColor: isOnline
-                  ? 'oklch(0.55 0.15 145 / 0.1)'
-                  : 'oklch(0.87 0.012 248)',
+                backgroundColor: isOnline ? 'oklch(0.55 0.15 145 / 0.1)' : 'oklch(0.87 0.012 248)',
                 borderRadius: '9999px',
                 padding: '0.375rem 0.875rem',
                 marginBottom: '1.5rem',
@@ -220,7 +217,9 @@ export default function GlobalError({
           )}
 
           {/* Botones */}
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div
+            style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}
+          >
             <button
               type="button"
               onClick={reset}

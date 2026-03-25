@@ -28,9 +28,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 const PRESET_COLORS = [
-  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7',
-  '#EC4899', '#EF4444', '#F97316', '#EAB308',
-  '#22C55E', '#14B8A6', '#06B6D4', '#64748B',
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#A855F7',
+  '#EC4899',
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#06B6D4',
+  '#64748B',
 ];
 
 export interface FieldConfig<T extends FieldValues> {
@@ -143,8 +152,7 @@ export function CatalogoFormModal<T extends FieldValues>({
                               <div className="grid grid-cols-6 gap-2">
                                 {PRESET_COLORS.map((color) => {
                                   const isSelected =
-                                    (field.value as string)?.toLowerCase() ===
-                                    color.toLowerCase();
+                                    (field.value as string)?.toLowerCase() === color.toLowerCase();
                                   return (
                                     <button
                                       key={color}

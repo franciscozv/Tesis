@@ -9,9 +9,19 @@ export function useGruposPermitidos() {
   const { data: misGrupos, ...misQuery } = useMisGrupos();
 
   return {
+    // Admin: todos los grupos para gestión. Usuario: sus grupos personales.
     grupos: isAdmin ? todosLosGrupos : misGrupos,
     isLoading: isAdmin ? allQuery.isLoading : misQuery.isLoading,
     isAdmin,
+    // Siempre refleja membresía personal, independiente del rol.
     misGruposIds: new Set(misGrupos?.map((g) => g.id_grupo) ?? []),
+    // IDs de grupos donde el usuario es directiva.
+    gruposDirectivaIds: new Set(
+      misGrupos?.filter((g) => g.es_directiva_miembro).map((g) => g.id_grupo) ?? [],
+    ),
+    // Grupos que el usuario puede gestionar (Crear/Editar actividades)
+    gruposGestionables: isAdmin
+      ? todosLosGrupos
+      : misGrupos?.filter((g) => g.es_directiva_miembro) ?? [],
   };
 }

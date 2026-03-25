@@ -6,10 +6,12 @@ import { patronesActividadService } from './patronesActividadService';
  */
 class PatronesActividadController {
   /**
-   * Obtiene todos los patrones de actividad activos
+   * Obtiene patrones de actividad. Admins pueden pasar ?includeInactive=true para ver todos.
    */
-  public getAll: RequestHandler = async (_req: Request, res: Response) => {
-    const serviceResponse = await patronesActividadService.findAll();
+  public getAll: RequestHandler = async (req: Request, res: Response) => {
+    const isAdmin = req.usuario?.rol === 'administrador';
+    const includeInactive = isAdmin && req.query.includeInactive === 'true';
+    const serviceResponse = await patronesActividadService.findAll(includeInactive);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

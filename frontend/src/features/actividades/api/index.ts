@@ -5,6 +5,7 @@ import type {
   ActividadFilters,
   CambiarEstadoActividadInput,
   CreateActividadInput,
+  DuplicarActividadInput,
   PaginatedActividadesResponse,
   UpdateActividadInput,
 } from '../types';
@@ -64,6 +65,14 @@ export const actividadesApi = {
   cambiarEstado: async (id: number, input: CambiarEstadoActividadInput) => {
     const { data } = await apiClient.patch<ApiResponse<Actividad>>(
       `/actividades/${id}/estado`,
+      input,
+    );
+    return data.responseObject;
+  },
+
+  duplicar: async (id: number, input: DuplicarActividadInput) => {
+    const { data } = await apiClient.post<ApiResponse<Actividad>>(
+      `/actividades/${id}/duplicar`,
       input,
     );
     return data.responseObject;

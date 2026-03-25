@@ -1,6 +1,11 @@
 import type { ApiResponse } from '@/features/auth/types';
 import apiClient from '@/lib/api-client';
-import type { CreateGrupoInput, GrupoMinisterial, UpdateGrupoInput } from '../types';
+import type {
+  CreateGrupoInput,
+  GrupoConPermisos,
+  GrupoMinisterial,
+  UpdateGrupoInput,
+} from '../types';
 
 export const gruposApi = {
   getAll: async () => {
@@ -24,7 +29,7 @@ export const gruposApi = {
   },
 
   getMisGrupos: async () => {
-    const { data } = await apiClient.get<ApiResponse<GrupoMinisterial[]>>('/grupos/mis-grupos');
+    const { data } = await apiClient.get<ApiResponse<GrupoConPermisos[]>>('/grupos/mis-grupos');
     return data.responseObject;
   },
 

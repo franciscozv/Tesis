@@ -21,7 +21,7 @@ class HistorialEstadoController {
    */
   public getByMiembro: RequestHandler = async (req: Request, res: Response) => {
     const miembroId = Number(req.query.miembro_id);
-    const serviceResponse = await historialEstadoService.findByMiembro(miembroId);
+    const serviceResponse = await historialEstadoService.findByMiembro(miembroId, req.usuario!);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -30,7 +30,7 @@ class HistorialEstadoController {
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await historialEstadoService.findById(id);
+    const serviceResponse = await historialEstadoService.findById(id, req.usuario!);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 

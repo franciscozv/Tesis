@@ -9,6 +9,8 @@ import {
   GetMiembroSchema,
   GetMiembrosQuerySchema,
   MiembroSchema,
+  ResetPasswordMiembroSchema,
+  UpdateCuentaSchema,
   UpdateMiembroSchema,
   UpdateMiPerfilSchema,
 } from '@/api/miembros/miembrosModel';
@@ -155,6 +157,23 @@ miembrosRouter.delete(
 );
 
 /**
+ * PATCH /api/miembros/:id/reactivar - Reactiva un miembro inactivo
+ */
+miembrosRegistry.registerPath({
+  method: 'patch',
+  path: '/api/miembros/{id}/reactivar',
+  tags: ['Miembros'],
+  request: { params: GetMiembroSchema.shape.params },
+  responses: createApiResponse(MiembroSchema, 'Miembro reactivado exitosamente'),
+});
+miembrosRouter.patch(
+  '/:id/reactivar',
+  verificarRol('administrador'),
+  validateRequest(GetMiembroSchema),
+  miembrosController.reactivar,
+);
+
+/**
  * PATCH /api/miembros/:id/estado - Cambia el estado de membresía (RF_05)
  */
 miembrosRegistry.registerPath({
@@ -178,4 +197,58 @@ miembrosRouter.patch(
   verificarRol('administrador'),
   validateRequest(ChangeEstadoComunionSchema),
   miembrosController.changeEstadoComunion,
+);
+
+/**
+ * PUT /api/miembros/:id/cuenta - Actualiza cuenta de acceso de un miembro
+ */
+miembrosRegistry.registerPath({
+  method: 'put',
+  path: '/api/miembros/{id}/cuenta',
+  tags: ['Miembros'],
+  summary: 'Actualizar email y/o rol de la cuenta de un miembro',
+  request: {
+    params: UpdateCuentaSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdateCuentaSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MiembroSchema, 'Cuenta actualizada exitosamente'),
+});
+miembrosRouter.put(
+  '/:id/cuenta',
+  verificarRol('administrador'),
+  validateRequest(UpdateCuentaSchema),
+  miembrosController.actualizarCuenta,
+);
+
+/**
+ * PATCH /api/miembros/:id/password - Restablece contraseÃ±a de un miembro
+ */
+miembrosRegistry.registerPath({
+  method: 'patch',
+  path: '/api/miembros/{id}/password',
+  tags: ['Miembros'],
+  summary: 'Restablecer contraseÃ±a de un miembro',
+  request: {
+    params: ResetPasswordMiembroSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: ResetPasswordMiembroSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(MiembroSchema, 'ContraseÃ±a restablecida exitosamente'),
+});
+miembrosRouter.patch(
+  '/:id/password',
+  verificarRol('administrador'),
+  validateRequest(ResetPasswordMiembroSchema),
+  miembrosController.resetPassword,
 );

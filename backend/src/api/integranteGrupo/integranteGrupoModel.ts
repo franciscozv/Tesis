@@ -1,6 +1,7 @@
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 import { commonValidations } from '@/common/utils/commonValidation';
+import { EstadoComunionEnum } from '../miembros/miembrosModel';
 
 extendZodWithOpenApi(z);
 
@@ -30,6 +31,7 @@ export const IntegranteGrupoConNombresSchema = z.object({
       nombre: z.string(),
       apellido: z.string(),
       rut: z.string(),
+      estado_comunion: EstadoComunionEnum.optional(),
     })
     .optional(),
   grupo: z.object({

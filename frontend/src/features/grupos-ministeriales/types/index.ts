@@ -1,3 +1,5 @@
+import type { EstadoComunion } from '@/features/miembros/types';
+
 export interface GrupoMinisterial {
   id_grupo: number;
   nombre: string;
@@ -6,6 +8,10 @@ export interface GrupoMinisterial {
   activo: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface GrupoConPermisos extends GrupoMinisterial {
+  es_directiva_miembro: boolean;
 }
 
 export interface CreateGrupoInput {
@@ -31,5 +37,6 @@ export interface MiembroGrupo {
     nombre: string;
     apellido: string;
     rut: string;
+    estado_comunion?: EstadoComunion;
   };
 }

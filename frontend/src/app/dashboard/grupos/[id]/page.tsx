@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import {
   ArrowLeft,
   BadgeCheck,
@@ -15,8 +16,10 @@ import {
   UserX,
 } from 'lucide-react';
 import Link from 'next/link';
-import { use, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, use, useState } from 'react';
 import { toast } from 'sonner';
+import { AccessDenied } from '@/components/access-denied';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +45,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import type { ApiResponse } from '@/features/auth/types';
 import type { RolGrupo } from '@/features/catalogos/types';
 import { GestionarRolesGrupo } from '@/features/grupo-rol/components/gestionar-roles-grupo';
 import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
@@ -131,18 +135,23 @@ function DirectivaCard({ cargo, holder, holderNombre }: DirectivaCardProps) {
 
 // ─── Página principal ───────────────────────────────────────────────────────
 
-export default function DetalleGrupoPage({ params }: { params: Promise<{ id: string }> }) {
+function DetalleGrupoPageInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const grupoId = Number(id);
-  const { data: grupo, isLoading } = useGrupo(grupoId);
+  const searchParams = useSearchParams();
+  const backHref =
+    searchParams.get('from') === 'mis-grupos' ? '/dashboard/mis-grupos' : '/dashboard/grupos';
+  const { data: grupo, isLoading, error } = useGrupo(grupoId);
   const { data: miembrosGrupo, isLoading: loadingMiembros } = useIntegrantesGrupo(grupoId);
   const { data: allMiembros } = useMiembros();
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'administrador';
   const { data: misGrupos } = useMisGrupos();
-  const misGruposIds = new Set(misGrupos?.map((g) => g.id_grupo) ?? []);
-  const puedeEditar = isAdmin || misGruposIds.has(grupoId);
+  const miGrupo = misGrupos?.find((g) => g.id_grupo === grupoId);
+  const puedeEditar = isAdmin || (miGrupo?.es_directiva_miembro ?? false);
   const { data: rolesGrupo } = useRolesHabilitadosEnGrupo(grupoId);
+
+  const isForbidden = axios.isAxiosError(error) && error.response?.status === 403;
 
   const [vincularOpen, setVincularOpen] = useState(false);
   const [cambiarRolTarget, setCambiarRolTarget] = useState<MiembroGrupo | null>(null);
@@ -151,7 +160,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
 
   const { data: historialDirectiva, isLoading: loadingHistorial } = useHistorialDirectiva(
     grupoId,
-    historialTab,
+    historialTab && puedeEditar,
   );
 
   const desvincularMutation = useDesvincularMiembro();
@@ -181,7 +190,10 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
         toast.success('Miembro desvinculado exitosamente');
         setMiembroADesvincular(null);
       },
-      onError: () => toast.error('Error al desvincular miembro'),
+      onError: (err: any) => {
+        const backendMsg = (err?.response?.data as ApiResponse | undefined)?.message;
+        toast.error(backendMsg || 'Error al desvincular miembro');
+      },
     });
   }
 
@@ -202,8 +214,29 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
     );
   }
 
+  if (isForbidden) {
+    return (
+      <AccessDenied
+        message="No tienes permiso para ver los detalles de este grupo ministerial."
+        backHref={backHref}
+        backLabel="Volver"
+      />
+    );
+  }
+
   if (!grupo) {
     return <p className="text-muted-foreground py-8 text-center">Grupo no encontrado.</p>;
+  }
+
+  // Usuarios sin pertenencia al grupo no pueden ver el detalle (doble verificación cliente)
+  if (!isAdmin && misGrupos !== undefined && !miGrupo) {
+    return (
+      <AccessDenied
+        message="No perteneces a este grupo ministerial."
+        backHref={backHref}
+        backLabel="Volver"
+      />
+    );
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -214,7 +247,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard/grupos">
+            <Link href={backHref}>
               <ArrowLeft className="size-4" />
             </Link>
           </Button>
@@ -376,7 +409,7 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
                     const nombre = miembro
                       ? `${miembro.nombre} ${miembro.apellido}`
                       : `Miembro #${mg.miembro_id}`;
-                    const comunion = miembroMap.get(mg.miembro_id)?.estado_comunion;
+                    const comunion = miembro?.estado_comunion;
                     return (
                       <TableRow key={mg.id}>
                         <TableCell className="font-medium">{nombre}</TableCell>
@@ -452,33 +485,35 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
       </Card>
 
       {/* ── Sección 3: Historial de Directiva ───────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="size-4 text-muted-foreground" />
-            Historial de Directiva
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Registro histórico de quiénes han conformado la directiva del grupo por año.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {!historialTab ? (
-            <div className="flex flex-col items-center gap-2 py-6">
-              <Clock className="size-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">
-                Haz clic para cargar el historial de directivas anteriores.
-              </p>
-              <Button size="sm" variant="outline" onClick={() => setHistorialTab(true)}>
-                <Clock className="size-4" />
-                Cargar Historial
-              </Button>
-            </div>
-          ) : (
-            <HistorialDirectiva historial={historialDirectiva} isLoading={loadingHistorial} />
-          )}
-        </CardContent>
-      </Card>
+      {puedeEditar && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="size-4 text-muted-foreground" />
+              Historial de Directiva
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Registro histórico de quiénes han conformado la directiva del grupo por año.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {!historialTab ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <Clock className="size-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">
+                  Haz clic para cargar el historial de directivas anteriores.
+                </p>
+                <Button size="sm" variant="outline" onClick={() => setHistorialTab(true)}>
+                  <Clock className="size-4" />
+                  Cargar Historial
+                </Button>
+              </div>
+            ) : (
+              <HistorialDirectiva historial={historialDirectiva} isLoading={loadingHistorial} />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Modales ──────────────────────────────────────────────────────────── */}
 
@@ -548,5 +583,13 @@ export default function DetalleGrupoPage({ params }: { params: Promise<{ id: str
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function DetalleGrupoPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense>
+      <DetalleGrupoPageInner params={params} />
+    </Suspense>
   );
 }

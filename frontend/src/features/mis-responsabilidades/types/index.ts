@@ -12,9 +12,9 @@ export interface Responsabilidad {
   grupo: { id: number; nombre: string } | null;
   tipo_actividad: { id: number; nombre: string };
   rol?: { id: number; nombre: string };
-  estado_invitacion?: 'pendiente' | 'confirmado';
+  estado_invitacion?: 'pendiente' | 'confirmado' | 'cancelado';
   necesidad?: { id: number; descripcion: string };
   tipo_necesidad?: { id: number; nombre: string };
-  cantidad_ofrecida?: number;
+  cantidad_comprometida?: number;
   invitado_id?: number;
 }

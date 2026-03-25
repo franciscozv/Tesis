@@ -5,14 +5,14 @@ import { commonValidations } from '@/common/utils/commonValidation';
 extendZodWithOpenApi(z);
 
 /**
- * Estados permitidos para necesidades logísticas
+ * Estados permitidos para necesidades materiales
  */
-export const ESTADOS_NECESIDAD = ['abierta', 'cubierta', 'cerrada'] as const;
+export const ESTADOS_NECESIDAD = ['abierta', 'cubierta', 'cerrada', 'cancelada'] as const;
 
 /**
- * Schema para Necesidad Logística
+ * Schema para Necesidad Material
  */
-export const NecesidadLogisticaSchema = z.object({
+export const NecesidadMaterialSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   actividad_id: z.number().openapi({ example: 1 }),
   tipo_necesidad_id: z.number().openapi({ example: 1 }),
@@ -24,10 +24,14 @@ export const NecesidadLogisticaSchema = z.object({
   fecha_registro: z.string().openapi({ example: '2024-01-15T10:00:00Z' }),
 });
 
-export type NecesidadLogistica = z.infer<typeof NecesidadLogisticaSchema>;
+export type NecesidadMaterial = z.infer<typeof NecesidadMaterialSchema>;
+
+// Alias para compatibilidad con código existente
+export { NecesidadMaterialSchema as NecesidadLogisticaSchema };
+export type NecesidadLogistica = NecesidadMaterial;
 
 /**
- * Schema para crear una Necesidad Logística
+ * Schema para crear una Necesidad Material
  */
 export const CreateNecesidadLogisticaSchema = z.object({
   body: z.object({
@@ -59,14 +63,14 @@ export const CreateNecesidadLogisticaSchema = z.object({
 });
 
 /**
- * Schema para obtener una Necesidad Logística por ID
+ * Schema para obtener una Necesidad Material por ID
  */
 export const GetNecesidadLogisticaSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
 /**
- * Schema para actualizar una Necesidad Logística
+ * Schema para actualizar una Necesidad Material
  */
 export const UpdateNecesidadLogisticaSchema = z.object({
   params: z.object({ id: commonValidations.id }),
@@ -98,7 +102,7 @@ export const UpdateNecesidadLogisticaSchema = z.object({
 });
 
 /**
- * Schema para cambiar el estado de una Necesidad Logística
+ * Schema para cambiar el estado de una Necesidad Material
  */
 export const PatchEstadoNecesidadSchema = z.object({
   params: z.object({ id: commonValidations.id }),
@@ -106,7 +110,7 @@ export const PatchEstadoNecesidadSchema = z.object({
     estado: z
       .enum(ESTADOS_NECESIDAD, {
         errorMap: () => ({
-          message: 'Estado debe ser: abierta, cubierta o cerrada',
+          message: 'Estado debe ser: abierta, cubierta, cerrada o cancelada',
         }),
       })
       .openapi({ example: 'cubierta' }),
@@ -136,7 +140,7 @@ export const TipoNecesidadResumenSchema = z.object({
 /**
  * Schema para necesidades abiertas (incluye datos de actividad y tipo)
  */
-export const NecesidadAbiertaSchema = NecesidadLogisticaSchema.extend({
+export const NecesidadAbiertaSchema = NecesidadMaterialSchema.extend({
   actividad: ActividadResumenSchema,
   tipo_necesidad: TipoNecesidadResumenSchema.nullable(),
 });

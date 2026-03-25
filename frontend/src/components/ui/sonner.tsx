@@ -32,6 +32,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--border-radius': 'var(--radius)',
         } as React.CSSProperties
       }
+      toastOptions={{
+        classNames: {
+          success:
+            '!bg-success !text-success-foreground !border-success [&_svg]:!text-success-foreground',
+          error:
+            '!bg-destructive !text-destructive-foreground !border-destructive [&_svg]:!text-destructive-foreground',
+          warning:
+            '!bg-warning !text-warning-foreground !border-warning [&_svg]:!text-warning-foreground',
+          info: '!bg-info !text-info-foreground !border-info [&_svg]:!text-info-foreground',
+        },
+      }}
       {...props}
     />
   );

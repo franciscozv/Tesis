@@ -15,25 +15,23 @@ class CandidatosController {
       tipo_actividad_id,
       actividad_id,
       grupo_id,
-      periodo_meses,
       filtro_plena_comunion,
-      solo_con_experiencia,
-      solo_sin_experiencia,
-      prioridad,
       incluir_con_conflictos,
+      priorizar_experiencia_tipo,
     } = req.body;
-    const serviceResponse = await candidatosService.sugerirParaResponsabilidad(responsabilidad_id, fecha, {
-      tipoActividadId: tipo_actividad_id,
-      actividadId: actividad_id,
-      periodoMeses: periodo_meses ?? 12,
-      filtroPlenaComun: filtro_plena_comunion,
-      grupoIdBody: grupo_id,
-      usuario: req.usuario,
-      soloConExperiencia: solo_con_experiencia,
-      soloSinExperiencia: solo_sin_experiencia,
-      prioridad,
-      incluirConConflictos: incluir_con_conflictos,
-    });
+    const serviceResponse = await candidatosService.sugerirParaResponsabilidad(
+      responsabilidad_id,
+      fecha,
+      {
+        tipoActividadId: tipo_actividad_id,
+        actividadId: actividad_id,
+        filtroPlenaComun: filtro_plena_comunion,
+        grupoIdBody: grupo_id,
+        usuario: req.usuario,
+        incluirConConflictos: incluir_con_conflictos,
+        priorizarExperienciaTipo: priorizar_experiencia_tipo,
+      },
+    );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -62,4 +60,3 @@ class CandidatosController {
 }
 
 export const candidatosController = new CandidatosController();
-

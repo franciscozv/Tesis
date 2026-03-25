@@ -124,9 +124,7 @@ export function GestionarRolesGrupo({ grupoId }: GestionarRolesGrupoProps) {
               {rolesDisponiblesParaAgregar.map((r) => (
                 <SelectItem key={r.id_rol_grupo} value={String(r.id_rol_grupo)}>
                   {r.nombre}
-                  {r.es_directiva && (
-                    <span className="ml-2 text-xs text-primary">(Directiva)</span>
-                  )}
+                  {r.es_directiva && <span className="ml-2 text-xs text-primary">(Directiva)</span>}
                 </SelectItem>
               ))}
             </SelectContent>

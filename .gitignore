@@ -1,14 +1,11 @@
-# Dependencies
-node_modules/
+﻿# LaTeX sources
+*.tex
 
-# Logs
-*.log
+# Specific docs
+requerimientos.md
 
-# Lock files
-pnpm-lock.yaml
-
-.claude
-
-.playwright-mcp
-
-
+# Local tooling
+.claude/
+.playwright-mcp/
+# PDFs
+*.pdf

@@ -28,6 +28,9 @@ apiClient.interceptors.response.use(
     // Handle errors globally
     if (error.response?.status === 401 && !error.config?.url?.startsWith('/auth/')) {
       localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      document.cookie =
+        'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       window.location.href = '/auth/login';
     }
 

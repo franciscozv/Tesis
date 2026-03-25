@@ -40,7 +40,10 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
 
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             {indicadores.disponible_en_fecha ? (
-              <Badge variant="outline" className="border-success-foreground text-success-foreground">
+              <Badge
+                variant="outline"
+                className="border-success-foreground text-success-foreground"
+              >
                 <CheckCircle2 className="mr-1 size-3" />
                 Disponible
               </Badge>
@@ -127,22 +130,22 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
           </div>
           <div className="col-span-2 flex items-start gap-1.5 text-sm">
             <Briefcase className="mt-0.5 size-3.5 shrink-0 text-sky-500" />
-            <span className="text-muted-foreground">Esta semana:</span>
+            <span className="text-muted-foreground">Este mes:</span>
             <span
-              className={`ml-auto text-right font-medium ${indicadores.servicios_esta_semana > 1 ? 'text-warning-foreground dark:text-warning-foreground' : ''}`}
+              className={`ml-auto text-right font-medium ${indicadores.servicios_este_mes > 1 ? 'text-warning-foreground dark:text-warning-foreground' : ''}`}
             >
-              {indicadores.servicios_esta_semana === 0 ? (
+              {indicadores.servicios_este_mes === 0 ? (
                 '0 servicios'
               ) : (
                 <>
                   <span>
-                    {indicadores.servicios_esta_semana} servicio
-                    {indicadores.servicios_esta_semana !== 1 ? 's' : ''}
+                    {indicadores.servicios_este_mes} servicio
+                    {indicadores.servicios_este_mes !== 1 ? 's' : ''}
                   </span>
-                  {indicadores.servicios_esta_semana_detalle &&
-                    indicadores.servicios_esta_semana_detalle.length > 0 && (
+                  {indicadores.servicios_este_mes_detalle &&
+                    indicadores.servicios_este_mes_detalle.length > 0 && (
                       <ul className="mt-0.5 space-y-0.5 text-right">
-                        {indicadores.servicios_esta_semana_detalle.map((s, i) => {
+                        {indicadores.servicios_este_mes_detalle.map((s, i) => {
                           const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                           const dia = s.fecha
                             ? DIAS[new Date(s.fecha + 'T12:00:00').getDay()]
@@ -171,7 +174,8 @@ export function CandidatoCard({ candidato, onInvitar }: CandidatoCardProps) {
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {indicadores.resumen_servicios.map((s, idx) => (
                 <span key={idx} className="text-xs text-muted-foreground">
-                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} ({s.rol})
+                  • <span className="font-semibold text-foreground">{s.cantidad}</span> {s.tipo} (
+                  {s.rol})
                 </span>
               ))}
             </div>

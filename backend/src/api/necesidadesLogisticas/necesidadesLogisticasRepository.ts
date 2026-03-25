@@ -1,6 +1,6 @@
-import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
-import { logger } from '@/server';
+﻿import { isEncargadoDeGrupo } from '@/common/utils/grupoPermissions';
 import { supabase } from '@/common/utils/supabaseClient';
+import { logger } from '@/server';
 import type { NecesidadAbierta, NecesidadLogistica } from './necesidadesLogisticasModel';
 
 /**
@@ -20,7 +20,7 @@ export class NecesidadesLogisticasRepository {
    */
   async findAllAsync(filters: NecesidadFilters = {}): Promise<NecesidadLogistica[]> {
     let query = supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .select('*')
       .order('fecha_registro', { ascending: false });
 
@@ -69,7 +69,7 @@ export class NecesidadesLogisticasRepository {
     const actividadIds = actividades.map((a: { id: number }) => a.id);
 
     let query = supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .select('*')
       .in('actividad_id', actividadIds)
       .order('fecha_registro', { ascending: false });
@@ -110,12 +110,12 @@ export class NecesidadesLogisticasRepository {
 
     // Paso 2: obtener necesidades con datos de actividad y tipo embebidos
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .select(
         `id, actividad_id, tipo_necesidad_id, descripcion,
          cantidad_requerida, unidad_medida, cantidad_cubierta, estado, fecha_registro,
          actividad:actividad(id, nombre, fecha, hora_inicio, hora_fin, lugar),
-         tipo_necesidad:tipo_necesidad_logistica(id_tipo, nombre)`,
+         tipo_necesidad:tipo_necesidad(id_tipo, nombre)`,
       )
       .eq('estado', 'abierta')
       .in('actividad_id', actividadIds)
@@ -133,7 +133,7 @@ export class NecesidadesLogisticasRepository {
    */
   async findByIdAsync(id: number): Promise<NecesidadLogistica | null> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .select('*')
       .eq('id', id)
       .single();
@@ -189,7 +189,7 @@ export class NecesidadesLogisticasRepository {
    */
   async tipoNecesidadExistsAsync(tipoNecesidadId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('tipo_necesidad_logistica')
+      .from('tipo_necesidad')
       .select('id_tipo')
       .eq('id_tipo', tipoNecesidadId)
       .eq('activo', true)
@@ -209,7 +209,7 @@ export class NecesidadesLogisticasRepository {
     necesidadData: Omit<NecesidadLogistica, 'id' | 'fecha_registro' | 'estado'>,
   ): Promise<NecesidadLogistica> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .insert({ ...necesidadData, estado: 'abierta' })
       .select()
       .single();
@@ -226,7 +226,7 @@ export class NecesidadesLogisticasRepository {
     necesidadData: Partial<NecesidadLogistica>,
   ): Promise<NecesidadLogistica | null> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .update(necesidadData)
       .eq('id', id)
       .select()
@@ -244,7 +244,7 @@ export class NecesidadesLogisticasRepository {
    */
   async updateEstadoAsync(id: number, estado: string): Promise<NecesidadLogistica | null> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
+      .from('necesidad')
       .update({ estado })
       .eq('id', id)
       .select()
@@ -258,29 +258,27 @@ export class NecesidadesLogisticasRepository {
   }
 
   /**
-   * Suma la cantidad_ofrecida de colaboradores aceptados para una necesidad
+   * Suma la cantidad_comprometida de colaboradores para una necesidad
    */
-  async sumCantidadOfrecidaAceptadaAsync(necesidadId: number): Promise<number> {
+  async sumCantidadCompromisosAsync(necesidadId: number): Promise<number> {
     const { data, error } = await supabase
       .from('colaborador')
-      .select('cantidad_ofrecida')
-      .eq('necesidad_id', necesidadId)
-      .eq('estado', 'aceptada');
+      .select('cantidad_comprometida')
+      .eq('necesidad_id', necesidadId);
 
     if (error) throw error;
     if (!data || data.length === 0) return 0;
-    return data.reduce((sum, c) => sum + (c.cantidad_ofrecida as number), 0);
+    return data.reduce((sum, c) => sum + (c.cantidad_comprometida as number), 0);
   }
 
   /**
-   * Indica si existe al menos una colaboración aceptada para una necesidad
+   * Indica si existe al menos una colaboración para una necesidad
    */
-  async hasColaboracionesAceptadasAsync(necesidadId: number): Promise<boolean> {
+  async hasColaboracionesAsync(necesidadId: number): Promise<boolean> {
     const { data, error } = await supabase
       .from('colaborador')
       .select('id')
       .eq('necesidad_id', necesidadId)
-      .eq('estado', 'aceptada')
       .limit(1);
 
     if (error) throw error;
@@ -294,10 +292,11 @@ export class NecesidadesLogisticasRepository {
    */
   async closeAllByActividadAsync(actividadId: number): Promise<{ count: number; ids: number[] }> {
     const { data, error } = await supabase
-      .from('necesidad_logistica')
-      .update({ estado: 'cerrada' })
+      .from('necesidad')
+      .update({ estado: 'cancelada' })
       .eq('actividad_id', actividadId)
       .neq('estado', 'cerrada')
+      .neq('estado', 'cancelada')
       .select('id');
 
     if (error) throw error;
@@ -309,7 +308,7 @@ export class NecesidadesLogisticasRepository {
    * Elimina una necesidad logística
    */
   async deleteAsync(id: number): Promise<boolean> {
-    const { error } = await supabase.from('necesidad_logistica').delete().eq('id', id);
+    const { error } = await supabase.from('necesidad').delete().eq('id', id);
 
     if (error) throw error;
     return true;

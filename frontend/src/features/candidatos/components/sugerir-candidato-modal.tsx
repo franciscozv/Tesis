@@ -51,8 +51,8 @@ const CRITERIOS_INFO = [
   },
   {
     key: 'carga',
-    label: 'Carga semanal',
-    description: 'Menos servicios esta semana → mejor',
+    label: 'Carga mensual',
+    description: 'Menos servicios este mes → mejor',
   },
   {
     key: 'fidelidad',
@@ -156,12 +156,8 @@ export function SugerirCandidatoModal({
       responsabilidad_id: Number(rolId),
       fecha,
       ...(actividadId !== undefined && { actividad_id: actividadId }),
-      periodo_meses: Number(periodoMeses),
       ...(filtroPlenaComun && { filtro_plena_comunion: true }),
       ...(grupoId ? { grupo_id: Number(grupoId) } : {}),
-      solo_con_experiencia: soloExpEfectivo,
-      solo_sin_experiencia: soloSinExpEfectivo,
-      prioridad: criteriosEfectivos,
       incluir_con_conflictos: !excluirConflictosEfectivo,
     };
 

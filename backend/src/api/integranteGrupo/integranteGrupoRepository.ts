@@ -35,10 +35,12 @@ export class IntegranteGrupoRepository {
   /**
    * Verifica si un grupo ministerial existe y está activo
    */
-  async verificarGrupoActivo(grupoId: number): Promise<{ existe: boolean; activo: boolean }> {
+  async verificarGrupoActivo(
+    grupoId: number,
+  ): Promise<{ existe: boolean; activo: boolean; nombre?: string }> {
     const { data, error } = await supabase
       .from('grupo')
-      .select('activo')
+      .select('activo, nombre')
       .eq('id_grupo', grupoId)
       .single();
 
@@ -49,6 +51,7 @@ export class IntegranteGrupoRepository {
     return {
       existe: true,
       activo: data.activo === true,
+      nombre: data.nombre,
     };
   }
 
@@ -61,10 +64,11 @@ export class IntegranteGrupoRepository {
     requiere_plena_comunion: boolean;
     es_unico: boolean;
     es_directiva: boolean;
+    nombre?: string;
   }> {
     const { data, error } = await supabase
       .from('rol_grupo')
-      .select('activo, requiere_plena_comunion, es_unico, es_directiva')
+      .select('activo, requiere_plena_comunion, es_unico, es_directiva, nombre')
       .eq('id_rol_grupo', rolId)
       .single();
 
@@ -84,6 +88,7 @@ export class IntegranteGrupoRepository {
       requiere_plena_comunion: data.requiere_plena_comunion === true,
       es_unico: data.es_unico === true,
       es_directiva: data.es_directiva === true,
+      nombre: data.nombre,
     };
   }
 
@@ -338,7 +343,7 @@ export class IntegranteGrupoRepository {
         fecha_desvinculacion,
         grupo!inner(id_grupo, nombre),
         rol_grupo!inner(id_rol_grupo, nombre, es_directiva),
-        miembro!inner(id, nombre, apellido, rut)
+        miembro!inner(id, nombre, apellido, rut, estado_comunion)
       `)
       .eq('grupo_id', grupoId)
       .order('fecha_vinculacion', { ascending: false });
@@ -364,6 +369,7 @@ export class IntegranteGrupoRepository {
                 nombre: miembroObj.nombre,
                 apellido: miembroObj.apellido,
                 rut: miembroObj.rut,
+                estado_comunion: miembroObj.estado_comunion,
               }
             : undefined,
           grupo: {
@@ -403,12 +409,8 @@ export class IntegranteGrupoRepository {
     if (error) throw error;
 
     return (data as any[]).map((row) => {
-      const grupoObj = Array.isArray(row.grupo)
-        ? row.grupo[0]
-        : row.grupo;
-      const rolObj = Array.isArray(row.rol_grupo)
-        ? row.rol_grupo[0]
-        : row.rol_grupo;
+      const grupoObj = Array.isArray(row.grupo) ? row.grupo[0] : row.grupo;
+      const rolObj = Array.isArray(row.rol_grupo) ? row.rol_grupo[0] : row.rol_grupo;
 
       return {
         id: row.id_integrante,
@@ -443,7 +445,7 @@ export class IntegranteGrupoRepository {
         fecha_desvinculacion,
         grupo!inner(id_grupo, nombre),
         rol_grupo!inner(id_rol_grupo, nombre, es_directiva),
-        miembro!inner(id, nombre, apellido, rut)
+        miembro!inner(id, nombre, apellido, rut, estado_comunion)
       `)
       .eq('grupo_id', grupoId)
       .is('fecha_desvinculacion', null)
@@ -455,12 +457,8 @@ export class IntegranteGrupoRepository {
       // PostgREST/Supabase joins usually return an object for many-to-one,
       // but we handle both cases to be safer.
       const miembroObj = Array.isArray(row.miembro) ? row.miembro[0] : row.miembro;
-      const grupoObj = Array.isArray(row.grupo)
-        ? row.grupo[0]
-        : row.grupo;
-      const rolObj = Array.isArray(row.rol_grupo)
-        ? row.rol_grupo[0]
-        : row.rol_grupo;
+      const grupoObj = Array.isArray(row.grupo) ? row.grupo[0] : row.grupo;
+      const rolObj = Array.isArray(row.rol_grupo) ? row.rol_grupo[0] : row.rol_grupo;
 
       return {
         id: row.id_integrante,
@@ -471,6 +469,7 @@ export class IntegranteGrupoRepository {
               nombre: miembroObj.nombre,
               apellido: miembroObj.apellido,
               rut: miembroObj.rut,
+              estado_comunion: miembroObj.estado_comunion,
             }
           : undefined,
         grupo: {

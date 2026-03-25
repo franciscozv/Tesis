@@ -141,7 +141,7 @@ export function NombramientoModal({
   function handleNombrar(miembroId: number) {
     if (!cargo) return;
     const integrante = integrantesNomina.find((mg) => mg.miembro_id === miembroId);
-    
+
     // Si no está en la nómina, es un candidato externo (búsqueda global)
     if (!integrante) {
       // Aquí se podría implementar la lógica para agregar al grupo y nombrar
@@ -172,12 +172,13 @@ export function NombramientoModal({
   }
 
   const nominaIds = new Set(integrantesNomina.map((mg) => mg.miembro_id));
-  
+
   // Si la búsqueda es global ('all'), mostramos todos los resultados del backend.
   // Si la búsqueda es por grupo, filtramos para asegurar que estén en la nómina (por seguridad UI).
-  const candidatos = grupoId === 'all' 
-    ? (sugerirMutation.data?.candidatos ?? [])
-    : (sugerirMutation.data?.candidatos ?? []).filter((c) => nominaIds.has(c.miembro_id));
+  const candidatos =
+    grupoId === 'all'
+      ? (sugerirMutation.data?.candidatos ?? [])
+      : (sugerirMutation.data?.candidatos ?? []).filter((c) => nominaIds.has(c.miembro_id));
 
   const metadata = sugerirMutation.data?.metadata;
 
@@ -235,14 +236,24 @@ export function NombramientoModal({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="text-xs">Todos los grupos (Global)</SelectItem>
-                        <SelectItem value={String(grupoIdProp)} className="text-xs">Este grupo</SelectItem>
+                        <SelectItem value="all" className="text-xs">
+                          Todos los grupos (Global)
+                        </SelectItem>
+                        <SelectItem value={String(grupoIdProp)} className="text-xs">
+                          Este grupo
+                        </SelectItem>
                         <Separator className="my-1" />
-                        {todosLosGrupos?.filter(g => g.id_grupo !== grupoIdProp).map((g) => (
-                          <SelectItem key={g.id_grupo} value={String(g.id_grupo)} className="text-xs">
-                            Grupo: {g.nombre}
-                          </SelectItem>
-                        ))}
+                        {todosLosGrupos
+                          ?.filter((g) => g.id_grupo !== grupoIdProp)
+                          .map((g) => (
+                            <SelectItem
+                              key={g.id_grupo}
+                              value={String(g.id_grupo)}
+                              className="text-xs"
+                            >
+                              Grupo: {g.nombre}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -388,7 +399,8 @@ export function NombramientoModal({
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground italic">
-                  * Ordenados por {prioridad.map((p) => CRITERIOS_INFO.find(c => c.key === p)?.label).slice(0, 1)}
+                  * Ordenados por{' '}
+                  {prioridad.map((p) => CRITERIOS_INFO.find((c) => c.key === p)?.label).slice(0, 1)}
                 </p>
               </div>
 

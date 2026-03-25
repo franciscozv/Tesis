@@ -59,15 +59,15 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
     // biome-ignore lint/suspicious/noExplicitAny: z.coerce creates input type mismatch with zodResolver
     resolver: zodResolver(ofrecerColaboracionSchema) as any,
     defaultValues: {
-      cantidad_ofrecida: 1,
+      cantidad_comprometida: 1,
       observaciones: '',
     },
   });
 
   function onSubmit(data: OfrecerColaboracionFormData) {
     if (!necesidad) return;
-    if (data.cantidad_ofrecida > faltante) {
-      form.setError('cantidad_ofrecida', {
+    if (data.cantidad_comprometida > faltante) {
+      form.setError('cantidad_comprometida', {
         message: `No puede exceder la cantidad faltante (${faltante})`,
       });
       return;
@@ -76,7 +76,7 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
       {
         necesidad_id: necesidad.id,
         miembro_id: miembroId,
-        cantidad_ofrecida: data.cantidad_ofrecida,
+        cantidad_comprometida: data.cantidad_comprometida,
         ...(data.observaciones ? { observaciones: data.observaciones } : {}),
       },
       {
@@ -104,8 +104,7 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
           <DialogDescription>
             {necesidad?.actividad
               ? `${necesidad.actividad.nombre} · ${formatFecha(necesidad.actividad.fecha)}, ${formatHora(necesidad.actividad.hora_inicio)}`
-              : (necesidad?.descripcion ??
-                'Registre su colaboración para esta necesidad.')}
+              : (necesidad?.descripcion ?? 'Registre su colaboración para esta necesidad.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -164,12 +163,10 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             <FormField
               control={form.control}
-              name="cantidad_ofrecida"
+              name="cantidad_comprometida"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Puedo llevar ({necesidad?.unidad_medida ?? 'unidades'}) *
-                  </FormLabel>
+                  <FormLabel>Cantidad a comprometer ({necesidad?.unidad_medida ?? 'unidades'}) *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -208,7 +205,7 @@ export function OfrecerseModal({ necesidad, miembroId, open, onOpenChange }: Ofr
                 disabled={mutation.isPending}
                 aria-label={
                   necesidad?.actividad
-                    ? `Ofrecerme para ${necesidad.actividad.nombre}, ${formatFecha(necesidad.actividad.fecha)}, ${necesidad.tipo_necesidad?.nombre ?? 'necesidad logística'}`
+                    ? `Ofrecerme para ${necesidad.actividad.nombre}, ${formatFecha(necesidad.actividad.fecha)}, ${necesidad.tipo_necesidad?.nombre ?? 'necesidad'}`
                     : 'Confirmar colaboración'
                 }
               >

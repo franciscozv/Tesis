@@ -21,53 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useCambiarEstadoActividad } from '../hooks/use-cambiar-estado-actividad';
 import { type CambiarEstadoActividadFormData, cambiarEstadoActividadSchema } from '../schemas';
 import type { Actividad, EstadoActividad } from '../types';
 
-const estadoLabels: Record<string, string> = {
-  programada: 'Programada',
-  realizada: 'Realizada',
-  cancelada: 'Cancelada',
-};
-
-function getOpcionesDisponibles(
-  actividad: Actividad | null,
-  isAdmin: boolean,
-): { value: EstadoActividad; label: string }[] {
-  if (!actividad) return [];
-
-  // La fecha+hora_fin determina si la actividad ya ocurrió
-  const isPast = new Date(`${actividad.fecha}T${actividad.hora_fin}`) <= new Date();
-
-  switch (actividad.estado) {
-    case 'programada':
-      // "Realizada" es automática (sistema la transiciona); solo se puede cancelar manualmente
-      return [{ value: 'cancelada', label: 'Cancelada' }];
-
-    case 'realizada':
-      // Solo admin puede cancelar una actividad ya realizada (corrección administrativa)
-      if (isAdmin) return [{ value: 'cancelada', label: 'Cancelada' }];
-      return [];
-
-    case 'cancelada':
-      if (!isAdmin) return [];
-      // Futura → se puede reprogramar; pasada → se puede marcar como realizada
-      if (!isPast) return [{ value: 'programada', label: 'Programada' }];
-      return [{ value: 'realizada', label: 'Realizada' }];
-
-    default:
-      return [];
-  }
+function esEstadoTerminal(estado: EstadoActividad): boolean {
+  return estado === 'cancelada' || estado === 'realizada';
 }
 
 interface CambiarEstadoActividadModalProps {
@@ -82,47 +42,46 @@ export function CambiarEstadoActividadModal({
   onOpenChange,
 }: CambiarEstadoActividadModalProps) {
   const mutation = useCambiarEstadoActividad();
-  const { usuario } = useAuth();
-  const isAdmin = usuario?.rol === 'administrador';
 
-  const opciones = useMemo(() => getOpcionesDisponibles(actividad, isAdmin), [actividad, isAdmin]);
+  const puedeCancelar = useMemo(
+    () => !!actividad && actividad.estado === 'programada',
+    [actividad],
+  );
 
   const form = useForm<CambiarEstadoActividadFormData>({
     // biome-ignore lint/suspicious/noExplicitAny: refine creates input type mismatch with zodResolver
     resolver: zodResolver(cambiarEstadoActividadSchema) as any,
     defaultValues: {
-      estado: opciones[0]?.value ?? 'cancelada',
+      estado: 'cancelada',
       motivo_cancelacion: '',
     },
   });
 
   useEffect(() => {
-    if (open && actividad && opciones.length > 0) {
+    if (open && actividad && puedeCancelar) {
       form.reset({
-        estado: opciones[0].value,
+        estado: 'cancelada',
         motivo_cancelacion: '',
       });
     }
-  }, [open, actividad, opciones, form]);
-
-  const estadoSeleccionado = form.watch('estado');
+  }, [open, actividad, puedeCancelar, form]);
 
   function onSubmit(data: CambiarEstadoActividadFormData) {
     if (!actividad) return;
-    const input: { estado: typeof data.estado; motivo_cancelacion?: string } = {
-      estado: data.estado,
+    const input: { estado: 'cancelada'; motivo_cancelacion?: string } = {
+      estado: 'cancelada',
     };
-    if (data.estado === 'cancelada' && data.motivo_cancelacion) {
+    if (data.motivo_cancelacion) {
       input.motivo_cancelacion = data.motivo_cancelacion;
     }
     mutation.mutate(
       { id: actividad.id, input },
       {
         onSuccess: () => {
-          toast.success(`Estado cambiado a ${estadoLabels[data.estado]}`);
+          toast.success('Actividad cancelada');
           onOpenChange(false);
         },
-        onError: () => toast.error('Error al cambiar el estado'),
+        onError: () => toast.error('Error al cancelar la actividad'),
       },
     );
   }
@@ -131,60 +90,32 @@ export function CambiarEstadoActividadModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cambiar Estado de Actividad</DialogTitle>
+          <DialogTitle>Cancelar actividad</DialogTitle>
           <DialogDescription>{actividad?.nombre}</DialogDescription>
         </DialogHeader>
 
-        {opciones.length === 0 ? (
+        {!puedeCancelar ? (
           <p className="py-2 text-sm text-muted-foreground">
-            No hay transiciones de estado disponibles para esta actividad.
+            {actividad && esEstadoTerminal(actividad.estado)
+              ? 'Esta actividad ya está finalizada o cancelada.'
+              : 'No se puede cancelar esta actividad.'}
           </p>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               <FormField
                 control={form.control}
-                name="estado"
+                name="motivo_cancelacion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nuevo Estado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {opciones.map((op) => (
-                          <SelectItem key={op.value} value={op.value}>
-                            {op.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Motivo de Cancelación *</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Describa el motivo de la cancelación..." {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              {estadoSeleccionado === 'cancelada' && (
-                <FormField
-                  control={form.control}
-                  name="motivo_cancelacion"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motivo de Cancelación *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describa el motivo de la cancelación..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -192,7 +123,7 @@ export function CambiarEstadoActividadModal({
                 </Button>
                 <Button type="submit" disabled={mutation.isPending}>
                   {mutation.isPending && <Loader2 className="animate-spin" />}
-                  Cambiar Estado
+                  Cancelar actividad
                 </Button>
               </div>
             </form>

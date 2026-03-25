@@ -1,10 +1,12 @@
 'use client';
 
+import axios from 'axios';
 import {
   ArrowLeft,
+  CalendarPlus,
   CheckCircle,
   Pencil,
-  RefreshCw,
+  ShieldOff,
   Sparkles,
   Trash2,
   UserPlus,
@@ -44,14 +46,19 @@ import { ActividadFormModal } from '@/features/actividades/components/actividad-
 import { CambiarEstadoActividadModal } from '@/features/actividades/components/cambiar-estado-actividad-modal';
 import { InvitarParticipanteModal } from '@/features/actividades/components/invitar-participante-modal';
 import { LogisticaTab } from '@/features/actividades/components/logistica-tab';
+import { ReprogramarActividadModal } from '@/features/actividades/components/reprogramar-actividad-modal';
 import { useActividad } from '@/features/actividades/hooks/use-actividades';
+import { useDuplicarActividad } from '@/features/actividades/hooks/use-duplicar-actividad';
 import {
   useDeleteInvitado,
   useInvitadosActividad,
   useMarcarAsistencia,
 } from '@/features/actividades/hooks/use-invitados-actividad';
 import { useUpdateActividad } from '@/features/actividades/hooks/use-update-actividad';
-import type { CreateActividadFormData } from '@/features/actividades/schemas';
+import type {
+  CreateActividadFormData,
+  ReprogramarActividadFormData,
+} from '@/features/actividades/schemas';
 import type { EstadoActividad } from '@/features/actividades/types';
 import type { EstadoInvitado } from '@/features/actividades/types/invitados';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -59,7 +66,7 @@ import { SugerirCandidatoModal } from '@/features/candidatos/components/sugerir-
 import { useSugerirCandidatosRol } from '@/features/candidatos/hooks/use-sugerir-candidatos-rol';
 import type { Candidato } from '@/features/candidatos/types';
 import { responsabilidadesActividadHooks, tiposActividadHooks } from '@/features/catalogos/hooks';
-import { useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { useGruposPermitidos } from '@/features/grupos-ministeriales/hooks/use-grupos-permitidos';
 import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import { useMiembros } from '@/features/miembros/hooks/use-miembros';
 
@@ -83,12 +90,14 @@ const invitadoEstadoLabels: Record<EstadoInvitado, string> = {
   pendiente: 'Pendiente',
   confirmado: 'Confirmado',
   rechazado: 'Rechazado',
+  cancelado: 'Cancelado',
 };
 
 const invitadoEstadoVariant: Record<EstadoInvitado, 'default' | 'secondary' | 'destructive'> = {
   confirmado: 'default',
   pendiente: 'secondary',
   rechazado: 'destructive',
+  cancelado: 'destructive',
 };
 
 // ---------------------------------------------------------------------------
@@ -129,26 +138,49 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
 
   const searchParams = useSearchParams();
   const origin = searchParams.get('origin');
+  const tabParam = searchParams.get('tab');
+  const colaboradorIdParam = searchParams.get('colaboradorId');
   const isUsuario = usuario?.rol === 'usuario';
   const backHref =
-    origin === 'calendar' || isUsuario ? '/dashboard/calendario' : '/dashboard/actividades';
+    origin === 'mis-responsabilidades'
+      ? '/dashboard/mis-responsabilidades'
+      : origin === 'necesidades'
+        ? '/dashboard/necesidades'
+        : origin === 'calendar' || isUsuario
+          ? '/dashboard/calendario'
+          : '/dashboard/actividades';
 
   // Data queries
-  const { data: actividad, isLoading } = useActividad(actividadId);
+  const { data: actividad, isLoading, error } = useActividad(actividadId);
+
+  const isForbidden = axios.isAxiosError(error) && error.response?.status === 403;
   const { data: tiposActividad } = tiposActividadHooks.useAllActivos();
-  const { data: grupos } = useGrupos();
+  const { grupos: gruposPermitidos, gruposGestionables } = useGruposPermitidos();
   const { data: misGrupos } = useMisGrupos();
   const { data: invitados, isLoading: loadingInvitados } = useInvitadosActividad(actividadId);
   const { data: miembros } = useMiembros();
   const { data: responsabilidadesActividad } = responsabilidadesActividadHooks.useAllActivos();
   const isAdmin = usuario?.rol === 'administrador';
 
-  const misGruposIds = useMemo(() => new Set(misGrupos?.map((g) => g.id_grupo) ?? []), [misGrupos]);
+  const actividadTerminada = useMemo(() => {
+    if (!actividad) return false;
+    const fin = actividad.hora_fin
+      ? `${actividad.fecha}T${actividad.hora_fin}`
+      : `${actividad.fecha}T23:59:59`;
+    return new Date(fin) < new Date();
+  }, [actividad]);
+
   const canManageGestion =
-    isAdmin || (isUsuario && !!actividad?.grupo_id && misGruposIds.has(actividad.grupo_id));
+    isAdmin ||
+    (isUsuario &&
+      !!actividad?.grupo_id &&
+      (misGrupos?.some(
+        (g) => g.id_grupo === actividad.grupo_id && g.es_directiva_miembro,
+      ) ?? false));
 
   // Mutations
   const updateMutation = useUpdateActividad();
+  const duplicarMutation = useDuplicarActividad();
   const asistenciaMutation = useMarcarAsistencia();
   const deleteInvitadoMutation = useDeleteInvitado();
   const sugerirMutation = useSugerirCandidatosRol();
@@ -156,6 +188,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
   // Modal state
   const [formOpen, setFormOpen] = useState(false);
   const [estadoOpen, setEstadoOpen] = useState(false);
+  const [reprogramarOpen, setReprogramarOpen] = useState(false);
   const [invitarOpen, setInvitarOpen] = useState(false);
   const [sugerirOpen, setSugerirOpen] = useState(false);
   const [deletingInvitadoId, setDeletingInvitadoId] = useState<number | null>(null);
@@ -176,6 +209,23 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     setSugerirOpen(false);
     setInvitarDefaults({ miembro_id: candidato.miembro_id, responsabilidad_id: responsabilidadId });
     setInvitarOpen(true);
+  }
+
+  function handleReprogramar(data: ReprogramarActividadFormData) {
+    if (!actividad) return;
+    duplicarMutation.mutate(
+      { id: actividad.id, input: data },
+      {
+        onSuccess: (nueva) => {
+          toast.success('Actividad reprogramada. Se creó una nueva actividad.');
+          setReprogramarOpen(false);
+          if (nueva?.id) {
+            window.location.href = `/dashboard/actividades/${nueva.id}`;
+          }
+        },
+        onError: () => toast.error('Error al reprogramar actividad'),
+      },
+    );
   }
 
   function handleUpdate(data: CreateActividadFormData) {
@@ -242,6 +292,26 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     );
   }
 
+  if (isForbidden) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+        <ShieldOff className="size-12 text-muted-foreground" />
+        <div>
+          <h2 className="text-xl font-semibold">Acceso restringido</h2>
+          <p className="text-muted-foreground mt-1">
+            Solo los miembros de directiva pueden ver detalles de actividades pasadas.
+          </p>
+          <Button variant="outline" className="mt-4" asChild>
+            <Link href={backHref}>
+              <ArrowLeft className="size-4" />
+              Volver
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!actividad) {
     return <p className="py-8 text-center text-muted-foreground">Actividad no encontrada.</p>;
   }
@@ -252,7 +322,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
     actividad.tipo_actividad?.nombre ??
     tiposActividad?.find((t) => t.id_tipo === actividad.tipo_actividad_id)?.nombre;
   const grupoNombre = actividad.grupo_id
-    ? grupos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
+    ? gruposPermitidos?.find((g) => g.id_grupo === actividad.grupo_id)?.nombre
     : null;
 
   const editingDefaults = {
@@ -282,16 +352,24 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
             <p className="text-sm text-muted-foreground">{formatFecha(actividad.fecha)}</p>
           </div>
         </div>
-        {((canManageGestion && !isCancelada) || (isAdmin && isCancelada)) && (
+        {canManageGestion && (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setEstadoOpen(true)}>
-              <RefreshCw className="size-4" />
-              Cambiar Estado
-            </Button>
-            {!isCancelada && (
-              <Button variant="outline" onClick={() => setFormOpen(true)}>
-                <Pencil className="size-4" />
-                Editar
+            {actividad.estado === 'programada' && (
+              <>
+                <Button variant="outline" onClick={() => setEstadoOpen(true)}>
+                  <XCircle className="size-4" />
+                  Cancelar actividad
+                </Button>
+                <Button variant="outline" onClick={() => setFormOpen(true)}>
+                  <Pencil className="size-4" />
+                  Editar
+                </Button>
+              </>
+            )}
+            {isCancelada && !actividad.reprogramada_en_id && (
+              <Button variant="outline" onClick={() => setReprogramarOpen(true)}>
+                <CalendarPlus className="size-4" />
+                Reprogramar
               </Button>
             )}
           </div>
@@ -299,10 +377,10 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="info">
+      <Tabs defaultValue={tabParam === 'logistica' && canManageGestion ? 'logistica' : 'info'}>
         <TabsList>
           <TabsTrigger value="info">Información General</TabsTrigger>
-          <TabsTrigger value="logistica">Logística</TabsTrigger>
+          {canManageGestion && <TabsTrigger value="logistica">Logística</TabsTrigger>}
         </TabsList>
 
         {/* ---------------------------------------------------------------- */}
@@ -361,6 +439,38 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                     <InfoRow label="Motivo cancelación" value={actividad.motivo_cancelacion} />
                   </>
                 )}
+                {actividad.reprogramacion_de_id && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-3 gap-2 py-2">
+                      <span className="text-sm text-muted-foreground">Reprogramación de</span>
+                      <span className="col-span-2 text-sm">
+                        <Link
+                          href={`/dashboard/actividades/${actividad.reprogramacion_de_id}`}
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          ← Ver actividad original
+                        </Link>
+                      </span>
+                    </div>
+                  </>
+                )}
+                {isCancelada && actividad.reprogramada_en_id && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-3 gap-2 py-2">
+                      <span className="text-sm text-muted-foreground">Reprogramada en</span>
+                      <span className="col-span-2 text-sm">
+                        <Link
+                          href={`/dashboard/actividades/${actividad.reprogramada_en_id}`}
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          Ver actividad sucesora →
+                        </Link>
+                      </span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -376,7 +486,9 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                 {canManageGestion && !isCancelada && (
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" asChild>
-                      <Link href={`/dashboard/actividades/${actividadId}/sugerir-responsabilidades`}>
+                      <Link
+                        href={`/dashboard/actividades/${actividadId}/sugerir-responsabilidades`}
+                      >
                         <Sparkles className="size-4" />
                         Sugerir
                       </Link>
@@ -413,8 +525,8 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                       <TableRow>
                         <TableHead>Miembro</TableHead>
                         <TableHead>Responsabilidad</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Asistió</TableHead>
+                        {canManageGestion && <TableHead>Estado</TableHead>}
+                        {actividadTerminada && <TableHead>Cumplimiento</TableHead>}
                         {canManageGestion && <TableHead className="w-24">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
@@ -433,29 +545,34 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                                 `Responsabilidad #${inv.responsabilidad_id}`}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <Badge variant={invitadoEstadoVariant[inv.estado]}>
-                              {invitadoEstadoLabels[inv.estado]}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {canManageGestion && inv.estado === 'confirmado' ? (
-                              <Checkbox
-                                checked={inv.asistio}
-                                onCheckedChange={(checked) =>
-                                  handleMarcarAsistencia(inv.id, checked === true)
-                                }
-                                disabled={asistenciaMutation.isPending}
-                                aria-label={
-                                  inv.asistio ? 'Desmarcar asistencia' : 'Marcar asistencia'
-                                }
-                              />
-                            ) : inv.asistio ? (
-                              <CheckCircle className="size-4 text-success-foreground" />
-                            ) : (
-                              <XCircle className="size-4 text-muted-foreground" />
-                            )}
-                          </TableCell>
+                          {canManageGestion && (
+                            <TableCell>
+                              <Badge variant={invitadoEstadoVariant[inv.estado]}>
+                                {invitadoEstadoLabels[inv.estado]}
+                              </Badge>
+                            </TableCell>
+                          )}
+                          {actividadTerminada && (
+                            <TableCell>
+                              {canManageGestion &&
+                              (inv.estado === 'confirmado' || inv.estado === 'pendiente') ? (
+                                <Checkbox
+                                  checked={inv.asistio}
+                                  onCheckedChange={(checked) =>
+                                    handleMarcarAsistencia(inv.id, checked === true)
+                                  }
+                                  disabled={asistenciaMutation.isPending}
+                                  aria-label={
+                                    inv.asistio ? 'Desmarcar asistencia' : 'Marcar asistencia'
+                                  }
+                                />
+                              ) : inv.asistio ? (
+                                <CheckCircle className="size-4 text-success-foreground" />
+                              ) : (
+                                <XCircle className="size-4 text-muted-foreground" />
+                              )}
+                            </TableCell>
+                          )}
                           {canManageGestion && (
                             <TableCell>
                               {inv.estado === 'pendiente' && (
@@ -488,11 +605,20 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
             actividadId={actividadId}
             canManage={canManageGestion}
             isCancelada={isCancelada}
+            resaltarColaboradorId={colaboradorIdParam ? parseInt(colaboradorIdParam) : undefined}
           />
         </TabsContent>
       </Tabs>
 
       {/* Modals */}
+      <ReprogramarActividadModal
+        open={reprogramarOpen}
+        onOpenChange={setReprogramarOpen}
+        actividadNombre={actividad.nombre}
+        isPending={duplicarMutation.isPending}
+        onSubmit={handleReprogramar}
+      />
+
       <ActividadFormModal
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -500,7 +626,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         onSubmit={handleUpdate}
         isPending={updateMutation.isPending}
         tiposActividad={tiposActividad}
-        grupos={grupos}
+        grupos={gruposGestionables}
         isEditing
       />
 
@@ -518,7 +644,7 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
         responsabilidadesActividad={responsabilidadesActividad}
         invitados={invitados}
         defaultValues={invitarDefaults}
-        excludeMiembroId={usuario?.miembro_id ?? undefined}
+        excludeMiembroId={usuario?.id ?? undefined}
       />
 
       <SugerirCandidatoModal
@@ -563,7 +689,8 @@ export default function DetalleActividadPage({ params }: { params: Promise<{ id:
                     ) : (
                       <>
                         Estás a punto de quitar el registro de asistencia de{' '}
-                        <span className="font-medium text-foreground">{nombre}</span> ({responsabilidad}).
+                        <span className="font-medium text-foreground">{nombre}</span> (
+                        {responsabilidad}).
                       </>
                     )}
                   </p>

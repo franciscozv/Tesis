@@ -37,7 +37,7 @@ function formatHora(hora: string) {
 
 export default function NecesidadesAbiertasPage() {
   const { usuario } = useAuth();
-  const miembroId = usuario?.miembro_id;
+  const miembroId = usuario?.id;
 
   const { data: necesidades, isLoading } = useNecesidadesAbiertas();
   const { data: tiposNecesidad } = tiposNecesidadHooks.useAllActivos();
@@ -65,7 +65,7 @@ export default function NecesidadesAbiertasPage() {
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-light tracking-tight">Necesidades Logísticas</h1>
+          <h1 className="text-2xl font-light tracking-tight">Necesidades Materiales</h1>
           <p className="text-muted-foreground">
             Necesidades abiertas para actividades de los próximos 60 días.
           </p>
@@ -135,7 +135,7 @@ export default function NecesidadesAbiertasPage() {
                     <CardTitle className="text-sm font-semibold leading-tight">
                       {nec.actividad ? (
                         <Link
-                          href={`/dashboard/actividades/${nec.actividad_id}`}
+                          href={`/dashboard/actividades/${nec.actividad_id}?origin=necesidades`}
                           className="hover:underline"
                         >
                           {nec.actividad.nombre}

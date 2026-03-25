@@ -164,20 +164,24 @@ export class ActividadesRepository {
   }
 
   /**
-   * Obtiene una actividad por ID
+   * Obtiene una actividad por ID, incluyendo `reprogramacion_de_id` (lookup inverso)
    */
   async findByIdAsync(id: number): Promise<Actividad | null> {
-    const { data, error } = await supabase
-      .from('actividad')
-      .select('*, tipo_actividad(nombre, color)')
-      .eq('id', id)
-      .single();
+    const [actividadResult, origenResult] = await Promise.all([
+      supabase.from('actividad').select('*, tipo_actividad(nombre, color)').eq('id', id).single(),
+      supabase.from('actividad').select('id').eq('reprogramada_en_id', id).maybeSingle(),
+    ]);
 
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
+    if (actividadResult.error) {
+      if (actividadResult.error.code === 'PGRST116') return null;
+      throw actividadResult.error;
     }
-    return data as Actividad;
+    if (origenResult.error) throw origenResult.error;
+
+    return {
+      ...(actividadResult.data as Actividad),
+      reprogramacion_de_id: origenResult.data?.id ?? null,
+    };
   }
 
   /**
@@ -247,7 +251,7 @@ export class ActividadesRepository {
    */
   async creadorExistsAsync(creadorId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('usuario')
+      .from('miembro')
       .select('id')
       .eq('id', creadorId)
       .eq('activo', true)
@@ -306,6 +310,18 @@ export class ActividadesRepository {
       throw error;
     }
     return data as Actividad;
+  }
+
+  /**
+   * Vincula la actividad original con su sucesora (reprogramación única)
+   */
+  async setReprogramadaEnAsync(originalId: number, nuevaActividadId: number): Promise<void> {
+    const { error } = await supabase
+      .from('actividad')
+      .update({ reprogramada_en_id: nuevaActividadId })
+      .eq('id', originalId);
+
+    if (error) throw error;
   }
 
   /**

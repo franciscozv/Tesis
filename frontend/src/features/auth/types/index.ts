@@ -2,7 +2,6 @@ export interface Usuario {
   id: number;
   email: string;
   rol: 'administrador' | 'usuario';
-  miembro_id: number | null;
   es_directiva: boolean;
 }
 

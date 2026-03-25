@@ -1,10 +1,27 @@
 'use client';
 
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import axios from 'axios';
+import {
   AlertTriangle,
   ArrowLeft,
   Award,
-  CalendarDays,
   ChevronDown,
   ChevronUp,
   Crown,
@@ -21,6 +38,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { AccessDenied } from '@/components/access-denied';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,18 +61,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { candidatosApi } from '@/features/candidatos/api';
-import { extractApiMessage } from '@/lib/api-error';
 import type { CandidatoCargo } from '@/features/candidatos/types';
 import { useRolesHabilitadosEnGrupo } from '@/features/grupo-rol/hooks/use-grupo-rol';
 import { useGrupo, useGrupos } from '@/features/grupos-ministeriales/hooks/use-grupos';
+import { useMisGrupos } from '@/features/grupos-ministeriales/hooks/use-mis-grupos';
 import type { MiembroGrupo } from '@/features/grupos-ministeriales/types';
-import { useRenovarDirectiva } from '@/features/integrantes-grupo/hooks/use-renovar-directiva';
 import { useIntegrantesGrupo } from '@/features/integrantes-grupo/hooks/use-integrantes-grupo';
+import { useRenovarDirectiva } from '@/features/integrantes-grupo/hooks/use-renovar-directiva';
+import { extractApiMessage } from '@/lib/api-error';
 
 const PERIODOS = [
   { value: '3', label: '3 meses' },
@@ -80,21 +98,37 @@ const CRITERIOS_INFO = [
     description: 'Más responsabilidades cumplidas → mejor',
   },
   {
+    key: 'colaboracion',
+    label: 'Cumplimiento en Colaboraciones',
+    description: 'Mejor récord de aportes/ayudas → mejor',
+  },
+  {
     key: 'antiguedad',
     label: 'Antigüedad',
     description: 'Más años en el grupo → mejor',
   },
 ] as const;
 
-const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'antiguedad'];
+const PRIORIDAD_DEFAULT = ['experiencia', 'carga_trabajo', 'fidelidad', 'colaboracion', 'antiguedad'];
 
-function getNextSunday(): string {
-  const today = new Date();
-  const day = today.getDay(); // 0 = domingo
-  const diff = day === 0 ? 0 : 7 - day;
-  const next = new Date(today);
-  next.setDate(today.getDate() + diff);
-  return next.toISOString().slice(0, 10);
+function SortableCriterioItem({ id, label }: { id: string; label: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-2 rounded-md border bg-background p-2 transition-colors hover:border-primary/40 cursor-grab active:cursor-grabbing select-none ${isDragging ? 'opacity-50 shadow-lg z-10 relative' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="size-4 text-muted-foreground/40 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="truncate text-xs font-semibold">{label}</p>
+      </div>
+    </div>
+  );
 }
 
 function getNombre(mg: MiembroGrupo): string {
@@ -106,10 +140,12 @@ function getEtiquetaDirectiva(c: CandidatoCargo, grupoNombre: string): string {
   const historial = c.indicadores.historial_otros_cargos ?? [];
   const grupoNombreLower = grupoNombre.trim().toLowerCase();
   const activosOtros = historial.filter(
-    (h) => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() !== grupoNombreLower,
+    (h) =>
+      !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() !== grupoNombreLower,
   );
   const activosEste = historial.filter(
-    (h) => !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() === grupoNombreLower,
+    (h) =>
+      !h.fecha_fin && h.es_directiva && h.grupo_nombre?.trim().toLowerCase() === grupoNombreLower,
   );
   if (activosOtros.length > 0) return `Directiva en otro grupo (${activosOtros.length})`;
   if (activosEste.length > 0) return 'Directiva actual';
@@ -124,14 +160,19 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
   const isAdmin = usuario?.rol === 'administrador';
 
   // --- Datos del Grupo ---
-  const { data: grupo, isLoading: loadingGrupo } = useGrupo(grupoId);
+  const { data: grupo, isLoading: loadingGrupo, error: errorGrupo } = useGrupo(grupoId);
   const { data: todosLosGrupos } = useGrupos();
   const { data: miembrosGrupo, isLoading: loadingMiembros } = useIntegrantesGrupo(grupoId);
   const { data: rolesGrupo, isLoading: loadingRoles } = useRolesHabilitadosEnGrupo(grupoId);
 
+  const { data: misGrupos } = useMisGrupos();
+  const miGrupo = misGrupos?.find((g) => g.id_grupo === grupoId);
+  const esDirectivaDeEsteGrupo = miGrupo?.es_directiva_miembro ?? false;
+
+  const isForbidden = axios.isAxiosError(errorGrupo) && errorGrupo.response?.status === 403;
+
   // --- Estado del Formulario ---
   const [selecciones, setSelecciones] = useState<Map<number, number>>(new Map());
-  const [fecha, setFecha] = useState(() => getNextSunday());
 
   // --- Configuración del Algoritmo ---
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>(String(grupoId));
@@ -141,6 +182,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
   const [soloConPlenaComunion, setSoloConPlenaComunion] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
   const DRAFT_KEY = `renovacion_draft_${grupoId}`;
   const [isLoaded, setIsLoaded] = useState(false);
@@ -152,7 +194,6 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
       try {
         const draft = JSON.parse(saved);
         if (draft.selecciones) setSelecciones(new Map(draft.selecciones));
-        if (draft.fecha) setFecha(draft.fecha);
         if (draft.periodoMeses) setPeriodoMeses(draft.periodoMeses);
         if (draft.soloConExperiencia !== undefined) setSoloConExperiencia(draft.soloConExperiencia);
         if (draft.soloConPlenaComunion !== undefined)
@@ -177,7 +218,6 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
     const draft = {
       selecciones: Array.from(selecciones.entries()),
-      fecha,
       periodoMeses,
       soloConExperiencia,
       soloConPlenaComunion,
@@ -187,7 +227,6 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
   }, [
     selecciones,
-    fecha,
     periodoMeses,
     soloConExperiencia,
     soloConPlenaComunion,
@@ -217,18 +256,33 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
     activos.filter((mg) => mg.rol.es_directiva).map((mg) => [mg.rol.id, mg]),
   );
 
-  function moverArriba(index: number) {
-    if (index === 0) return;
-    const next = [...prioridad];
-    [next[index - 1], next[index]] = [next[index], next[index - 1]];
-    setPrioridad(next);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setPrioridad((prev) => {
+        const oldIndex = prev.indexOf(active.id as string);
+        const newIndex = prev.indexOf(over.id as string);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
   }
 
-  function moverAbajo(index: number) {
-    if (index === prioridad.length - 1) return;
-    const next = [...prioridad];
-    [next[index], next[index + 1]] = [next[index + 1], next[index]];
-    setPrioridad(next);
+  // Expandir automáticamente el primer cargo al cargar los roles
+  useEffect(() => {
+    if (rolesDirectiva.length > 0) {
+      setExpandedCards(new Set([rolesDirectiva[0].id_rol_grupo]));
+    }
+  }, [rolesDirectiva.length]);
+
+  function advanceToNext(currentCargoId: number, nextSelecciones: Map<number, number>) {
+    const unassigned = rolesDirectiva.filter((r) => !nextSelecciones.has(r.id_rol_grupo));
+    const next = unassigned.find((r) => r.id_rol_grupo !== currentCargoId);
+    setExpandedCards(new Set(next ? [next.id_rol_grupo] : []));
   }
 
   // Cargar sugerencias cuando cambian los roles o la config
@@ -303,11 +357,8 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
       nuevo_miembro_id,
     }));
 
-    // Convertir fecha local (YYYY-MM-DD) a ISO datetime
-    const fechaISO = new Date(`${fecha}T00:00:00`).toISOString();
-
     renovarMutation.mutate(
-      { renovaciones, fecha: fechaISO },
+      { renovaciones },
       {
         onSuccess: () => {
           localStorage.removeItem(DRAFT_KEY);
@@ -336,15 +387,19 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
     );
   }
 
-  if (!grupo || !isAdmin) {
+  // Usuarios sin pertenencia de directiva al grupo no pueden renovar
+  if (isForbidden || (!loadingGrupo && !isAdmin && !esDirectivaDeEsteGrupo)) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground">No tienes permisos para acceder a esta página.</p>
-        <Button variant="link" asChild>
-          <Link href={`/dashboard/grupos/${grupoId}`}>Volver al detalle</Link>
-        </Button>
-      </div>
+      <AccessDenied
+        message="No tienes permiso para renovar la directiva de este grupo ministerial."
+        backHref={`/dashboard/grupos/${grupoId}`}
+        backLabel="Volver al detalle"
+      />
     );
+  }
+
+  if (!grupo) {
+    return <p className="text-muted-foreground py-8 text-center">Grupo no encontrado.</p>;
   }
 
   const totalSelecciones = selecciones.size;
@@ -396,27 +451,6 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Columna Izquierda: Configuración */}
         <div className="space-y-6 lg:col-span-1">
-          {/* Tarjeta de Fecha */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="size-4 text-primary" />
-                Fecha de Vigencia
-              </CardTitle>
-              <CardDescription>Indica cuándo asume la nueva directiva.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2">
-                <Label>Fecha efectiva</Label>
-                <DatePicker
-                  value={fecha}
-                  onChange={setFecha}
-                  disabledDays={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Filtros rápidos siempre visibles */}
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold text-muted-foreground">Filtros rápidos</Label>
@@ -426,7 +460,10 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 checked={soloConExperiencia}
                 onCheckedChange={(v) => setSoloConExperiencia(Boolean(v))}
               />
-              <Label htmlFor="solo-exp-page" className="cursor-pointer text-xs font-medium leading-none">
+              <Label
+                htmlFor="solo-exp-page"
+                className="cursor-pointer text-xs font-medium leading-none"
+              >
                 Solo con experiencia previa en el cargo
               </Label>
             </div>
@@ -436,7 +473,10 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 checked={soloConPlenaComunion}
                 onCheckedChange={(v) => setSoloConPlenaComunion(Boolean(v))}
               />
-              <Label htmlFor="solo-plena-page" className="cursor-pointer text-xs font-medium leading-none">
+              <Label
+                htmlFor="solo-plena-page"
+                className="cursor-pointer text-xs font-medium leading-none"
+              >
                 Solo con Plena Comunión
               </Label>
             </div>
@@ -456,7 +496,11 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                   onClick={() => setShowConfig(!showConfig)}
                   className="text-primary"
                 >
-                  {showConfig ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                  {showConfig ? (
+                    <ChevronUp className="size-4" />
+                  ) : (
+                    <ChevronDown className="size-4" />
+                  )}
                 </Button>
               </div>
               <CardDescription>Período, alcance y orden de prioridad.</CardDescription>
@@ -522,40 +566,22 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Orden de prioridad
                   </Label>
-                  <div className="grid gap-2">
-                    {prioridad.map((key, index) => {
-                      const crit = CRITERIOS_INFO.find((c) => c.key === key);
-                      return (
-                        <div
-                          key={key}
-                          className="flex items-center gap-2 rounded-md border bg-background p-2 transition-colors hover:border-primary/40"
-                        >
-                          <GripVertical className="size-4 text-muted-foreground/40" />
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate text-xs font-semibold">{crit?.label}</p>
-                          </div>
-                          <div className="flex gap-0.5">
-                            <button
-                              type="button"
-                              onClick={() => moverArriba(index)}
-                              disabled={index === 0}
-                              className="rounded p-0.5 hover:bg-muted disabled:opacity-20"
-                            >
-                              <ChevronUp className="size-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => moverAbajo(index)}
-                              disabled={index === prioridad.length - 1}
-                              className="rounded p-0.5 hover:bg-muted disabled:opacity-20"
-                            >
-                              <ChevronDown className="size-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext items={prioridad} strategy={verticalListSortingStrategy}>
+                      <div className="grid gap-2">
+                        {prioridad.map((key) => {
+                          const crit = CRITERIOS_INFO.find((c) => c.key === key);
+                          return (
+                            <SortableCriterioItem key={key} id={key} label={crit?.label ?? key} />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                   <Button
                     variant="link"
                     size="sm"
@@ -572,6 +598,32 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
         {/* Columna Derecha: Cargos */}
         <div className="space-y-4 lg:col-span-2">
+          {/* Barra de progreso */}
+          {rolesDirectiva.length > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
+              <span className="shrink-0 text-sm font-medium text-muted-foreground">
+                Cargos asignados:
+              </span>
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{
+                    width: `${rolesDirectiva.length > 0 ? (totalSelecciones / rolesDirectiva.length) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <span className="shrink-0 text-sm font-bold tabular-nums">
+                {totalSelecciones}
+                <span className="font-normal text-muted-foreground"> / {rolesDirectiva.length}</span>
+              </span>
+              {totalSelecciones === rolesDirectiva.length && rolesDirectiva.length > 0 && (
+                <Badge className="shrink-0 bg-success/20 text-success-foreground dark:bg-success/30">
+                  ¡Todos asignados!
+                </Badge>
+              )}
+            </div>
+          )}
+
           {rolesDirectiva.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -592,61 +644,99 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                 // Todos los miembros activos del grupo pueden ser candidatos (incluyendo directiva actual para reelección)
                 const opcionesSelect = activos;
 
+                const isExpanded = expandedCards.has(cargo.id_rol_grupo);
+                const titularAsignadoNombre = seleccionado
+                  ? (activos.find((m) => m.miembro_id === seleccionado)
+                      ? getNombre(activos.find((m) => m.miembro_id === seleccionado)!)
+                      : `#${seleccionado}`)
+                  : null;
+
+                function toggleCard() {
+                  setExpandedCards((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(cargo.id_rol_grupo)) next.delete(cargo.id_rol_grupo);
+                    else next.add(cargo.id_rol_grupo);
+                    return next;
+                  });
+                }
+
                 return (
                   <Card
                     key={cargo.id_rol_grupo}
                     className={`transition-all ${
-                      seleccionado ? 'border-success-foreground/40 bg-success/5 dark:border-success-foreground/30' : ''
+                      seleccionado
+                        ? 'border-success-foreground/40 bg-success/5 dark:border-success-foreground/30'
+                        : ''
                     }`}
                   >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary dark:bg-primary/10 dark:text-primary">
-                            <ShieldCheck className="size-5" />
+                    <CardHeader
+                      className="cursor-pointer select-none rounded-t-lg pb-4 transition-colors hover:bg-muted/20"
+                      onClick={toggleCard}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="shrink-0 rounded-full bg-primary/10 p-2 text-primary dark:bg-primary/10 dark:text-primary">
+                            <ShieldCheck className="size-4" />
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-lg">{cargo.nombre}</CardTitle>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <CardTitle className="text-base">{cargo.nombre}</CardTitle>
                               {cargo.requiere_plena_comunion && (
-                                <Badge variant="outline" className="text-[10px] font-bold text-warning-foreground border-warning-foreground/40 bg-warning">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-bold text-warning-foreground border-warning-foreground/40 bg-warning"
+                                >
                                   Requiere Plena Comunión
                                 </Badge>
                               )}
                             </div>
-                            {titularNombre ? (
-                              <p className="text-sm text-muted-foreground">
-                                Titular actual:{' '}
-                                <span className="font-medium text-foreground">{titularNombre}</span>
-                              </p>
-                            ) : (
-                              <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <UserX className="size-3.5" />
-                                Vacante
-                              </p>
-                            )}
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {titularNombre ? (
+                                <>
+                                  Titular:{' '}
+                                  <span className="font-medium text-foreground">
+                                    {titularNombre}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <UserX className="size-3" />
+                                  Vacante
+                                </span>
+                              )}
+                            </p>
                           </div>
                         </div>
-                        {seleccionado && (
-                          <div className="flex gap-2">
-                            {[...selecciones.values()].filter((id) => id === seleccionado).length >
-                              1 && (
-                              <Badge
-                                variant="destructive"
-                                className="bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive"
-                              >
-                                Duplicado
+                        <div className="flex shrink-0 items-center gap-2">
+                          {seleccionado && (
+                            <>
+                              {[...selecciones.values()].filter((id) => id === seleccionado)
+                                .length > 1 && (
+                                <Badge
+                                  variant="destructive"
+                                  className="bg-destructive/10 text-destructive dark:bg-destructive/30 dark:text-destructive"
+                                >
+                                  Duplicado
+                                </Badge>
+                              )}
+                              <Badge className="max-w-36 truncate bg-success/20 text-success-foreground dark:bg-success/30 dark:text-success-foreground">
+                                {!isExpanded && titularAsignadoNombre
+                                  ? titularAsignadoNombre
+                                  : 'Asignado'}
                               </Badge>
-                            )}
-                            <Badge className="bg-success/20 text-success-foreground dark:bg-success/30 dark:text-success-foreground">
-                              Asignado
-                            </Badge>
-                          </div>
-                        )}
+                            </>
+                          )}
+                          {isExpanded ? (
+                            <ChevronUp className="size-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="size-4 text-muted-foreground" />
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
 
-                    <CardContent className="space-y-6">
+                    {isExpanded && (
+                    <CardContent className="space-y-6" onClick={(e) => e.stopPropagation()}>
                       <div className="grid gap-2">
                         <Label className="text-sm font-semibold">Seleccionar nuevo titular</Label>
                         <Select
@@ -655,10 +745,12 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                             const next = new Map(selecciones);
                             if (val && val !== '__none__') {
                               next.set(cargo.id_rol_grupo, Number(val));
+                              setSelecciones(next);
+                              advanceToNext(cargo.id_rol_grupo, next);
                             } else {
                               next.delete(cargo.id_rol_grupo);
+                              setSelecciones(next);
                             }
-                            setSelecciones(next);
                           }}
                         >
                           <SelectTrigger className="h-10 bg-background">
@@ -690,7 +782,9 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             Sugerencias automáticas
                           </p>
-                          {loadingSugerencias && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
+                          {loadingSugerencias && (
+                            <Loader2 className="size-3 animate-spin text-muted-foreground" />
+                          )}
                         </div>
 
                         {loadingSugerencias ? (
@@ -706,14 +800,17 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                 <button
                                   key={c.miembro_id}
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     const next = new Map(selecciones);
                                     if (isSelected) {
                                       next.delete(cargo.id_rol_grupo);
+                                      setSelecciones(next);
                                     } else {
                                       next.set(cargo.id_rol_grupo, c.miembro_id);
+                                      setSelecciones(next);
+                                      advanceToNext(cargo.id_rol_grupo, next);
                                     }
-                                    setSelecciones(next);
                                   }}
                                   className={`flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
                                     isSelected
@@ -723,18 +820,31 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                 >
                                   <div className="flex w-full items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-bold text-primary dark:text-primary">#{c.posicion}</span>
-                                      <span className="text-sm font-semibold">{c.nombre_completo}</span>
+                                      <span className="font-bold text-primary dark:text-primary">
+                                        #{c.posicion}
+                                      </span>
+                                      <span className="text-sm font-semibold">
+                                        {c.nombre_completo}
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      {cargo.requiere_plena_comunion && !c.indicadores.plena_comunion && (
-                                        <Badge variant="destructive" className="h-4 px-1.5 text-[9px] uppercase">
-                                          Sin Plena Comunión
-                                        </Badge>
-                                      )}
+                                      {cargo.requiere_plena_comunion &&
+                                        !c.indicadores.plena_comunion && (
+                                          <Badge
+                                            variant="destructive"
+                                            className="h-4 px-1.5 text-[9px] uppercase"
+                                          >
+                                            Sin Plena Comunión
+                                          </Badge>
+                                        )}
                                       {/* DIAGNÓSTICO AVANZADO */}
-                                      {c.indicadores.historial_otros_cargos?.some((h) => h.es_directiva) && (
-                                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-bold border-primary/60 text-primary bg-primary/10 gap-1">
+                                      {c.indicadores.historial_otros_cargos?.some(
+                                        (h) => h.es_directiva,
+                                      ) && (
+                                        <Badge
+                                          variant="outline"
+                                          className="h-4 px-1.5 text-[9px] font-bold border-primary/60 text-primary bg-primary/10 gap-1"
+                                        >
                                           <Crown className="size-2.5" />
                                           {getEtiquetaDirectiva(c, grupo.nombre ?? '')}
                                         </Badge>
@@ -742,72 +852,116 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                       {isSelected && <RefreshCw className="size-3 text-primary" />}
                                     </div>
                                   </div>
-                                  
+
                                   <div className="flex flex-wrap gap-2">
-                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-muted-foreground/30 bg-muted/50 text-muted-foreground">
+                                    <Badge
+                                      variant="outline"
+                                      className="h-4 px-1.5 text-[9px] font-normal gap-1 border-muted-foreground/30 bg-muted/50 text-muted-foreground"
+                                    >
                                       <Award className="size-2.5" />
                                       {c.indicadores.experiencia_cargo_en_grupo}× exp.
                                     </Badge>
-                                    <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-normal gap-1 border-success-foreground/40 bg-success text-success-foreground">
+                                    <Badge
+                                      variant="outline"
+                                      className="h-4 px-1.5 text-[9px] font-normal gap-1 border-success-foreground/40 bg-success text-success-foreground"
+                                    >
                                       <TrendingUp className="size-2.5" />
                                       {c.indicadores.asistencias_count} servicios
                                     </Badge>
                                   </div>
 
                                   {/* 1. Grupos Actuales (Carga de Trabajo) */}
-                                  {c.indicadores.historial_otros_cargos && c.indicadores.historial_otros_cargos.some(h => !h.fecha_fin) && (
-                                    <div className="mt-1 text-[10px] text-muted-foreground leading-tight space-y-0.5">
-                                      <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">Participa actualmente en:</p>
-                                      {c.indicadores.historial_otros_cargos
-                                        .filter(h => !h.fecha_fin)
-                                        .map((h) => {
-                                          const esDirectiva = h.es_directiva;
-                                          return (
-                                            <p key={`${h.grupo_nombre}-${h.cargo_nombre}`} className={`flex items-center gap-1 pl-1 border-l ${
-                                              esDirectiva
-                                                ? 'border-primary/60 text-primary font-semibold'
-                                                : 'border-primary/60 text-primary dark:text-primary font-medium'
-                                            }`}>
-                                              {esDirectiva ? <Crown className="size-2.5 shrink-0" /> : <Users className="size-2.5 shrink-0" />}
-                                              <span>{h.grupo_nombre} ({h.cargo_nombre || 'Integrante'})</span>
-                                            </p>
-                                          );
-                                        })}
-                                    </div>
-                                  )}
+                                  {c.indicadores.historial_otros_cargos &&
+                                    c.indicadores.historial_otros_cargos.some(
+                                      (h) => !h.fecha_fin,
+                                    ) && (
+                                      <div className="mt-1 text-[10px] text-muted-foreground leading-tight space-y-0.5">
+                                        <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">
+                                          Participa actualmente en:
+                                        </p>
+                                        {c.indicadores.historial_otros_cargos
+                                          .filter((h) => !h.fecha_fin)
+                                          .map((h) => {
+                                            const esDirectiva = h.es_directiva;
+                                            return (
+                                              <p
+                                                key={`${h.grupo_nombre}-${h.cargo_nombre}`}
+                                                className={`flex items-center gap-1 pl-1 border-l ${
+                                                  esDirectiva
+                                                    ? 'border-primary/60 text-primary font-semibold'
+                                                    : 'border-primary/60 text-primary dark:text-primary font-medium'
+                                                }`}
+                                              >
+                                                {esDirectiva ? (
+                                                  <Crown className="size-2.5 shrink-0" />
+                                                ) : (
+                                                  <Users className="size-2.5 shrink-0" />
+                                                )}
+                                                <span>
+                                                  {h.grupo_nombre} ({h.cargo_nombre || 'Integrante'}
+                                                  )
+                                                </span>
+                                              </p>
+                                            );
+                                          })}
+                                      </div>
+                                    )}
 
                                   {/* 2. Historial Pasado (Trayectoria) */}
-                                  {c.indicadores.historial_otros_cargos && c.indicadores.historial_otros_cargos.some(h => h.fecha_fin) && (() => {
-                                    const pasados = c.indicadores.historial_otros_cargos
-                                      .filter(h => h.fecha_fin)
-                                      .sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
-                                    const visible = pasados.slice(0, 3);
-                                    const resto = pasados.length - visible.length;
-                                    return (
-                                      <div className="mt-1.5 text-[10px] text-muted-foreground leading-tight space-y-0.5">
-                                        <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">Trayectoria Anterior:</p>
-                                        {visible.map((h) => {
-                                          const nombreCargoExhibido = h.cargo_nombre || 'Integrante';
-                                          const inicio = h.fecha_inicio ? new Date(h.fecha_inicio).getFullYear() : '?';
-                                          const fin = new Date(h.fecha_fin!).getFullYear();
-                                          const esDirectiva = h.es_directiva;
-                                          return (
-                                            <p key={`${h.grupo_nombre}-${h.cargo_nombre}-${h.fecha_inicio}`} className={`flex items-center gap-1 pl-1 border-l ${
-                                              esDirectiva
-                                                ? 'border-primary/60 text-primary font-medium'
-                                                : 'border-muted-foreground/20'
-                                            }`}>
-                                              {esDirectiva ? <Crown className="size-2.5 shrink-0" /> : <span className="w-2.5 text-center">•</span>}
-                                              <span>{nombreCargoExhibido} en {h.grupo_nombre} ({inicio}-{fin})</span>
+                                  {c.indicadores.historial_otros_cargos &&
+                                    c.indicadores.historial_otros_cargos.some((h) => h.fecha_fin) &&
+                                    (() => {
+                                      const pasados = c.indicadores.historial_otros_cargos
+                                        .filter((h) => h.fecha_fin)
+                                        .sort(
+                                          (a, b) =>
+                                            new Date(b.fecha_inicio).getTime() -
+                                            new Date(a.fecha_inicio).getTime(),
+                                        );
+                                      const visible = pasados.slice(0, 3);
+                                      const resto = pasados.length - visible.length;
+                                      return (
+                                        <div className="mt-1.5 text-[10px] text-muted-foreground leading-tight space-y-0.5">
+                                          <p className="font-medium text-muted-foreground/80 uppercase text-[8px] tracking-wider">
+                                            Trayectoria Anterior:
+                                          </p>
+                                          {visible.map((h) => {
+                                            const nombreCargoExhibido =
+                                              h.cargo_nombre || 'Integrante';
+                                            const inicio = h.fecha_inicio
+                                              ? new Date(h.fecha_inicio).getFullYear()
+                                              : '?';
+                                            const fin = new Date(h.fecha_fin!).getFullYear();
+                                            const esDirectiva = h.es_directiva;
+                                            return (
+                                              <p
+                                                key={`${h.grupo_nombre}-${h.cargo_nombre}-${h.fecha_inicio}`}
+                                                className={`flex items-center gap-1 pl-1 border-l ${
+                                                  esDirectiva
+                                                    ? 'border-primary/60 text-primary font-medium'
+                                                    : 'border-muted-foreground/20'
+                                                }`}
+                                              >
+                                                {esDirectiva ? (
+                                                  <Crown className="size-2.5 shrink-0" />
+                                                ) : (
+                                                  <span className="w-2.5 text-center">•</span>
+                                                )}
+                                                <span>
+                                                  {nombreCargoExhibido} en {h.grupo_nombre} (
+                                                  {inicio}-{fin})
+                                                </span>
+                                              </p>
+                                            );
+                                          })}
+                                          {resto > 0 && (
+                                            <p className="text-muted-foreground/60 pl-1">
+                                              +{resto} más
                                             </p>
-                                          );
-                                        })}
-                                        {resto > 0 && (
-                                          <p className="text-muted-foreground/60 pl-1">+{resto} más</p>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
 
                                   {/* Resumen de Actividades - Siempre Visible */}
                                   <div className="mt-2 w-full space-y-1">
@@ -815,9 +969,14 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                                       Actividades Realizadas ({periodoMeses} meses):
                                     </p>
                                     <div className="flex flex-wrap gap-1">
-                                      {c.indicadores.resumen_servicios && c.indicadores.resumen_servicios.length > 0 ? (
+                                      {c.indicadores.resumen_servicios &&
+                                      c.indicadores.resumen_servicios.length > 0 ? (
                                         c.indicadores.resumen_servicios.map((s, i) => (
-                                          <Badge key={i} variant="secondary" className="h-4 px-1.5 text-[9px] font-normal bg-muted/50">
+                                          <Badge
+                                            key={i}
+                                            variant="secondary"
+                                            className="h-4 px-1.5 text-[9px] font-normal bg-muted/50"
+                                          >
                                             {s.cantidad} {s.tipo} ({s.rol})
                                           </Badge>
                                         ))
@@ -831,13 +990,19 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
 
                                   <div className="mt-1 space-y-0.5">
                                     <p className="text-[10px] text-muted-foreground leading-tight">
-                                      <span className="font-medium text-muted-foreground/80">Antigüedad en grupo: </span>
-                                      {c.indicadores.antiguedad_grupo_anios} años 
-                                      {c.indicadores.fecha_vinculacion_grupo && ` (Desde ${new Date(c.indicadores.fecha_vinculacion_grupo).getFullYear()})`}
+                                      <span className="font-medium text-muted-foreground/80">
+                                        Antigüedad en grupo:{' '}
+                                      </span>
+                                      {c.indicadores.antiguedad_grupo_anios} años
+                                      {c.indicadores.fecha_vinculacion_grupo &&
+                                        ` (Desde ${new Date(c.indicadores.fecha_vinculacion_grupo).getFullYear()})`}
                                     </p>
                                     <p className="text-[10px] text-muted-foreground leading-tight">
-                                      <span className="font-medium text-muted-foreground/80">Antigüedad en iglesia: </span>
-                                      {c.indicadores.antiguedad_anios} años (Desde {new Date(c.indicadores.fecha_ingreso).getFullYear()})
+                                      <span className="font-medium text-muted-foreground/80">
+                                        Antigüedad en iglesia:{' '}
+                                      </span>
+                                      {c.indicadores.antiguedad_anios} años (Desde{' '}
+                                      {new Date(c.indicadores.fecha_ingreso).getFullYear()})
                                     </p>
                                   </div>
                                 </button>
@@ -851,6 +1016,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                         )}
                       </div>
                     </CardContent>
+                    )}
                   </Card>
                 );
               })}
@@ -869,7 +1035,7 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
             <AlertDialogDescription>
               Se aplicarán los siguientes cambios de forma masiva en el grupo{' '}
               <span className="font-bold text-foreground">{grupo.nombre}</span>. Los cargos
-              anteriores se cerrarán con fecha {new Date(fecha).toLocaleDateString()}.
+              anteriores se cerrarán con fecha de hoy.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -921,16 +1087,21 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                     {/* Fila Saliente → Entrante */}
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex flex-col">
-                        <span className="text-[10px] uppercase text-muted-foreground">Saliente</span>
+                        <span className="text-[10px] uppercase text-muted-foreground">
+                          Saliente
+                        </span>
                         <span className="text-xs">
                           {titularActual ? getNombre(titularActual) : 'Vacante'}
                         </span>
                       </div>
                       <ArrowLeft className="size-3 rotate-180 text-muted-foreground" />
                       <div className="flex flex-col text-right">
-                        <span className="text-[10px] uppercase text-success-foreground font-bold">Entrante</span>
+                        <span className="text-[10px] uppercase text-success-foreground font-bold">
+                          Entrante
+                        </span>
                         <span className="text-xs font-semibold">
-                          {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : `Miembro #${miembroId}`)}
+                          {candidato?.nombre_completo ??
+                            (nuevoTitular ? getNombre(nuevoTitular) : `Miembro #${miembroId}`)}
                         </span>
                       </div>
                     </div>
@@ -941,7 +1112,9 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                         <AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning-foreground dark:text-warning-foreground" />
                         <p className="text-[11px] text-warning-foreground dark:text-warning-foreground">
                           <span className="font-semibold">
-                            {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')} ya ocupa otro cargo en este grupo:
+                            {candidato?.nombre_completo ??
+                              (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')}{' '}
+                            ya ocupa otro cargo en este grupo:
                           </span>{' '}
                           {cargoDirectivoEsteGrupo.cargo_nombre}
                         </p>
@@ -953,17 +1126,24 @@ export default function RenovacionDirectivaPage({ params }: { params: Promise<{ 
                         <AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning-foreground dark:text-warning-foreground" />
                         <div className="min-w-0">
                           <p className="text-[11px] font-semibold text-warning-foreground dark:text-warning-foreground">
-                            {candidato?.nombre_completo ?? (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')} tiene cargos activos en otros grupos:
+                            {candidato?.nombre_completo ??
+                              (nuevoTitular ? getNombre(nuevoTitular) : 'El entrante')}{' '}
+                            tiene cargos activos en otros grupos:
                           </p>
                           <ul className="mt-0.5 space-y-0.5">
                             {cargosActivosExternos.map((h, i) => (
-                              <li key={i} className="flex items-center gap-1 text-[11px] text-warning-foreground dark:text-warning-foreground">
+                              <li
+                                key={i}
+                                className="flex items-center gap-1 text-[11px] text-warning-foreground dark:text-warning-foreground"
+                              >
                                 {h.es_directiva ? (
                                   <Crown className="size-2.5 shrink-0" />
                                 ) : (
                                   <Users className="size-2.5 shrink-0" />
                                 )}
-                                <span className="font-medium">{h.cargo_nombre ?? 'Integrante'}</span>
+                                <span className="font-medium">
+                                  {h.cargo_nombre ?? 'Integrante'}
+                                </span>
                                 <span className="text-warning-foreground/70">en</span>
                                 <span>{h.grupo_nombre}</span>
                               </li>

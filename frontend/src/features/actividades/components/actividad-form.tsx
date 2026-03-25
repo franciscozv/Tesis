@@ -23,7 +23,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { TimePicker } from '@/components/ui/time-picker';
 import {
   Select,
   SelectContent,
@@ -32,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { TimePicker } from '@/components/ui/time-picker';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import type { TipoActividad } from '@/features/catalogos/types';
 import type { GrupoMinisterial } from '@/features/grupos-ministeriales/types';

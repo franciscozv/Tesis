@@ -18,7 +18,7 @@ export const necesidadesLogisticasRegistry = new OpenAPIRegistry();
 export const necesidadesLogisticasRouter: Router = express.Router();
 
 // Registrar schema en OpenAPI
-necesidadesLogisticasRegistry.register('NecesidadLogistica', NecesidadLogisticaSchema);
+necesidadesLogisticasRegistry.register('NecesidadMaterial', NecesidadLogisticaSchema);
 
 // Todas las rutas requieren autenticación
 necesidadesLogisticasRouter.use(verificarToken);
@@ -27,7 +27,7 @@ necesidadesLogisticasRouter.use(verificarToken);
 necesidadesLogisticasRegistry.registerPath({
   method: 'get',
   path: '/api/necesidades/abiertas',
-  tags: ['Necesidades Logísticas'],
+  tags: ['Necesidades Materiales'],
   summary: 'Obtener necesidades abiertas de actividades en los próximos 60 días',
   responses: createApiResponse(z.array(NecesidadLogisticaSchema), 'Success'),
 });
@@ -37,8 +37,8 @@ necesidadesLogisticasRouter.get('/abiertas', necesidadesLogisticasController.get
 necesidadesLogisticasRegistry.registerPath({
   method: 'get',
   path: '/api/necesidades',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Obtener necesidades logísticas con filtros opcionales (estado, actividad_id)',
+  tags: ['Necesidades Materiales'],
+  summary: 'Obtener necesidades materiales con filtros opcionales (estado, actividad_id)',
   request: {
     query: ListNecesidadesQuerySchema.shape.query,
   },
@@ -54,8 +54,8 @@ necesidadesLogisticasRouter.get(
 necesidadesLogisticasRegistry.registerPath({
   method: 'get',
   path: '/api/necesidades/{id}',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Obtener una necesidad logística por ID',
+  tags: ['Necesidades Materiales'],
+  summary: 'Obtener una necesidad material por ID',
   request: { params: GetNecesidadLogisticaSchema.shape.params },
   responses: createApiResponse(NecesidadLogisticaSchema, 'Success'),
 });
@@ -69,8 +69,8 @@ necesidadesLogisticasRouter.get(
 necesidadesLogisticasRegistry.registerPath({
   method: 'post',
   path: '/api/necesidades',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Crear una nueva necesidad logística',
+  tags: ['Necesidades Materiales'],
+  summary: 'Crear una nueva necesidad material',
   request: {
     body: {
       content: {
@@ -93,8 +93,8 @@ necesidadesLogisticasRouter.post(
 necesidadesLogisticasRegistry.registerPath({
   method: 'put',
   path: '/api/necesidades/{id}',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Actualizar una necesidad logística',
+  tags: ['Necesidades Materiales'],
+  summary: 'Actualizar una necesidad material',
   request: {
     params: UpdateNecesidadLogisticaSchema.shape.params,
     body: {
@@ -118,8 +118,8 @@ necesidadesLogisticasRouter.put(
 necesidadesLogisticasRegistry.registerPath({
   method: 'patch',
   path: '/api/necesidades/{id}/estado',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Cambiar estado de una necesidad logística',
+  tags: ['Necesidades Materiales'],
+  summary: 'Cambiar estado de una necesidad material',
   request: {
     params: PatchEstadoNecesidadSchema.shape.params,
     body: {
@@ -143,8 +143,8 @@ necesidadesLogisticasRouter.patch(
 necesidadesLogisticasRegistry.registerPath({
   method: 'delete',
   path: '/api/necesidades/{id}',
-  tags: ['Necesidades Logísticas'],
-  summary: 'Eliminar una necesidad logística (solo si está en estado abierta)',
+  tags: ['Necesidades Materiales'],
+  summary: 'Eliminar una necesidad material (solo si está en estado abierta)',
   request: { params: GetNecesidadLogisticaSchema.shape.params },
   responses: createApiResponse(z.null(), 'Success'),
 });

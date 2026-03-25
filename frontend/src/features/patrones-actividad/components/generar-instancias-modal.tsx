@@ -27,8 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usePatrones } from '../hooks/use-patrones';
 import { useGenerarInstancias } from '../hooks/use-generar-instancias';
+import { usePatrones } from '../hooks/use-patrones';
 import { type GenerarInstanciasFormData, generarInstanciasSchema } from '../schemas';
 import type { PatronActividad } from '../types';
 

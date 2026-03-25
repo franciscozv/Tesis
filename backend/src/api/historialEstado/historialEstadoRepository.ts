@@ -89,7 +89,7 @@ export class HistorialEstadoRepository {
    */
   async usuarioExistsAsync(usuarioId: number): Promise<boolean> {
     const { data, error } = await supabase
-      .from('usuario')
+      .from('miembro')
       .select('id')
       .eq('id', usuarioId)
       .eq('activo', true)

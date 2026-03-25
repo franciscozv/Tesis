@@ -1,4 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
+﻿import { StatusCodes } from 'http-status-codes';
+import { emitAndPersistAdmin } from '@/api/notificaciones/notificacionesService';
 import type { JwtPayload } from '@/common/middleware/authMiddleware';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { nowEnZona, parseActividadFin } from '@/common/utils/dateTime';
@@ -20,39 +21,31 @@ export class ColaboradoresService {
    * Obtiene todos los colaboradores con filtros opcionales, scoped según rol del usuario
    */
   async findAll(
-    filters: { necesidad_id?: number; miembro_id?: number; estado?: string },
+    filters: { necesidad_id?: number; miembro_id?: number },
     usuario?: JwtPayload,
   ): Promise<ServiceResponse<Colaborador[] | null>> {
     try {
       let colaboradores: Colaborador[];
 
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'El usuario no tiene un miembro asociado',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         colaboradores = await this.colaboradoresRepository.findAllForEncargadoAsync(
           filters,
-          usuario.miembro_id,
+          usuario.id,
         );
       } else {
-        // administrador: acceso global
         colaboradores = await this.colaboradoresRepository.findAllAsync(filters);
       }
 
       if (colaboradores.length === 0) {
-        return ServiceResponse.success<Colaborador[]>('No se encontraron colaboradores', []);
+        return ServiceResponse.success<Colaborador[]>('No se encontraron compromisos', []);
       }
 
-      return ServiceResponse.success<Colaborador[]>('Colaboradores encontrados', colaboradores);
+      return ServiceResponse.success<Colaborador[]>('Compromisos encontrados', colaboradores);
     } catch (error) {
-      const errorMessage = `Error al obtener colaboradores: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener compromisos: ${(error as Error).message}`;
       logger.error({ err: error }, errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener colaboradores',
+        'Error al obtener compromisos',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -60,22 +53,22 @@ export class ColaboradoresService {
   }
 
   /**
-   * Obtiene un colaborador por ID
+   * Obtiene un compromiso por ID
    */
   async findById(id: number): Promise<ServiceResponse<Colaborador | null>> {
     try {
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
 
       if (!colaborador) {
-        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('Compromiso no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      return ServiceResponse.success<Colaborador>('Colaborador encontrado', colaborador);
+      return ServiceResponse.success<Colaborador>('Compromiso encontrado', colaborador);
     } catch (error) {
-      const errorMessage = `Error al obtener colaborador: ${(error as Error).message}`;
+      const errorMessage = `Error al obtener compromiso: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al obtener colaborador',
+        'Error al obtener compromiso',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -83,19 +76,19 @@ export class ColaboradoresService {
   }
 
   /**
-   * Crea una nueva oferta de colaboración
+   * Registra un nuevo compromiso de colaboración (confirmado automáticamente)
    */
   async create(
-    colaboradorData: Omit<Colaborador, 'id' | 'fecha_oferta' | 'fecha_decision' | 'estado'>,
+    colaboradorData: Omit<Colaborador, 'id' | 'fecha_compromiso' | 'cumplio'>,
   ): Promise<ServiceResponse<Colaborador | null>> {
     try {
-      // Cargar necesidad + actividad en una sola consulta
+      // Cargar necesidad + actividad
       const necesidad = await this.colaboradoresRepository.getNecesidadConActividadAsync(
         colaboradorData.necesidad_id,
       );
       if (!necesidad) {
         return ServiceResponse.failure(
-          'La necesidad logística especificada no existe',
+          'La necesidad material especificada no existe',
           null,
           StatusCodes.BAD_REQUEST,
         );
@@ -104,7 +97,7 @@ export class ColaboradoresService {
       // Validar que la necesidad esté abierta
       if (necesidad.estado !== 'abierta') {
         return ServiceResponse.failure(
-          'Solo se pueden ofrecer colaboraciones para necesidades en estado "abierta"',
+          'Solo se pueden registrar compromisos para necesidades en estado "abierta"',
           null,
           StatusCodes.CONFLICT,
         );
@@ -114,7 +107,7 @@ export class ColaboradoresService {
       const { actividad } = necesidad;
       if (actividad.estado === 'cancelada') {
         return ServiceResponse.failure(
-          'No se puede registrar colaboración en una actividad cancelada',
+          'No se puede registrar un compromiso en una actividad cancelada',
           null,
           StatusCodes.CONFLICT,
         );
@@ -123,7 +116,7 @@ export class ColaboradoresService {
       const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
       if (finActividad.isBefore(nowEnZona())) {
         return ServiceResponse.failure(
-          'No se puede registrar colaboración en una actividad que ya finalizó',
+          'No se puede registrar un compromiso en una actividad que ya finalizó',
           null,
           StatusCodes.CONFLICT,
         );
@@ -141,40 +134,62 @@ export class ColaboradoresService {
         );
       }
 
-      // Validar que el miembro no tenga ya una oferta para la misma necesidad
-      const ofertaExistente = await this.colaboradoresRepository.findByMiembroAndNecesidad(
+      // Validar que el miembro no tenga ya un compromiso para la misma necesidad
+      const compromisoExistente = await this.colaboradoresRepository.findByMiembroAndNecesidad(
         colaboradorData.miembro_id,
         colaboradorData.necesidad_id,
       );
-      if (ofertaExistente) {
+      if (compromisoExistente) {
         return ServiceResponse.failure(
-          'Ya existe una oferta de este miembro para esta necesidad',
+          'Ya tienes un compromiso registrado para esta necesidad',
           null,
           StatusCodes.CONFLICT,
         );
       }
 
-      // Validar que cantidad_ofrecida no supere la cantidad faltante
+      // Validar que cantidad_comprometida no supere la cantidad faltante
       const cantidadFaltante = necesidad.cantidad_requerida - necesidad.cantidad_cubierta;
-      if (colaboradorData.cantidad_ofrecida > cantidadFaltante) {
+      if (colaboradorData.cantidad_comprometida > cantidadFaltante) {
         return ServiceResponse.failure(
-          `La cantidad ofrecida (${colaboradorData.cantidad_ofrecida}) supera la cantidad faltante (${cantidadFaltante})`,
+          `La cantidad comprometida (${colaboradorData.cantidad_comprometida}) supera la cantidad faltante (${cantidadFaltante})`,
           null,
           StatusCodes.BAD_REQUEST,
         );
       }
 
       const colaborador = await this.colaboradoresRepository.createAsync(colaboradorData);
+
+      // Actualizar cantidad_cubierta automáticamente
+      const nuevaCantidadCubierta = necesidad.cantidad_cubierta + colaboradorData.cantidad_comprometida;
+      await this.colaboradoresRepository.updateCantidadCubiertaAsync(
+        colaboradorData.necesidad_id,
+        nuevaCantidadCubierta,
+        necesidad.cantidad_requerida,
+      );
+
+      // Notificar a admins y directiva
+      const miembro = (colaborador as any).miembro;
+      const nombreMiembro = miembro
+        ? `${miembro.nombre} ${miembro.apellido}`
+        : `Miembro #${colaboradorData.miembro_id}`;
+      await emitAndPersistAdmin({
+        tipo: 'nueva_colaboracion',
+        mensaje: `${nombreMiembro} se ofreció a colaborar`,
+        detalle: `${necesidad.descripcion} · ${colaboradorData.cantidad_comprometida} ${necesidad.unidad_medida ?? ''} · ${necesidad.actividad.nombre}`.trim(),
+        href: `/dashboard/actividades/${necesidad.actividad.id}?tab=logistica&colaboradorId=${colaborador.id}`,
+        timestamp: Date.now(),
+      });
+
       return ServiceResponse.success<Colaborador>(
-        'Oferta de colaboración registrada exitosamente',
+        'Compromiso de colaboración registrado exitosamente',
         colaborador,
         StatusCodes.CREATED,
       );
     } catch (error) {
-      const errorMessage = `Error al crear colaborador: ${(error as Error).message}`;
+      const errorMessage = `Error al registrar compromiso: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al registrar oferta de colaboración',
+        'Error al registrar compromiso de colaboración',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -182,133 +197,57 @@ export class ColaboradoresService {
   }
 
   /**
-   * Acepta o rechaza una oferta de colaboración
+   * Marca si un colaborador cumplió su compromiso (verificación post-actividad)
    */
-  async updateDecision(
+  async marcarCumplio(
     id: number,
-    estado: 'aceptada' | 'rechazada',
+    cumplio: boolean,
     usuario?: JwtPayload,
   ): Promise<ServiceResponse<Colaborador | null>> {
     try {
-      // Verificar que el colaborador exista
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
       if (!colaborador) {
-        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('Compromiso no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      // Usuario no-admin: validar que la oferta pertenece a una necesidad de sus grupos
+      // Usuario no-admin: validar que el compromiso pertenece a una necesidad de sus grupos
       if (usuario?.rol === 'usuario') {
-        if (!usuario.miembro_id) {
-          return ServiceResponse.failure(
-            'El usuario no tiene un miembro asociado',
-            null,
-            StatusCodes.FORBIDDEN,
-          );
-        }
         const esEncargado = await this.colaboradoresRepository.perteneceEncargadoAsync(
           colaborador.necesidad_id,
-          usuario.miembro_id,
+          usuario.id,
         );
         if (!esEncargado) {
           return ServiceResponse.failure(
-            'No tiene permisos para decidir esta oferta',
+            'No tiene permisos para marcar este compromiso',
             null,
             StatusCodes.FORBIDDEN,
           );
         }
       }
 
-      // Solo se pueden decidir ofertas pendientes
-      if (colaborador.estado !== 'pendiente') {
-        return ServiceResponse.failure(
-          `No se puede cambiar la decisión de una oferta en estado "${colaborador.estado}"`,
-          null,
-          StatusCodes.CONFLICT,
-        );
-      }
-
-      // Validar que la actividad no haya finalizado
-      const necesidadInfo = await this.colaboradoresRepository.getNecesidadConActividadAsync(
-        colaborador.necesidad_id,
-      );
-
-      if (necesidadInfo) {
-        const { actividad } = necesidadInfo;
-        if (actividad.estado === 'cancelada') {
-          return ServiceResponse.failure(
-            'No se puede decidir sobre una oferta de una actividad cancelada',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-
-        const finActividad = parseActividadFin(actividad.fecha, actividad.hora_fin);
-        if (finActividad.isBefore(nowEnZona())) {
-          return ServiceResponse.failure(
-            'No se puede decidir sobre una oferta de una actividad que ya finalizó',
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-      }
-
-      // Si se acepta, validar y actualizar cantidad_cubierta en la necesidad
-      if (estado === 'aceptada') {
-        const necesidad = await this.colaboradoresRepository.getNecesidadInfoAsync(
-          colaborador.necesidad_id,
-        );
-        if (!necesidad) {
-          return ServiceResponse.failure(
-            'La necesidad logística asociada no existe',
-            null,
-            StatusCodes.INTERNAL_SERVER_ERROR,
-          );
-        }
-
-        const nuevaCantidadCubierta = necesidad.cantidad_cubierta + colaborador.cantidad_ofrecida;
-
-        // Validar que no se supere la cantidad requerida
-        if (nuevaCantidadCubierta > necesidad.cantidad_requerida) {
-          return ServiceResponse.failure(
-            `Aceptar esta oferta superaría la cantidad requerida. Faltante: ${necesidad.cantidad_requerida - necesidad.cantidad_cubierta}, ofrecido: ${colaborador.cantidad_ofrecida}`,
-            null,
-            StatusCodes.CONFLICT,
-          );
-        }
-
-        // Actualizar cantidad_cubierta en la necesidad
-        // Si queda completamente cubierta, se cambia automáticamente a estado 'cubierta'
-        await this.colaboradoresRepository.updateCantidadCubiertaAsync(
-          colaborador.necesidad_id,
-          nuevaCantidadCubierta,
-          necesidad.cantidad_requerida,
-        );
-      }
-
-      const colaboradorActualizado = await this.colaboradoresRepository.updateDecisionAsync(
+      const colaboradorActualizado = await this.colaboradoresRepository.updateCumplioAsync(
         id,
-        estado,
+        cumplio,
       );
 
       if (!colaboradorActualizado) {
         return ServiceResponse.failure(
-          'Error al registrar la decisión',
+          'Error al actualizar el compromiso',
           null,
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
 
-      const mensaje =
-        estado === 'aceptada'
-          ? 'Oferta de colaboración aceptada exitosamente'
-          : 'Oferta de colaboración rechazada';
+      const mensaje = cumplio
+        ? 'Compromiso marcado como cumplido'
+        : 'Compromiso marcado como no cumplido';
 
       return ServiceResponse.success<Colaborador>(mensaje, colaboradorActualizado);
     } catch (error) {
-      const errorMessage = `Error al procesar decisión: ${(error as Error).message}`;
+      const errorMessage = `Error al marcar cumplio: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al procesar la decisión sobre la oferta',
+        'Error al actualizar el compromiso',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -316,30 +255,38 @@ export class ColaboradoresService {
   }
 
   /**
-   * Elimina una oferta de colaboración (solo si está pendiente)
+   * Elimina un compromiso de colaboración y descuenta la cantidad cubierta
    */
   async delete(id: number): Promise<ServiceResponse<null>> {
     try {
       const colaborador = await this.colaboradoresRepository.findByIdAsync(id);
       if (!colaborador) {
-        return ServiceResponse.failure('Colaborador no encontrado', null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure('Compromiso no encontrado', null, StatusCodes.NOT_FOUND);
       }
 
-      if (colaborador.estado !== 'pendiente') {
-        return ServiceResponse.failure(
-          'Solo se pueden eliminar ofertas en estado "pendiente"',
-          null,
-          StatusCodes.CONFLICT,
+      // Descontar la cantidad del compromiso eliminado
+      const necesidad = await this.colaboradoresRepository.getNecesidadInfoAsync(
+        colaborador.necesidad_id,
+      );
+      if (necesidad && necesidad.estado !== 'cancelada') {
+        const nuevaCantidad = Math.max(
+          0,
+          necesidad.cantidad_cubierta - colaborador.cantidad_comprometida,
+        );
+        await this.colaboradoresRepository.updateCantidadCubiertaAsync(
+          colaborador.necesidad_id,
+          nuevaCantidad,
+          necesidad.cantidad_requerida,
         );
       }
 
       await this.colaboradoresRepository.deleteAsync(id);
-      return ServiceResponse.success('Oferta de colaboración eliminada exitosamente', null);
+      return ServiceResponse.success('Compromiso de colaboración eliminado exitosamente', null);
     } catch (error) {
-      const errorMessage = `Error al eliminar colaborador: ${(error as Error).message}`;
+      const errorMessage = `Error al eliminar compromiso: ${(error as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
-        'Error al eliminar oferta de colaboración',
+        'Error al eliminar compromiso de colaboración',
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

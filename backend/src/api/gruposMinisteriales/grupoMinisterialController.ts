@@ -19,7 +19,7 @@ class GrupoMinisterialController {
    */
   public getById: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id as string, 10);
-    const serviceResponse = await grupoMinisterialService.findById(id);
+    const serviceResponse = await grupoMinisterialService.findById(id, req.usuario!);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
@@ -53,9 +53,8 @@ class GrupoMinisterialController {
    * GET /grupos/mis-grupos - Obtiene los grupos que el usuario puede gestionar
    */
   public getMisGrupos: RequestHandler = async (req: Request, res: Response) => {
-    const rol = req.usuario!.rol;
-    const miembro_id = req.usuario!.miembro_id;
-    const serviceResponse = await grupoMinisterialService.findMisGrupos(rol, miembro_id);
+    const miembro_id = req.usuario!.id;
+    const serviceResponse = await grupoMinisterialService.findMisGrupos(miembro_id);
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 }

@@ -83,6 +83,23 @@ export const cambiarEstadoActividadSchema = z
     path: ['motivo_cancelacion'],
   });
 
+export const reprogramarActividadSchema = z
+  .object({
+    fecha: z
+      .string()
+      .min(1, 'La fecha es requerida')
+      .refine((val) => val >= new Date().toISOString().slice(0, 10), {
+        message: 'La fecha no puede ser anterior a hoy',
+      }),
+    hora_inicio: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato HH:MM'),
+    hora_fin: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Formato HH:MM'),
+  })
+  .refine((data) => data.hora_fin > data.hora_inicio, {
+    message: 'La hora de fin debe ser mayor a la hora de inicio',
+    path: ['hora_fin'],
+  });
+
 export type CreateActividadFormData = z.infer<typeof createActividadSchema>;
 export type UpdateActividadFormData = z.infer<typeof updateActividadSchema>;
 export type CambiarEstadoActividadFormData = z.infer<typeof cambiarEstadoActividadSchema>;
+export type ReprogramarActividadFormData = z.infer<typeof reprogramarActividadSchema>;

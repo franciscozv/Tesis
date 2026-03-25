@@ -3,9 +3,9 @@ import { patronesApi } from '../api';
 
 export const PATRONES_QUERY_KEY = 'patrones';
 
-export function usePatrones() {
+export function usePatrones(includeInactive = false) {
   return useQuery({
-    queryKey: [PATRONES_QUERY_KEY],
-    queryFn: patronesApi.getAll,
+    queryKey: [PATRONES_QUERY_KEY, { includeInactive }],
+    queryFn: () => patronesApi.getAll(includeInactive),
   });
 }

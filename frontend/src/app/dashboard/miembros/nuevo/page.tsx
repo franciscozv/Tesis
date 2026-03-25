@@ -13,7 +13,6 @@ import type { CreateMiembroFormData } from '@/features/miembros/schemas';
 function cleanOptionalFields(data: CreateMiembroFormData) {
   return {
     ...data,
-    email: data.email || undefined,
     telefono: data.telefono || undefined,
     fecha_nacimiento: data.fecha_nacimiento || undefined,
     direccion: data.direccion || undefined,

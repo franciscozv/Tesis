@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MiembroForm } from '@/features/miembros/components/miembro-form';
 import { useMiembro } from '@/features/miembros/hooks/use-miembros';
 import { useUpdateMiembro } from '@/features/miembros/hooks/use-update-miembro';
-import type { CreateMiembroFormData } from '@/features/miembros/schemas';
+import { type CreateMiembroFormData, updateMiembroSchema } from '@/features/miembros/schemas';
 
 export default function EditarMiembroPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,14 +21,14 @@ export default function EditarMiembroPage({ params }: { params: Promise<{ id: st
   const mutation = useUpdateMiembro();
 
   function onSubmit(data: CreateMiembroFormData) {
-    const { rut: _, estado_comunion: __, ...input } = data;
+    const { rut: _, estado_comunion: __, rol: ___, ...input } = data;
     const cleaned = {
       ...input,
-      email: input.email || null,
-      telefono: input.telefono || null,
-      fecha_nacimiento: input.fecha_nacimiento || null,
-      direccion: input.direccion || null,
-      genero: (input.genero as 'masculino' | 'femenino') || null,
+      email: input.email || undefined,
+      telefono: input.telefono || undefined,
+      fecha_nacimiento: input.fecha_nacimiento || undefined,
+      direccion: input.direccion || undefined,
+      genero: (input.genero as 'masculino' | 'femenino') || undefined,
     };
     mutation.mutate(
       { id: miembroId, input: cleaned },
@@ -101,6 +101,8 @@ export default function EditarMiembroPage({ params }: { params: Promise<{ id: st
             submitLabel="Actualizar"
             disableRut
             allowEstadoComunion={false}
+            showRol={false}
+            schema={updateMiembroSchema}
           />
         </CardContent>
       </Card>

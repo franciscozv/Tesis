@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+﻿import dayjs from 'dayjs';
 import { supabase } from '@/common/utils/supabaseClient';
 
 /**
@@ -155,71 +155,97 @@ export class CandidatosRepository {
    */
   async getCargoRequisitosAsync(
     cargoId: number,
-  ): Promise<{ existe: boolean; requiere_plena_comunion: boolean; nombre: string | null }> {
+  ): Promise<{
+    existe: boolean;
+    requiere_plena_comunion: boolean;
+    es_directiva: boolean;
+    nombre: string | null;
+  }> {
     const { data, error } = await supabase
       .from('rol_grupo')
-      .select('id_rol_grupo, nombre, requiere_plena_comunion')
+      .select('id_rol_grupo, nombre, requiere_plena_comunion, es_directiva')
       .eq('id_rol_grupo', cargoId)
       .eq('activo', true)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116')
-        return { existe: false, requiere_plena_comunion: false, nombre: null };
+      if (error.code === 'PGRST116') {
+        return {
+          existe: false,
+          requiere_plena_comunion: false,
+          es_directiva: false,
+          nombre: null,
+        };
+      }
       throw error;
     }
     return {
       existe: data !== null,
       requiere_plena_comunion: (data as any)?.requiere_plena_comunion ?? false,
+      es_directiva: (data as any)?.es_directiva ?? false,
       nombre: (data as any)?.nombre ?? null,
     };
   }
 
   /**
-   * Retorna miembros con membresía vigente (fecha_desvinculacion IS NULL).
-   * Si se provee grupoId, filtra por ese grupo.
-   * Si requierePlenaComunion es true, filtra solo los de estado 'plena_comunion'.
+   * Retorna miembros activos candidatos para un cargo.
+   * - Sin grupoId: retorna TODOS los miembros activos (incluyendo los sin grupo).
+   * - Con grupoId: retorna solo los miembros con membresía vigente en ese grupo.
    */
   async findMiembrosVigentesEnGrupoAsync(
     _requierePlenaComunion: boolean,
     grupoId?: number,
   ): Promise<MiembroBase[]> {
-    let query = supabase
-      .from('miembro')
-      .select(
-        'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_grupo!inner(grupo_id, fecha_desvinculacion)',
-      )
-      .eq('activo', true)
-      .is('integrante_grupo.fecha_desvinculacion', null);
-
+    // Caso con grupo: INNER JOIN para garantizar que el miembro pertenece al grupo
     if (grupoId !== undefined) {
-      query = query.eq('integrante_grupo.grupo_id', grupoId);
+      const { data, error } = await supabase
+        .from('miembro')
+        .select(
+          'id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso, integrante_grupo!inner(grupo_id, fecha_vinculacion, fecha_desvinculacion)',
+        )
+        .eq('activo', true)
+        .eq('integrante_grupo.grupo_id', grupoId)
+        .is('integrante_grupo.fecha_desvinculacion', null);
+
+      if (error) throw error;
+
+      const miembrosMap = new Map<number, MiembroBase>();
+      for (const row of (data ?? []) as any[]) {
+        if (!miembrosMap.has(row.id)) {
+          miembrosMap.set(row.id, {
+            id: row.id as number,
+            nombre: row.nombre as string,
+            apellido: row.apellido as string,
+            telefono: row.telefono as string | null,
+            email: row.email as string | null,
+            estado_comunion: row.estado_comunion as string,
+            fecha_ingreso: row.fecha_ingreso as string,
+            fecha_vinculacion_grupo: row.integrante_grupo?.[0]?.fecha_vinculacion as
+              | string
+              | undefined,
+          });
+        }
+      }
+      return Array.from(miembrosMap.values());
     }
 
-    // Se elimina el filtro duro de estado_comunion para permitir que el administrador 
-    // vea a todos los candidatos y tome la decisión final.
+    // Caso global: sin JOIN — incluye miembros sin grupo
+    const { data, error } = await supabase
+      .from('miembro')
+      .select('id, nombre, apellido, telefono, email, estado_comunion, fecha_ingreso')
+      .eq('activo', true);
 
-    const { data, error } = await query;
     if (error) throw error;
 
-    // Usar un Map para asegurar unicidad de miembros (un miembro puede estar en varios grupos)
-    const miembrosMap = new Map<number, MiembroBase>();
-    for (const row of (data ?? []) as any[]) {
-      if (!miembrosMap.has(row.id)) {
-        miembrosMap.set(row.id, {
-          id: row.id as number,
-          nombre: row.nombre as string,
-          apellido: row.apellido as string,
-          telefono: row.telefono as string | null,
-          email: row.email as string | null,
-          estado_comunion: row.estado_comunion as string,
-          fecha_ingreso: row.fecha_ingreso as string,
-          fecha_vinculacion_grupo: row.integrante_grupo?.[0]?.fecha_vinculacion as string | undefined,
-        });
-      }
-    }
-
-    return Array.from(miembrosMap.values());
+    return (data ?? []).map((row) => ({
+      id: row.id as number,
+      nombre: row.nombre as string,
+      apellido: row.apellido as string,
+      telefono: row.telefono as string | null,
+      email: row.email as string | null,
+      estado_comunion: row.estado_comunion as string,
+      fecha_ingreso: row.fecha_ingreso as string,
+    }));
   }
 
   // ─── Métodos BATCH para sugerirParaResponsabilidad (evitan N+1) ─────────────────────────
@@ -320,7 +346,9 @@ export class CandidatosRepository {
     miembroIds: number[],
     cargoId: number,
     grupoId: number,
-  ): Promise<Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>> {
+  ): Promise<
+    Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>
+  > {
     if (miembroIds.length === 0) return new Map();
 
     const { data, error } = await supabase
@@ -332,7 +360,10 @@ export class CandidatosRepository {
 
     if (error) throw error;
 
-    const result = new Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>();
+    const result = new Map<
+      number,
+      Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>
+    >();
     for (const row of (data ?? []) as any[]) {
       const arr = result.get(row.miembro_id) ?? [];
       arr.push({
@@ -352,7 +383,9 @@ export class CandidatosRepository {
   async getExperienciaCargoGlobalBatchAsync(
     miembroIds: number[],
     cargoId: number,
-  ): Promise<Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>> {
+  ): Promise<
+    Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>
+  > {
     if (miembroIds.length === 0) return new Map();
 
     const { data, error } = await supabase
@@ -363,7 +396,10 @@ export class CandidatosRepository {
 
     if (error) throw error;
 
-    const result = new Map<number, Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>>();
+    const result = new Map<
+      number,
+      Array<{ grupo_nombre: string; fecha_inicio: string; fecha_fin: string | null }>
+    >();
     for (const row of (data ?? []) as any[]) {
       const arr = result.get(row.miembro_id) ?? [];
       arr.push({
@@ -409,14 +445,17 @@ export class CandidatosRepository {
 
   /**
    * BATCH: Para cada miembro, obtiene la fecha y nombre de actividad más reciente en que
-   * realizó el rol dado (asistio: true, actividad realizada).
+   * fue CONFIRMADO para el rol dado (en actividades no canceladas hasta la fecha dada).
    * Retorna Map<miembro_id, { fecha: string; nombre_actividad: string }>.
-   * Si un miembro no aparece en el mapa, nunca ha realizado el rol.
+   * Si un miembro no aparece en el mapa, nunca ha sido asignado al rol.
    */
   async getUltimoUsoRolBatchAsync(
     miembroIds: number[],
     rolId: number,
-  ): Promise<Map<number, { fecha: string; nombre_actividad: string; tipo_actividad: string | null }>> {
+    fechaLimite: string,
+  ): Promise<
+    Map<number, { fecha: string; nombre_actividad: string; tipo_actividad: string | null }>
+  > {
     if (miembroIds.length === 0) return new Map();
 
     const { data, error } = await supabase
@@ -424,12 +463,16 @@ export class CandidatosRepository {
       .select('miembro_id, actividad!inner(fecha, nombre, estado, tipo_actividad(nombre))')
       .in('miembro_id', miembroIds)
       .eq('responsabilidad_id', rolId)
-      .eq('asistio', true)
-      .eq('actividad.estado', 'realizada');
+      .eq('estado', 'confirmado')
+      .neq('actividad.estado', 'cancelada')
+      .lte('actividad.fecha', fechaLimite);
 
     if (error) throw error;
 
-    const result = new Map<number, { fecha: string; nombre_actividad: string; tipo_actividad: string | null }>();
+    const result = new Map<
+      number,
+      { fecha: string; nombre_actividad: string; tipo_actividad: string | null }
+    >();
     for (const row of (data ?? []) as any[]) {
       const actual = result.get(row.miembro_id);
       if (!actual || row.actividad.fecha > actual.fecha) {
@@ -454,12 +497,14 @@ export class CandidatosRepository {
   ): Promise<Map<number, ServicioSemanaDetalle[]>> {
     if (miembroIds.length === 0) return new Map();
 
-    const inicio = dayjs(fecha).startOf('week').format('YYYY-MM-DD');
-    const fin = dayjs(fecha).endOf('week').format('YYYY-MM-DD');
+    const inicio = dayjs(fecha).startOf('month').format('YYYY-MM-DD');
+    const fin = dayjs(fecha).endOf('month').format('YYYY-MM-DD');
 
     const { data, error } = await supabase
       .from('invitado')
-      .select('miembro_id, actividad!inner(nombre, fecha, estado), responsabilidad_actividad!responsabilidad_id(nombre)')
+      .select(
+        'miembro_id, actividad!inner(nombre, fecha, estado), responsabilidad_actividad!responsabilidad_id(nombre)',
+      )
       .in('miembro_id', miembroIds)
       .eq('estado', 'confirmado')
       .eq('actividad.estado', 'programada')
@@ -497,7 +542,9 @@ export class CandidatosRepository {
 
     let query = supabase
       .from('invitado')
-      .select('miembro_id, actividad!inner(nombre, fecha, estado), responsabilidad_actividad!responsabilidad_id(nombre)')
+      .select(
+        'miembro_id, actividad!inner(nombre, fecha, estado), responsabilidad_actividad!responsabilidad_id(nombre)',
+      )
       .in('miembro_id', miembroIds)
       .eq('estado', 'confirmado')
       .eq('actividad.fecha', fecha)
@@ -528,12 +575,16 @@ export class CandidatosRepository {
    * Incluye tanto membresías pasadas como vigentes, con cualquier rol.
    * Retorna Map<miembro_id, Array<{ cargo: string; grupo: string; inicio: string; fin: string | null }>>.
    */
-  async getHistorialGruposCompletoBatchAsync(
-    miembroIds: number[],
-  ): Promise<
+  async getHistorialGruposCompletoBatchAsync(miembroIds: number[]): Promise<
     Map<
       number,
-      Array<{ cargo: string; grupo: string; inicio: string; fin: string | null; es_directiva: boolean }>
+      Array<{
+        cargo: string;
+        grupo: string;
+        inicio: string;
+        fin: string | null;
+        es_directiva: boolean;
+      }>
     >
   > {
     if (miembroIds.length === 0) return new Map();
@@ -553,11 +604,17 @@ export class CandidatosRepository {
 
     const result = new Map<
       number,
-      Array<{ cargo: string; grupo: string; inicio: string; fin: string | null; es_directiva: boolean }>
+      Array<{
+        cargo: string;
+        grupo: string;
+        inicio: string;
+        fin: string | null;
+        es_directiva: boolean;
+      }>
     >();
     for (const row of (data ?? []) as any[]) {
       const arr = result.get(row.miembro_id) ?? [];
-      
+
       // Manejo ultra-robusto de objetos anidados de Supabase
       const rolObj = Array.isArray(row.rol_grupo) ? row.rol_grupo[0] : row.rol_grupo;
       const grupoObj = Array.isArray(row.grupo) ? row.grupo[0] : row.grupo;
@@ -567,7 +624,7 @@ export class CandidatosRepository {
         grupo: grupoObj?.nombre ?? 'Desconocido',
         inicio: row.fecha_vinculacion,
         fin: row.fecha_desvinculacion,
-        es_directiva: !!(rolObj?.es_directiva), // Forzar a booleano
+        es_directiva: !!rolObj?.es_directiva, // Forzar a booleano
       });
       result.set(row.miembro_id, arr);
     }
@@ -588,7 +645,9 @@ export class CandidatosRepository {
 
     const { data, error } = await supabase
       .from('invitado')
-      .select('miembro_id, actividad!inner(tipo_actividad(nombre)), responsabilidad_actividad!responsabilidad_id(nombre)')
+      .select(
+        'miembro_id, actividad!inner(tipo_actividad(nombre)), responsabilidad_actividad!responsabilidad_id(nombre)',
+      )
       .in('miembro_id', miembroIds)
       .eq('asistio', true)
       .gte('actividad.fecha', inicio)
@@ -617,6 +676,33 @@ export class CandidatosRepository {
 
     return result;
   }
+
+  async getColaboracionesBatchAsync(
+    miembroIds: number[],
+    inicio: string,
+    fin: string,
+  ): Promise<Map<number, { cumplidas: number; totales: number }>> {
+    if (miembroIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from('colaborador')
+      .select('miembro_id, cumplio, necesidad!inner(actividad!inner(fecha))')
+      .in('miembro_id', miembroIds)
+      .gte('necesidad.actividad.fecha', inicio)
+      .lte('necesidad.actividad.fecha', fin);
+
+    if (error) throw error;
+
+    const result = new Map<number, { cumplidas: number; totales: number }>();
+    miembroIds.forEach((id) => result.set(id, { cumplidas: 0, totales: 0 }));
+
+    for (const row of data as any[]) {
+      const stats = result.get(row.miembro_id)!;
+      stats.totales++;
+      if (row.cumplio) stats.cumplidas++;
+      result.set(row.miembro_id, stats);
+    }
+
+    return result;
+  }
 }
-
-

@@ -16,22 +16,28 @@ export interface Miembro {
   activo: boolean;
   created_at: string;
   updated_at: string;
+  // Campos de cuenta (null = sin acceso al sistema)
+  rol: 'administrador' | 'usuario' | null;
+  fecha_creacion: string | null;
+  ultimo_acceso: string | null;
 }
 
 export interface CreateMiembroInput {
   rut: string;
   nombre: string;
   apellido: string;
-  email?: string | null;
+  email: string;
   telefono?: string | null;
   fecha_nacimiento?: string | null;
   direccion?: string | null;
   genero?: Genero | null;
   estado_comunion: EstadoComunion;
+  rol: 'administrador' | 'usuario';
   fecha_ingreso: string;
 }
 
-export interface UpdateMiembroInput extends Partial<Omit<CreateMiembroInput, 'estado_comunion'>> {}
+export interface UpdateMiembroInput
+  extends Partial<Omit<CreateMiembroInput, 'estado_comunion' | 'rol'>> {}
 
 export interface UpdateMiPerfilInput {
   direccion?: string | null;
@@ -56,9 +62,24 @@ export interface PaginatedMiembrosResponse {
   meta: PaginationMeta;
 }
 
+export interface UpdateCuentaInput {
+  email?: string;
+  rol?: 'administrador' | 'usuario';
+}
+
+export interface ResetPasswordInput {
+  nueva_password: string;
+}
+
 export interface MiembrosQueryParams {
   page: number;
   limit: number;
   search?: string;
   estado_comunion?: EstadoComunion | '';
+  incluir_inactivos?: boolean;
+}
+
+export interface DeleteMiembroResult {
+  tipo: 'inactivado' | 'eliminado';
+  tieneDependencias: boolean;
 }

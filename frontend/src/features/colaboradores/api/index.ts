@@ -4,7 +4,7 @@ import type {
   Colaborador,
   ColaboradorFilters,
   CreateColaboradorInput,
-  DecidirOfertaInput,
+  MarcarCumplioInput,
 } from '../types';
 
 export const colaboradoresApi = {
@@ -12,7 +12,6 @@ export const colaboradoresApi = {
     const params = new URLSearchParams();
     if (filters?.necesidad_id) params.set('necesidad_id', String(filters.necesidad_id));
     if (filters?.miembro_id) params.set('miembro_id', String(filters.miembro_id));
-    if (filters?.estado) params.set('estado', filters.estado);
     const query = params.toString();
     const { data } = await apiClient.get<ApiResponse<Colaborador[]>>(
       `/colaboradores${query ? `?${query}` : ''}`,
@@ -30,9 +29,9 @@ export const colaboradoresApi = {
     return data.responseObject;
   },
 
-  decidir: async (id: number, input: DecidirOfertaInput) => {
+  marcarCumplio: async (id: number, input: MarcarCumplioInput) => {
     const { data } = await apiClient.patch<ApiResponse<Colaborador>>(
-      `/colaboradores/${id}/decision`,
+      `/colaboradores/${id}/cumplio`,
       input,
     );
     return data.responseObject;

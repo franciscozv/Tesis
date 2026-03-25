@@ -30,7 +30,7 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
       {
         onSuccess: () => {
           toast.success('Grupo actualizado exitosamente');
-          router.push(`/dashboard/grupos/${grupoId}`);
+          router.push('/dashboard/grupos');
         },
         onError: (error: any) => {
           const apiMessage = error.response?.data?.message;
@@ -66,9 +66,9 @@ export default function EditarGrupoPage({ params }: { params: Promise<{ id: stri
     <div className="mx-auto max-w-lg grid gap-4">
       <div>
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/dashboard/grupos/${grupoId}`}>
+          <Link href="/dashboard/grupos">
             <ArrowLeft className="size-4" />
-            Volver al grupo
+            Volver a grupos
           </Link>
         </Button>
       </div>

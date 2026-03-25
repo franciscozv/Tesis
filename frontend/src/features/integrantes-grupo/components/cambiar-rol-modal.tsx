@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  BadgeCheck,
-  Check,
-  ChevronsUpDown,
-  Info,
-  Loader2,
-  Search,
-  UserCheck,
-} from 'lucide-react';
+import { BadgeCheck, Check, ChevronsUpDown, Info, Loader2, Search, UserCheck } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -44,14 +36,13 @@ export function CambiarRolModal({
   const [searchTerm, setSearchTerm] = React.useState('');
   const [openCombobox, setOpenCombobox] = React.useState(false);
   const [nuevoRolId, setNuevoRolId] = React.useState<number>(0);
-  
+
   const mutation = useCambiarRol();
-  
+
   // FILTRO: Solo roles activos que NO sean de directiva y que no sea el rol actual
   const rolesDisponibles =
-    rolesGrupo?.filter(
-      (r) => r.activo && r.id_rol_grupo !== comunion?.rol.id && !r.es_directiva,
-    ) ?? [];
+    rolesGrupo?.filter((r) => r.activo && r.id_rol_grupo !== comunion?.rol.id && !r.es_directiva) ??
+    [];
 
   const rolesFiltrados = rolesDisponibles.filter((r) =>
     r.nombre.toLowerCase().includes(searchTerm.toLowerCase()),

@@ -19,9 +19,9 @@ export interface IndicadoresRol {
   /** Tipo de actividad del último uso del rol. null = nunca lo ha realizado o sin tipo asignado. */
   ultimo_uso_tipo_actividad?: string | null;
   /** Servicios confirmados en la semana de la fecha objetivo. */
-  servicios_esta_semana: number;
-  /** Detalle de los servicios confirmados esta semana (actividad, rol y fecha). */
-  servicios_esta_semana_detalle?: Array<{ actividad: string; rol: string; fecha: string }>;
+  servicios_este_mes: number;
+  /** Detalle de los servicios confirmados este mes (actividad, rol y fecha). */
+  servicios_este_mes_detalle?: Array<{ actividad: string; rol: string; fecha: string }>;
   asistencia_ratio_periodo: number;
   asistencias_count: number;
   confirmadas_count: number;
@@ -45,18 +45,13 @@ export interface SugerirRolInput {
   tipo_actividad_id?: number;
   /** ID de la actividad. Para rol 'usuario', restringe los candidatos al grupo de esa actividad. */
   actividad_id?: number;
-  periodo_meses?: number;
   filtro_plena_comunion?: boolean;
   /** Solo para administradores: filtra candidatos de un grupo específico */
   grupo_id?: number;
-  /** Excluir candidatos sin experiencia previa en el rol */
-  solo_con_experiencia?: boolean;
-  /** Excluir candidatos con experiencia previa (rotación / nuevos talentos) */
-  solo_sin_experiencia?: boolean;
-  /** Orden de prioridad para el ranking: disponibilidad | experiencia_tipo | rotacion | carga | fidelidad */
-  prioridad?: string[];
   /** Si true, incluye candidatos con conflicto de horario en los resultados (resaltados en rojo). Default: false (excluir). */
   incluir_con_conflictos?: boolean;
+  /** Si true, entre candidatos con igual rotación y carga, se priorizan quienes tienen experiencia en este tipo de actividad. */
+  priorizar_experiencia_tipo?: boolean;
 }
 
 // ─── Sugerir Cargo (indicadores crudos, sin scoring) ─────────────────────────

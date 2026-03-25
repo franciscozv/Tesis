@@ -24,7 +24,7 @@ export function useCreateInvitado() {
   return useMutation({
     mutationFn: async (input: CreateInvitadoInput) => {
       const { data } = await apiClient.post<ApiResponse<Invitado>>('/invitados', input);
-      return data.responseObject;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

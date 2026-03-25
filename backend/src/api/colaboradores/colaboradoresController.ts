@@ -12,7 +12,6 @@ class ColaboradoresController {
     const filters = {
       necesidad_id: req.query.necesidad_id ? Number(req.query.necesidad_id) : undefined,
       miembro_id: req.query.miembro_id ? Number(req.query.miembro_id) : undefined,
-      estado: req.query.estado as string | undefined,
     };
     const serviceResponse = await colaboradoresService.findAll(filters, req.usuario);
     res.status(serviceResponse.statusCode).send(serviceResponse);
@@ -28,7 +27,7 @@ class ColaboradoresController {
   };
 
   /**
-   * Crea una nueva oferta de colaboración
+   * Registra un nuevo compromiso de colaboración
    */
   public create: RequestHandler = async (req: Request, res: Response) => {
     const serviceResponse = await colaboradoresService.create(req.body);
@@ -36,20 +35,20 @@ class ColaboradoresController {
   };
 
   /**
-   * Acepta o rechaza una oferta de colaboración
+   * Marca si un colaborador cumplió su compromiso
    */
-  public updateDecision: RequestHandler = async (req: Request, res: Response) => {
+  public marcarCumplio: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);
-    const serviceResponse = await colaboradoresService.updateDecision(
+    const serviceResponse = await colaboradoresService.marcarCumplio(
       id,
-      req.body.estado,
+      req.body.cumplio,
       req.usuario,
     );
     res.status(serviceResponse.statusCode).send(serviceResponse);
   };
 
   /**
-   * Elimina una oferta de colaboración
+   * Elimina un compromiso de colaboración
    */
   public delete: RequestHandler = async (req: Request, res: Response) => {
     const id = Number.parseInt(req.params.id, 10);

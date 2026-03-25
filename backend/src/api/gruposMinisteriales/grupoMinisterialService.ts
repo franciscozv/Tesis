@@ -54,8 +54,12 @@ export class GrupoMinisterialService {
 
   /**
    * Busca un grupo ministerial por ID.
+   * Admins pueden ver cualquier grupo. Usuarios solo pueden ver grupos donde son miembros activos.
    */
-  async findById(id: number): Promise<ServiceResponse<GrupoMinisterial | null>> {
+  async findById(
+    id: number,
+    usuario: { id: number; rol: string },
+  ): Promise<ServiceResponse<GrupoMinisterial | null>> {
     try {
       const grupo = await this.grupoMinisterialRepository.findByIdAsync(id);
 
@@ -65,6 +69,20 @@ export class GrupoMinisterialService {
           null,
           StatusCodes.NOT_FOUND,
         );
+      }
+
+      if (usuario.rol !== 'administrador') {
+        const esMiembro = await this.grupoMinisterialRepository.isMemberOfGrupoAsync(
+          usuario.id,
+          id,
+        );
+        if (!esMiembro) {
+          return ServiceResponse.failure(
+            'No perteneces a este grupo ministerial',
+            null,
+            StatusCodes.FORBIDDEN,
+          );
+        }
       }
 
       return ServiceResponse.success<GrupoMinisterial>('Grupo ministerial encontrado', grupo);
@@ -225,31 +243,18 @@ export class GrupoMinisterialService {
   }
 
   /**
-   * Obtiene los grupos ministeriales que un usuario puede gestionar según su rol
-   * - Administrador: Retorna todos los grupos activos
-   * - Usuario: Retorna solo los grupos donde tiene un rol de directiva (es_directiva = true)
+   * Obtiene los grupos donde el usuario tiene membresía activa (cualquier rol),
+   * con `es_directiva_miembro` indicando si tiene cargo directivo en cada grupo.
+   * Aplica por igual a administradores y usuarios: la identidad personal siempre
+   * se resuelve por membresía, no por rol global.
    */
   async findMisGrupos(
-    rol: 'administrador' | 'usuario',
-    miembro_id: number | null,
-  ): Promise<ServiceResponse<GrupoMinisterial[] | null>> {
+    miembro_id: number,
+  ): Promise<ServiceResponse<(GrupoMinisterial & { es_directiva_miembro: boolean })[] | null>> {
     try {
-      let grupos: GrupoMinisterial[] = [];
-
-      if (rol === 'administrador') {
-        grupos = await this.grupoMinisterialRepository.findAllAsync();
-      } else {
-        if (!miembro_id) {
-          return ServiceResponse.failure(
-            'El usuario no tiene un miembro_id asociado',
-            null,
-            StatusCodes.BAD_REQUEST,
-          );
-        }
-        grupos = await this.grupoMinisterialRepository.findGruposByDirectivaAsync(miembro_id);
-      }
-
-      return ServiceResponse.success<GrupoMinisterial[]>('Grupos obtenidos exitosamente', grupos);
+      const grupos =
+        await this.grupoMinisterialRepository.findTodosGruposByMiembroAsync(miembro_id);
+      return ServiceResponse.success('Grupos obtenidos exitosamente', grupos);
     } catch (ex) {
       const errorMessage = `Error al obtener grupos del usuario: ${(ex as Error).message}`;
       logger.error(errorMessage);

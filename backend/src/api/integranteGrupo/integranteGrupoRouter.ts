@@ -169,14 +169,11 @@ integranteGrupoRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(
-    z.array(IntegranteGrupoSchema),
-    'Directiva renovada exitosamente',
-  ),
+  responses: createApiResponse(z.array(IntegranteGrupoSchema), 'Directiva renovada exitosamente'),
 });
 integranteGrupoRouter.post(
   '/grupo/:grupo_id/renovar-directiva',
-  verificarRol('administrador'),
+  verificarRol('administrador', 'usuario'),
   validateRequest(RenovarDirectivaMasivaSchema),
   integranteGrupoController.renovarDirectivaMasiva,
 );
