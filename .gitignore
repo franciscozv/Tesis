@@ -9,3 +9,5 @@ requerimientos.md
 .playwright-mcp/
 # PDFs
 *.pdf
+# Dependencies
+node_modules/
